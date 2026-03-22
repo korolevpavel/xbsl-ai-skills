@@ -15,6 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
         scripts/explore.py
     xbsl-meta-add/       # создание объектов конфигурации
         references/      # спецификации по типам объектов
+    xbsl-form-add/       # создание форм интерфейса (КомпонентИнтерфейса)
+        references/      # спецификации ФормаОбъекта, ФормаСписка, elements
 tools/                   # материалы и инструменты (в .gitignore)
 ```
 
@@ -28,6 +30,9 @@ tools/                   # материалы и инструменты (в .git
 
 ### xbsl-meta-add
 Создаёт объект конфигурации (`.yaml` + опционально `.xbsl`). Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/{ТипОбъекта}.md`.
+
+### xbsl-form-add
+Создаёт форму интерфейса (`КомпонентИнтерфейса`) — `ФормаОбъекта` и/или `ФормаСписка`. Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/ФормаОбъекта.md` или `references/ФормаСписка.md`.
 
 ## Структура проекта 1С:Элемент
 

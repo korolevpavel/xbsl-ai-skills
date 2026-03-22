@@ -13,7 +13,6 @@
 | [`xbsl-meta-add`](.claude/skills/xbsl-meta-add/SKILL.md) | Создание объекта конфигурации (Справочник, Документ, Перечисление и др.) по описанию |
 | [`xbsl-form-add`](.claude/skills/xbsl-form-add/SKILL.md) | Создание формы интерфейса (ФормаОбъекта и/или ФормаСписка) для объекта конфигурации |
 
-`xbsl-meta-add` и `xbsl-form-add` оркестрируют два других скилла: сначала вызывают `xbsl-explore` для определения пути и проверки конфликтов, затем `xbsl-uuid` для генерации идентификаторов.
 
 Спецификации по каждому типу объекта метаданных и справочник типов реквизитов хранятся в [`.claude/skills/xbsl-meta-add/references/`](.claude/skills/xbsl-meta-add/references/):
 

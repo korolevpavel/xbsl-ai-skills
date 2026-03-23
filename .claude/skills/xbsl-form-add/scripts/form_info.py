@@ -92,8 +92,8 @@ def parse_list_section(text: str, section_name: str) -> list[dict]:
                         k, _, v = part.partition(":")
                         current[k.strip()] = v.strip()
 
-        # Свойства текущего элемента (отступ 8)
-        elif indent == 8 and current is not None and ":" in stripped and not stripped.startswith("-"):
+        # Свойства текущего элемента (отступ 6 — продолжение inline-элемента, или 8 — блочный элемент)
+        elif indent in (6, 8) and current is not None and ":" in stripped and not stripped.startswith("-"):
             key, _, val = stripped.partition(":")
             val = val.strip()
             if val:  # пропускаем пустые значения (вложенные объекты)
@@ -105,24 +105,40 @@ def parse_list_section(text: str, section_name: str) -> list[dict]:
     return items
 
 
-def find_object(root: str, name: str) -> tuple[str, str, str] | None:
+def find_project_dirs(root: str) -> list[str]:
+    """
+    Рекурсивно ищет все папки, содержащие Проект.yaml, начиная с root.
+    Возвращает список путей к таким папкам.
+    """
+    result = []
+    try:
+        entries = sorted(os.scandir(root), key=lambda e: e.name)
+    except OSError:
+        return result
+
+    for entry in entries:
+        if not entry.is_dir():
+            continue
+        if os.path.isfile(os.path.join(entry.path, "Проект.yaml")):
+            result.append(entry.path)
+        else:
+            result.extend(find_project_dirs(entry.path))
+
+    return result
+
+
+def find_object(root: str, name: str) -> tuple[str, str, str, str] | None:
     """
     Ищет объект по имени во всех проектах и подсистемах.
-    Возвращает (path_to_subsystem, filename, file_text) или None.
+    Сначала рекурсивно находит все папки с Проект.yaml, затем ищет объект в подсистемах.
+    Возвращает (path_to_subsystem, filename, file_text, namespace) или None.
+    namespace имеет вид "vendor::project::subsystem".
     """
-    try:
-        proj_entries = sorted(os.scandir(root), key=lambda e: e.name)
-    except OSError:
-        return None
+    project_dirs = find_project_dirs(root)
 
-    for proj_entry in proj_entries:
-        if not proj_entry.is_dir():
-            continue
-        if not os.path.isfile(os.path.join(proj_entry.path, "Проект.yaml")):
-            continue
-
+    for proj_path in project_dirs:
         try:
-            sub_entries = sorted(os.scandir(proj_entry.path), key=lambda e: e.name)
+            sub_entries = sorted(os.scandir(proj_path), key=lambda e: e.name)
         except OSError:
             continue
 
@@ -142,7 +158,11 @@ def find_object(root: str, name: str) -> tuple[str, str, str] | None:
                     except OSError:
                         continue
                     if get_yaml_field(text, "Имя") == name:
-                        return sub_entry.path, fname, text
+                        vendor = os.path.basename(os.path.dirname(proj_path))
+                        project = os.path.basename(proj_path)
+                        subsystem = os.path.basename(sub_entry.path)
+                        namespace = f"{vendor}::{project}::{subsystem}"
+                        return sub_entry.path, fname, text, namespace
             except OSError:
                 continue
 
@@ -173,7 +193,7 @@ def main():
         }, ensure_ascii=False, indent=2))
         sys.exit(1)
 
-    obj_path, obj_file, obj_text = found
+    obj_path, obj_file, obj_text, namespace = found
 
     obj_type = get_yaml_field(obj_text, "ВидЭлемента") or "Неизвестно"
     fields = parse_list_section(obj_text, "Реквизиты")
@@ -200,6 +220,7 @@ def main():
         "object_path": obj_path,
         "object_file": obj_file,
         "object_type": obj_type,
+        "namespace": namespace,
         "field_count": field_count,
         "tc_count": tc_count,
         "fields": [{"name": f.get("Имя", "?"), "type": f.get("Тип", "")} for f in fields],

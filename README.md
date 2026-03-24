@@ -11,6 +11,7 @@
 | [`xbsl-uuid`](.claude/skills/xbsl-uuid/SKILL.md) | Генерация UUID v4 для объектов конфигурации |
 | [`xbsl-explore`](.claude/skills/xbsl-explore/SKILL.md) | Разведка структуры проекта: находит проекты, подсистемы, объекты, проверяет конфликты имён |
 | [`xbsl-meta-add`](.claude/skills/xbsl-meta-add/SKILL.md) | Создание объекта конфигурации (Справочник, Документ, Перечисление и др.) по описанию |
+| [`xbsl-deploy`](.claude/skills/xbsl-deploy/SKILL.md) | Управление приложениями на 1С:Предприятие.Элемент: деплой, запуск, остановка, статус, merge |
 
 `xbsl-meta-add` оркестрирует два других скилла: сначала вызывает `xbsl-explore` для определения пути и проверки конфликтов, затем `xbsl-uuid` для генерации идентификаторов.
 
@@ -32,10 +33,12 @@
 | [`ТабличныеЧасти.md`](.claude/skills/xbsl-meta-add/references/ТабличныеЧасти.md) | Вложенные строки в Справочнике и Документе |
 | [`types.md`](.claude/skills/xbsl-meta-add/references/types.md) | Справочник типов реквизитов |
 
+`xbsl-deploy` использует Console API v2. Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
+
 ## Требования
 
 - [Claude Code](https://claude.ai/code) или другой AI-агент, поддерживающий скиллы
-- `python3` — для работы скиллов `xbsl-explore` и `xbsl-uuid`
+- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid` и `xbsl-deploy`
 
 ## Установка
 
@@ -57,6 +60,10 @@ cp -r xbsl-ai-skills/.claude/skills/ /путь/к/твоему/проекту/.c
 
 ```
 Добавь перечисление статусов задачи: Новая, В работе, Завершена
+```
+
+```
+Задеплой ветку main на Элемент
 ```
 
 ## Структура проекта 1С:Элемент

@@ -35,6 +35,13 @@ import os
 import sys
 
 
+class AmbiguousObjectError(Exception):
+    def __init__(self, name: str, matches: list[tuple[str, str, str, str]]):
+        super().__init__(f'Найдено несколько объектов с именем "{name}"')
+        self.name = name
+        self.matches = matches
+
+
 def get_yaml_field(text: str, field: str) -> str | None:
     """Извлекает значение простого поля из YAML без внешних зависимостей."""
     for line in text.splitlines():
@@ -111,6 +118,9 @@ def find_project_dirs(root: str) -> list[str]:
     Возвращает список путей к таким папкам.
     """
     result = []
+    if os.path.isfile(os.path.join(root, "Проект.yaml")):
+        return [root]
+
     try:
         entries = sorted(os.scandir(root), key=lambda e: e.name)
     except OSError:
@@ -127,6 +137,23 @@ def find_project_dirs(root: str) -> list[str]:
     return result
 
 
+def read_text_file(path: str) -> str | None:
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+def get_project_namespace_parts(proj_path: str) -> tuple[str, str]:
+    project_file = os.path.join(proj_path, "Проект.yaml")
+    project_text = read_text_file(project_file) or ""
+
+    vendor = get_yaml_field(project_text, "Поставщик") or os.path.basename(os.path.dirname(proj_path))
+    project = get_yaml_field(project_text, "Имя") or os.path.basename(proj_path)
+    return vendor, project
+
+
 def find_object(root: str, name: str) -> tuple[str, str, str, str] | None:
     """
     Ищет объект по имени во всех проектах и подсистемах.
@@ -135,8 +162,11 @@ def find_object(root: str, name: str) -> tuple[str, str, str, str] | None:
     namespace имеет вид "vendor::project::subsystem".
     """
     project_dirs = find_project_dirs(root)
+    matches = []
 
     for proj_path in project_dirs:
+        vendor, project = get_project_namespace_parts(proj_path)
+
         try:
             sub_entries = sorted(os.scandir(proj_path), key=lambda e: e.name)
         except OSError:
@@ -153,20 +183,21 @@ def find_object(root: str, name: str) -> tuple[str, str, str, str] | None:
                     if not fname.endswith(".yaml"):
                         continue
                     fpath = os.path.join(sub_entry.path, fname)
-                    try:
-                        text = open(fpath, encoding="utf-8").read()
-                    except OSError:
+                    text = read_text_file(fpath)
+                    if text is None:
                         continue
                     if get_yaml_field(text, "Имя") == name:
-                        vendor = os.path.basename(os.path.dirname(proj_path))
-                        project = os.path.basename(proj_path)
                         subsystem = os.path.basename(sub_entry.path)
                         namespace = f"{vendor}::{project}::{subsystem}"
-                        return sub_entry.path, fname, text, namespace
+                        matches.append((sub_entry.path, fname, text, namespace))
             except OSError:
                 continue
 
-    return None
+    if not matches:
+        return None
+    if len(matches) > 1:
+        raise AmbiguousObjectError(name, matches)
+    return matches[0]
 
 
 def suggest_layout(field_count: int, tc_count: int) -> str:
@@ -177,6 +208,21 @@ def suggest_layout(field_count: int, tc_count: int) -> str:
     return "tabs"
 
 
+def infer_field_type(obj_type: str, field: dict) -> str:
+    field_type = field.get("Тип")
+    if field_type:
+        return field_type
+
+    field_name = field.get("Имя")
+    if field_name == "Файлы":
+        return "Файлы"
+    if obj_type == "Справочник" and field_name == "Наименование":
+        return "Строка"
+    if obj_type == "Документ" and field_name == "Номер":
+        return "Строка"
+    return ""
+
+
 def main():
     parser = argparse.ArgumentParser(description="Анализ объекта 1С:Элемент для создания форм")
     parser.add_argument("--name", required=True, help="Имя объекта конфигурации")
@@ -184,7 +230,22 @@ def main():
     args = parser.parse_args()
 
     root = os.path.abspath(args.root)
-    found = find_object(root, args.name)
+    try:
+        found = find_object(root, args.name)
+    except AmbiguousObjectError as exc:
+        print(json.dumps({
+            "error": str(exc),
+            "searched_in": root,
+            "matches": [
+                {
+                    "object_path": obj_path,
+                    "object_file": obj_file,
+                    "namespace": namespace,
+                }
+                for obj_path, obj_file, _obj_text, namespace in exc.matches
+            ],
+        }, ensure_ascii=False, indent=2))
+        sys.exit(1)
 
     if not found:
         print(json.dumps({
@@ -199,17 +260,16 @@ def main():
     fields = parse_list_section(obj_text, "Реквизиты")
     tc_list = parse_list_section(obj_text, "ТабличныеЧасти")
 
-    # Нормализуем тип для полей Файлы (нет Тип — это файловый реквизит)
     for f in fields:
-        if not f.get("Тип") and f.get("Имя") == "Файлы":
-            f["Тип"] = "Файлы"
+        f["Тип"] = infer_field_type(obj_type, f)
 
     field_count = len(fields)
     tc_count = len(tc_list)
 
     # Проверяем существование файлов форм
-    form_obj_file = f"{args.name}ФормаОбъекта.yaml"
-    form_list_file = f"{args.name}ФормаСписка.yaml"
+    object_stem = os.path.splitext(obj_file)[0]
+    form_obj_file = f"{object_stem}ФормаОбъекта.yaml"
+    form_list_file = f"{object_stem}ФормаСписка.yaml"
 
     existing_forms = {
         "ФормаОбъекта": form_obj_file if os.path.isfile(os.path.join(obj_path, form_obj_file)) else None,

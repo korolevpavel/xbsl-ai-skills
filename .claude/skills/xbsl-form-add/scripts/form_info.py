@@ -33,10 +33,23 @@ import argparse
 import json
 import os
 import sys
+from typing import NamedTuple
+
+
+PROJECT_FILE = "Проект.yaml"
+SUBSYSTEM_FILE = "Подсистема.yaml"
+UNKNOWN_OBJECT_TYPE = "Неизвестно"
+
+
+class ObjectMatch(NamedTuple):
+    object_path: str
+    object_file: str
+    object_text: str
+    namespace: str
 
 
 class AmbiguousObjectError(Exception):
-    def __init__(self, name: str, matches: list[tuple[str, str, str, str]]):
+    def __init__(self, name: str, matches: list[ObjectMatch]):
         super().__init__(f'Найдено несколько объектов с именем "{name}"')
         self.name = name
         self.matches = matches
@@ -118,7 +131,7 @@ def find_project_dirs(root: str) -> list[str]:
     Возвращает список путей к таким папкам.
     """
     result = []
-    if os.path.isfile(os.path.join(root, "Проект.yaml")):
+    if os.path.isfile(os.path.join(root, PROJECT_FILE)):
         return [root]
 
     try:
@@ -129,7 +142,7 @@ def find_project_dirs(root: str) -> list[str]:
     for entry in entries:
         if not entry.is_dir():
             continue
-        if os.path.isfile(os.path.join(entry.path, "Проект.yaml")):
+        if os.path.isfile(os.path.join(entry.path, PROJECT_FILE)):
             result.append(entry.path)
         else:
             result.extend(find_project_dirs(entry.path))
@@ -146,7 +159,7 @@ def read_text_file(path: str) -> str | None:
 
 
 def get_project_namespace_parts(proj_path: str) -> tuple[str, str]:
-    project_file = os.path.join(proj_path, "Проект.yaml")
+    project_file = os.path.join(proj_path, PROJECT_FILE)
     project_text = read_text_file(project_file) or ""
 
     vendor = get_yaml_field(project_text, "Поставщик") or os.path.basename(os.path.dirname(proj_path))
@@ -154,7 +167,31 @@ def get_project_namespace_parts(proj_path: str) -> tuple[str, str]:
     return vendor, project
 
 
-def find_object(root: str, name: str) -> tuple[str, str, str, str] | None:
+def iter_subsystem_dirs(project_path: str) -> list[str]:
+    try:
+        entries = sorted(os.scandir(project_path), key=lambda e: e.name)
+    except OSError:
+        return []
+
+    return [
+        entry.path
+        for entry in entries
+        if entry.is_dir() and os.path.isfile(os.path.join(entry.path, SUBSYSTEM_FILE))
+    ]
+
+
+def iter_yaml_files(path: str):
+    try:
+        filenames = sorted(os.listdir(path))
+    except OSError:
+        return
+
+    for filename in filenames:
+        if filename.endswith(".yaml"):
+            yield filename, os.path.join(path, filename)
+
+
+def find_object(root: str, name: str) -> ObjectMatch | None:
     """
     Ищет объект по имени во всех проектах и подсистемах.
     Сначала рекурсивно находит все папки с Проект.yaml, затем ищет объект в подсистемах.
@@ -166,32 +203,15 @@ def find_object(root: str, name: str) -> tuple[str, str, str, str] | None:
 
     for proj_path in project_dirs:
         vendor, project = get_project_namespace_parts(proj_path)
+        for subsystem_path in iter_subsystem_dirs(proj_path):
+            for filename, file_path in iter_yaml_files(subsystem_path) or ():
+                text = read_text_file(file_path)
+                if text is None or get_yaml_field(text, "Имя") != name:
+                    continue
 
-        try:
-            sub_entries = sorted(os.scandir(proj_path), key=lambda e: e.name)
-        except OSError:
-            continue
-
-        for sub_entry in sub_entries:
-            if not sub_entry.is_dir():
-                continue
-            if not os.path.isfile(os.path.join(sub_entry.path, "Подсистема.yaml")):
-                continue
-
-            try:
-                for fname in sorted(os.listdir(sub_entry.path)):
-                    if not fname.endswith(".yaml"):
-                        continue
-                    fpath = os.path.join(sub_entry.path, fname)
-                    text = read_text_file(fpath)
-                    if text is None:
-                        continue
-                    if get_yaml_field(text, "Имя") == name:
-                        subsystem = os.path.basename(sub_entry.path)
-                        namespace = f"{vendor}::{project}::{subsystem}"
-                        matches.append((sub_entry.path, fname, text, namespace))
-            except OSError:
-                continue
+                subsystem = os.path.basename(subsystem_path)
+                namespace = f"{vendor}::{project}::{subsystem}"
+                matches.append(ObjectMatch(subsystem_path, filename, text, namespace))
 
     if not matches:
         return None
@@ -223,73 +243,97 @@ def infer_field_type(obj_type: str, field: dict) -> str:
     return ""
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Анализ объекта 1С:Элемент для создания форм")
-    parser.add_argument("--name", required=True, help="Имя объекта конфигурации")
-    parser.add_argument("--root", default=".", help="Корневая папка поиска (по умолчанию: .)")
-    args = parser.parse_args()
+def normalize_fields(obj_type: str, fields: list[dict]) -> list[dict]:
+    normalized_fields = []
 
-    root = os.path.abspath(args.root)
-    try:
-        found = find_object(root, args.name)
-    except AmbiguousObjectError as exc:
-        print(json.dumps({
-            "error": str(exc),
-            "searched_in": root,
-            "matches": [
-                {
-                    "object_path": obj_path,
-                    "object_file": obj_file,
-                    "namespace": namespace,
-                }
-                for obj_path, obj_file, _obj_text, namespace in exc.matches
-            ],
-        }, ensure_ascii=False, indent=2))
-        sys.exit(1)
+    for field in fields:
+        normalized_field = dict(field)
+        normalized_field["Тип"] = infer_field_type(obj_type, normalized_field)
+        normalized_fields.append(normalized_field)
 
-    if not found:
-        print(json.dumps({
-            "error": f'Объект "{args.name}" не найден',
-            "searched_in": root,
-        }, ensure_ascii=False, indent=2))
-        sys.exit(1)
+    return normalized_fields
 
-    obj_path, obj_file, obj_text, namespace = found
 
-    obj_type = get_yaml_field(obj_text, "ВидЭлемента") or "Неизвестно"
-    fields = parse_list_section(obj_text, "Реквизиты")
-    tc_list = parse_list_section(obj_text, "ТабличныеЧасти")
+def build_existing_forms(object_path: str, object_file: str) -> dict[str, str | None]:
+    object_stem = os.path.splitext(object_file)[0]
+    form_obj_file = f"{object_stem}ФормаОбъекта.yaml"
+    form_list_file = f"{object_stem}ФормаСписка.yaml"
 
-    for f in fields:
-        f["Тип"] = infer_field_type(obj_type, f)
+    return {
+        "ФормаОбъекта": form_obj_file if os.path.isfile(os.path.join(object_path, form_obj_file)) else None,
+        "ФормаСписка": form_list_file if os.path.isfile(os.path.join(object_path, form_list_file)) else None,
+    }
+
+
+def build_result(found: ObjectMatch) -> dict:
+    obj_type = get_yaml_field(found.object_text, "ВидЭлемента") or UNKNOWN_OBJECT_TYPE
+    fields = normalize_fields(obj_type, parse_list_section(found.object_text, "Реквизиты"))
+    tc_list = parse_list_section(found.object_text, "ТабличныеЧасти")
 
     field_count = len(fields)
     tc_count = len(tc_list)
 
-    # Проверяем существование файлов форм
-    object_stem = os.path.splitext(obj_file)[0]
-    form_obj_file = f"{object_stem}ФормаОбъекта.yaml"
-    form_list_file = f"{object_stem}ФормаСписка.yaml"
-
-    existing_forms = {
-        "ФормаОбъекта": form_obj_file if os.path.isfile(os.path.join(obj_path, form_obj_file)) else None,
-        "ФормаСписка": form_list_file if os.path.isfile(os.path.join(obj_path, form_list_file)) else None,
-    }
-
-    result = {
-        "object_path": obj_path,
-        "object_file": obj_file,
+    return {
+        "object_path": found.object_path,
+        "object_file": found.object_file,
         "object_type": obj_type,
-        "namespace": namespace,
+        "namespace": found.namespace,
         "field_count": field_count,
         "tc_count": tc_count,
-        "fields": [{"name": f.get("Имя", "?"), "type": f.get("Тип", "")} for f in fields],
-        "tc": [{"name": t.get("Имя", "?")} for t in tc_list],
+        "fields": [{"name": field.get("Имя", "?"), "type": field.get("Тип", "")} for field in fields],
+        "tc": [{"name": tc.get("Имя", "?")} for tc in tc_list],
         "suggested_layout": suggest_layout(field_count, tc_count),
-        "existing_forms": existing_forms,
+        "existing_forms": build_existing_forms(found.object_path, found.object_file),
     }
 
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+def build_not_found_error(name: str, root: str) -> dict:
+    return {
+        "error": f'Объект "{name}" не найден',
+        "searched_in": root,
+    }
+
+
+def build_ambiguous_error(error: AmbiguousObjectError, root: str) -> dict:
+    return {
+        "error": str(error),
+        "searched_in": root,
+        "matches": [
+            {
+                "object_path": match.object_path,
+                "object_file": match.object_file,
+                "namespace": match.namespace,
+            }
+            for match in error.matches
+        ],
+    }
+
+
+def print_json(data: dict) -> None:
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Анализ объекта 1С:Элемент для создания форм")
+    parser.add_argument("--name", required=True, help="Имя объекта конфигурации")
+    parser.add_argument("--root", default=".", help="Корневая папка поиска (по умолчанию: .)")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None):
+    args = parse_args(argv)
+    root = os.path.abspath(args.root)
+    try:
+        found = find_object(root, args.name)
+    except AmbiguousObjectError as exc:
+        print_json(build_ambiguous_error(exc, root))
+        sys.exit(1)
+
+    if not found:
+        print_json(build_not_found_error(args.name, root))
+        sys.exit(1)
+
+    print_json(build_result(found))
 
 
 if __name__ == "__main__":

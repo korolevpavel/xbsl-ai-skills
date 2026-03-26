@@ -59,6 +59,20 @@ def api():
     return load_api_module()
 
 
+@pytest.fixture(autouse=True)
+def clear_element_env(monkeypatch) -> None:
+    for key in (
+        "ELEMENT_BASE_URL",
+        "ELEMENT_CLIENT_ID",
+        "ELEMENT_CLIENT_SECRET",
+        "ELEMENT_APP_ID",
+        "ELEMENT_PROJECT_ID",
+        "ELEMENT_BRANCH",
+        "ELEMENT_SPACE_ID",
+    ):
+        monkeypatch.delenv(key, raising=False)
+
+
 def test_get_token_cache_path_is_stable(api) -> None:
     path = api.get_token_cache_path("https://example.com", "client")
 
@@ -79,7 +93,15 @@ def test_token_cache_roundtrip_and_expiration(api, tmp_path: Path, monkeypatch) 
     assert api.load_cached_token(str(cache_path)) is None
 
 
-@pytest.mark.parametrize("payload", ['{"expires_at": 999999}', '{"token": "x"}', "not-json"])
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"expires_at": 999999}',
+        '{"token": "x"}',
+        json.dumps({"token": json.dumps({"error": "HTTP 401"}), "expires_at": 9999999999}),
+        "not-json",
+    ],
+)
 def test_load_cached_token_returns_none_for_invalid_payloads(api, tmp_path: Path, payload: str) -> None:
     cache_path = tmp_path / "token.json"
     cache_path.write_text(payload, encoding="utf-8")
@@ -94,6 +116,24 @@ def test_save_token_cache_ignores_oserror(api, monkeypatch) -> None:
     monkeypatch.setattr(builtins, "open", fake_open)
 
     api.save_token_cache("/tmp/token.json", "TOKEN")
+
+
+def test_compact_reference_handles_non_dict_name_only_and_empty_dict(api) -> None:
+    assert api.compact_reference("branch-main") == "branch-main"
+    assert api.compact_reference({"name": "main"}) == {"name": "main"}
+    assert api.compact_reference({}) == {}
+
+
+def test_build_branch_body_skips_optional_fields_when_missing(api) -> None:
+    assert api.build_branch_body({"source-branch": "branch-main"}, "fallback") == {
+        "name": "fallback",
+        "source-branch": "branch-main",
+    }
+
+
+def test_require_object_response_returns_dict_or_none(api) -> None:
+    assert api.require_object_response({"id": "branch-1"}) == {"id": "branch-1"}
+    assert api.require_object_response([{"id": "branch-1"}]) is None
 
 
 @pytest.mark.parametrize(
@@ -130,9 +170,10 @@ def test_fetch_token_returns_diagnostic_if_token_field_missing(api, monkeypatch)
         lambda _request: FakeResponse(b'{"status":"ok"}'),
     )
 
-    result = json.loads(api.fetch_token("https://example.com", "client", "secret"))
+    with pytest.raises(api.TokenFetchError) as exc_info:
+        api.fetch_token("https://example.com", "client", "secret")
 
-    assert result == {"error": "token field not found", "response": {"status": "ok"}}
+    assert exc_info.value.payload == {"error": "token field not found", "response": {"status": "ok"}}
 
 
 def test_fetch_token_returns_http_error_payload(api, monkeypatch) -> None:
@@ -149,9 +190,45 @@ def test_fetch_token_returns_http_error_payload(api, monkeypatch) -> None:
 
     monkeypatch.setattr(api.urllib.request, "urlopen", fake_urlopen)
 
-    result = json.loads(api.fetch_token("https://example.com", "client", "secret"))
+    with pytest.raises(api.TokenFetchError) as exc_info:
+        api.fetch_token("https://example.com", "client", "secret")
 
-    assert result == {"error": "HTTP 401", "details": '{"message":"bad credentials"}'}
+    assert exc_info.value.payload == {"error": "HTTP 401", "details": {"message": "bad credentials"}}
+
+
+def test_fetch_token_returns_connection_error(api, monkeypatch) -> None:
+    monkeypatch.setattr(
+        api.urllib.request,
+        "urlopen",
+        lambda _request: (_ for _ in ()).throw(api.urllib.error.URLError("dns failed")),
+    )
+
+    with pytest.raises(api.TokenFetchError) as exc_info:
+        api.fetch_token("https://example.com", "client", "secret")
+
+    assert exc_info.value.payload == {"error": "Connection error", "details": "dns failed"}
+
+
+def test_fetch_token_returns_oserror(api, monkeypatch) -> None:
+    monkeypatch.setattr(
+        api.urllib.request,
+        "urlopen",
+        lambda _request: (_ for _ in ()).throw(OSError("socket closed")),
+    )
+
+    with pytest.raises(api.TokenFetchError) as exc_info:
+        api.fetch_token("https://example.com", "client", "secret")
+
+    assert exc_info.value.payload == {"error": "Connection error", "details": "socket closed"}
+
+
+def test_fetch_token_returns_invalid_json_error(api, monkeypatch) -> None:
+    monkeypatch.setattr(api.urllib.request, "urlopen", lambda _request: FakeResponse(b"not-json"))
+
+    with pytest.raises(api.TokenFetchError) as exc_info:
+        api.fetch_token("https://example.com", "client", "secret")
+
+    assert exc_info.value.payload == {"error": "Invalid JSON response", "details": "not-json"}
 
 
 def test_get_token_uses_cached_token(api, monkeypatch) -> None:
@@ -173,6 +250,23 @@ def test_get_token_fetches_and_saves_when_cache_misses(api, monkeypatch) -> None
 
     assert api.get_token(args) == "NEW_TOKEN"
     assert saved == [(api.get_token_cache_path("https://example.com", "client"), "NEW_TOKEN")]
+
+
+def test_get_token_does_not_save_failed_fetch(api, monkeypatch) -> None:
+    args = SimpleNamespace(base_url="https://example.com", client_id="client", client_secret="secret")
+
+    monkeypatch.setattr(api, "load_cached_token", lambda _path: None)
+    monkeypatch.setattr(
+        api,
+        "fetch_token",
+        lambda *_args: (_ for _ in ()).throw(api.TokenFetchError({"error": "HTTP 401"})),
+    )
+    monkeypatch.setattr(api, "save_token_cache", lambda *_args: pytest.fail("save_token_cache should not be called"))
+
+    with pytest.raises(api.TokenFetchError) as exc_info:
+        api.get_token(args)
+
+    assert exc_info.value.payload == {"error": "HTTP 401"}
 
 
 @pytest.mark.parametrize(
@@ -238,6 +332,41 @@ def test_api_request_returns_error_details_for_http_error(api, monkeypatch, raw_
     }
 
 
+def test_api_request_returns_connection_error(api, monkeypatch) -> None:
+    monkeypatch.setattr(
+        api.urllib.request,
+        "urlopen",
+        lambda _request: (_ for _ in ()).throw(api.urllib.error.URLError("connection refused")),
+    )
+
+    assert api.api_request("GET", "https://example.com/api", "TOKEN") == {
+        "error": "Connection error",
+        "details": "connection refused",
+    }
+
+
+def test_api_request_returns_oserror(api, monkeypatch) -> None:
+    monkeypatch.setattr(
+        api.urllib.request,
+        "urlopen",
+        lambda _request: (_ for _ in ()).throw(OSError("socket closed")),
+    )
+
+    assert api.api_request("GET", "https://example.com/api", "TOKEN") == {
+        "error": "Connection error",
+        "details": "socket closed",
+    }
+
+
+def test_api_request_returns_invalid_json_error(api, monkeypatch) -> None:
+    monkeypatch.setattr(api.urllib.request, "urlopen", lambda _request: FakeResponse(b"not-json"))
+
+    assert api.api_request("GET", "https://example.com/api", "TOKEN") == {
+        "error": "Invalid JSON response",
+        "details": "not-json",
+    }
+
+
 def test_main_requires_base_url(api, monkeypatch, capsys) -> None:
     result = run_main(api, monkeypatch, capsys, ["--action", "list-projects"], expected_exit=1)
 
@@ -288,6 +417,60 @@ def test_main_get_token_prints_token(api, monkeypatch, capsys) -> None:
     )
 
     assert result == {"token": "TOKEN"}
+
+
+def test_main_get_token_prints_error_and_exits_on_token_fetch_failure(api, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        api,
+        "get_token",
+        lambda _args: (_ for _ in ()).throw(api.TokenFetchError({"error": "HTTP 401", "details": "bad credentials"})),
+    )
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action",
+            "get-token",
+            "--base-url",
+            "https://example.com",
+            "--client-id",
+            "client",
+            "--client-secret",
+            "secret",
+        ],
+        expected_exit=1,
+    )
+
+    assert result == {"error": "HTTP 401", "details": "bad credentials"}
+
+
+def test_main_non_token_action_prints_error_and_exits_on_token_fetch_failure(api, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        api,
+        "get_token",
+        lambda _args: (_ for _ in ()).throw(api.TokenFetchError({"error": "Connection error", "details": "dns failed"})),
+    )
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action",
+            "list-projects",
+            "--base-url",
+            "https://example.com",
+            "--client-id",
+            "client",
+            "--client-secret",
+            "secret",
+        ],
+        expected_exit=1,
+    )
+
+    assert result == {"error": "Connection error", "details": "dns failed"}
 
 
 @pytest.mark.parametrize(
@@ -396,7 +579,7 @@ def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv
             [{"id": "branch-1"}],
         ),
         (
-            ["--action", "list-branches", "--branch-name", ""],
+            ["--action", "list-branches"],
             ("GET", "https://example.com/console/api/v2/branches", "TOKEN", None),
             [{"id": "branch-2"}],
         ),
@@ -433,6 +616,20 @@ def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv
                 },
             ),
             {"id": "branch-new-2"},
+        ),
+        (
+            ["--action", "create-branch", "--project-id", "project-1"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/branches",
+                "TOKEN",
+                {
+                    "name": "main",
+                    "kind": "development",
+                    "project-id": "project-1",
+                },
+            ),
+            {"id": "branch-main"},
         ),
         (
             ["--action", "delete-branch", "--branch-id", "branch-1"],
@@ -510,8 +707,46 @@ def test_main_update_branch_prints_get_error_and_exits(api, monkeypatch, capsys)
     assert result == {"error": "HTTP 404"}
 
 
+def test_main_update_branch_prints_unexpected_response_type_and_exits(api, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    monkeypatch.setattr(api, "api_request", lambda *_args, **_kwargs: [{"id": "branch-1"}])
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action",
+            "update-branch",
+            "--branch-id",
+            "branch-1",
+            "--base-url",
+            "https://example.com",
+            "--client-id",
+            "client",
+            "--client-secret",
+            "secret",
+        ],
+        expected_exit=1,
+    )
+
+    assert result == {"error": "Unexpected response type"}
+
+
 def test_main_update_branch_success_uses_current_name_version_and_application(api, monkeypatch, capsys) -> None:
-    responses = iter([{"name": "release", "version-stamp": "v1"}, {"ok": True}])
+    responses = iter(
+        [
+            {
+                "name": "release",
+                "kind": "release",
+                "source-branch": {"id": "branch-main", "name": "main"},
+                "deletion-mark": False,
+                "version-stamp": "v1",
+                "application": {"id": "old-app", "name": "Old app", "url": "https://old-app"},
+            },
+            {"ok": True},
+        ]
+    )
     calls = []
 
     def fake_api_request(method, url, token, body=None):
@@ -547,14 +782,21 @@ def test_main_update_branch_success_uses_current_name_version_and_application(ap
             "PUT",
             "https://example.com/console/api/v2/branches/branch-1",
             "TOKEN",
-            {"name": "release", "version-stamp": "v1", "application": {"id": "app-1"}},
+            {
+                "name": "release",
+                "kind": "release",
+                "source-branch": {"id": "branch-main"},
+                "deletion-mark": False,
+                "version-stamp": "v1",
+                "application": {"id": "app-1"},
+            },
         ),
     ]
     assert result == {"ok": True}
 
 
 def test_main_update_branch_falls_back_to_branch_name_without_optional_fields(api, monkeypatch, capsys) -> None:
-    responses = iter([{}, {"ok": True}])
+    responses = iter([{"kind": "development", "application": {"id": "current-app"}}, {"ok": True}])
     calls = []
 
     def fake_api_request(method, url, token, body=None):
@@ -588,7 +830,7 @@ def test_main_update_branch_falls_back_to_branch_name_without_optional_fields(ap
         "PUT",
         "https://example.com/console/api/v2/branches/branch-1",
         "TOKEN",
-        {"name": "fallback"},
+        {"name": "fallback", "kind": "development", "application": {"id": "current-app"}},
     )
     assert result == {"ok": True}
 
@@ -619,8 +861,45 @@ def test_main_merge_branch_prints_get_error_and_exits(api, monkeypatch, capsys) 
     assert result == {"error": "HTTP 409"}
 
 
+def test_main_merge_branch_prints_unexpected_response_type_and_exits(api, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    monkeypatch.setattr(api, "api_request", lambda *_args, **_kwargs: [{"id": "branch-1"}])
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action",
+            "merge-branch",
+            "--branch-id",
+            "branch-1",
+            "--base-url",
+            "https://example.com",
+            "--client-id",
+            "client",
+            "--client-secret",
+            "secret",
+        ],
+        expected_exit=1,
+    )
+
+    assert result == {"error": "Unexpected response type"}
+
+
 def test_main_merge_branch_success_uses_version_stamp(api, monkeypatch, capsys) -> None:
-    responses = iter([{"name": "release", "version-stamp": "v2"}, {"merged": True}])
+    responses = iter(
+        [
+            {
+                "name": "release",
+                "kind": "release",
+                "deletion-mark": False,
+                "application": {"id": "app-1", "name": "App"},
+                "version-stamp": "v2",
+            },
+            {"merged": True},
+        ]
+    )
     calls = []
 
     def fake_api_request(method, url, token, body=None):
@@ -654,14 +933,21 @@ def test_main_merge_branch_success_uses_version_stamp(api, monkeypatch, capsys) 
             "PUT",
             "https://example.com/console/api/v2/branches/branch-1",
             "TOKEN",
-            {"name": "release", "write-parameters": {"merge": True}, "version-stamp": "v2"},
+            {
+                "name": "release",
+                "kind": "release",
+                "deletion-mark": False,
+                "application": {"id": "app-1"},
+                "version-stamp": "v2",
+                "write-parameters": {"merge": True},
+            },
         ),
     ]
     assert result == {"merged": True}
 
 
 def test_main_merge_branch_omits_version_stamp_when_missing(api, monkeypatch, capsys) -> None:
-    responses = iter([{}, {"merged": True}])
+    responses = iter([{"kind": "development", "application": {"id": "current-app"}}, {"merged": True}])
     calls = []
 
     def fake_api_request(method, url, token, body=None):
@@ -695,7 +981,12 @@ def test_main_merge_branch_omits_version_stamp_when_missing(api, monkeypatch, ca
         "PUT",
         "https://example.com/console/api/v2/branches/branch-1",
         "TOKEN",
-        {"name": "fallback", "write-parameters": {"merge": True}},
+        {
+            "name": "fallback",
+            "kind": "development",
+            "application": {"id": "current-app"},
+            "write-parameters": {"merge": True},
+        },
     )
     assert result == {"merged": True}
 

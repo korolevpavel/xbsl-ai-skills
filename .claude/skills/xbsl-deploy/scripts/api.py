@@ -45,6 +45,92 @@ import urllib.request
 TOKEN_TTL = 3600
 
 
+class TokenFetchError(Exception):
+    def __init__(self, payload: dict):
+        super().__init__(payload.get("error", "token fetch error"))
+        self.payload = payload
+
+
+def build_error(error: str, details=None, response=None) -> dict:
+    payload = {"error": error}
+    if details is not None:
+        payload["details"] = details
+    if response is not None:
+        payload["response"] = response
+    return payload
+
+
+def parse_json_or_text(raw: str):
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return raw
+
+
+def is_error_token(token: str) -> bool:
+    try:
+        payload = json.loads(token)
+    except json.JSONDecodeError:
+        return False
+    return isinstance(payload, dict) and "error" in payload
+
+
+def extract_token(body: dict) -> str | None:
+    for key in ("id_token", "token", "value"):
+        token = body.get(key)
+        if token:
+            return token
+
+    access_token = body.get("access_token")
+    if access_token and access_token != "Not implemented":
+        return access_token
+    return None
+
+
+def resolve_branch_name(branch_name: str) -> str:
+    return branch_name or os.environ.get("ELEMENT_BRANCH", "main")
+
+
+def compact_reference(value):
+    if not isinstance(value, dict):
+        return value
+    if value.get("id"):
+        return {"id": value["id"]}
+    if value.get("name"):
+        return {"name": value["name"]}
+    return value
+
+
+def build_branch_body(current: dict, fallback_name: str, app_id: str = "", merge: bool = False) -> dict:
+    body = {
+        "name": current.get("name") or fallback_name,
+    }
+    if "kind" in current:
+        body["kind"] = current["kind"]
+    if "source-branch" in current:
+        body["source-branch"] = compact_reference(current["source-branch"])
+    if "deletion-mark" in current:
+        body["deletion-mark"] = current["deletion-mark"]
+
+    current_application = compact_reference(current.get("application"))
+    if current_application:
+        body["application"] = current_application
+
+    if current.get("version-stamp"):
+        body["version-stamp"] = current["version-stamp"]
+    if app_id:
+        body["application"] = {"id": app_id}
+    if merge:
+        body["write-parameters"] = {"merge": True}
+    return body
+
+
+def require_object_response(response) -> dict | None:
+    if isinstance(response, dict):
+        return response
+    return None
+
+
 def get_token_cache_path(base_url: str, client_id: str) -> str:
     h = hashlib.md5(f"{base_url}:{client_id}".encode()).hexdigest()[:8]
     return f"/tmp/element_token_{h}.json"
@@ -54,8 +140,11 @@ def load_cached_token(cache_path: str) -> str | None:
     try:
         with open(cache_path, encoding="utf-8") as f:
             data = json.load(f)
+        token = data["token"]
+        if is_error_token(token):
+            return None
         if time.time() < data.get("expires_at", 0):
-            return data["token"]
+            return token
     except (OSError, KeyError, json.JSONDecodeError):
         pass
     return None
@@ -85,16 +174,24 @@ def fetch_token(base_url: str, client_id: str, client_secret: str) -> str:
     )
     try:
         with urllib.request.urlopen(req) as resp:
-            body = json.loads(resp.read().decode())
-            # В документации токен приходит как id_token, но оставляем fallback для совместимости.
-            token = body.get("id_token") or body.get("token") or body.get("access_token") or body.get("value")
-            if not token:
-                # Если поле не нашли — вернуть весь ответ для диагностики
-                return json.dumps({"error": "token field not found", "response": body}, ensure_ascii=False)
-            return token
+            raw = resp.read().decode(errors="replace")
     except urllib.error.HTTPError as e:
-        body = e.read().decode()
-        return json.dumps({"error": f"HTTP {e.code}", "details": body}, ensure_ascii=False)
+        details = parse_json_or_text(e.read().decode(errors="replace"))
+        raise TokenFetchError(build_error(f"HTTP {e.code}", details=details)) from e
+    except urllib.error.URLError as e:
+        raise TokenFetchError(build_error("Connection error", details=str(e.reason))) from e
+    except OSError as e:
+        raise TokenFetchError(build_error("Connection error", details=str(e))) from e
+
+    try:
+        body = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise TokenFetchError(build_error("Invalid JSON response", details=raw)) from e
+
+    token = extract_token(body)
+    if not token:
+        raise TokenFetchError(build_error("token field not found", response=body))
+    return token
 
 
 def get_token(args) -> str:
@@ -124,15 +221,21 @@ def api_request(method: str, url: str, token: str, body: dict | None = None) -> 
     req = urllib.request.Request(url, method=method, headers=headers, data=data)
     try:
         with urllib.request.urlopen(req) as resp:
-            raw = resp.read().decode()
-            return json.loads(raw) if raw.strip() else {}
+            raw = resp.read().decode(errors="replace")
     except urllib.error.HTTPError as e:
-        raw = e.read().decode()
-        try:
-            err_body = json.loads(raw)
-        except json.JSONDecodeError:
-            err_body = raw
-        return {"error": f"HTTP {e.code}", "details": err_body}
+        err_body = parse_json_or_text(e.read().decode(errors="replace"))
+        return build_error(f"HTTP {e.code}", details=err_body)
+    except urllib.error.URLError as e:
+        return build_error("Connection error", details=str(e.reason))
+    except OSError as e:
+        return build_error("Connection error", details=str(e))
+
+    if not raw.strip():
+        return {}
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return build_error("Invalid JSON response", details=raw)
 
 
 def main():
@@ -144,7 +247,7 @@ def main():
     parser.add_argument("--app-id", default=os.environ.get("ELEMENT_APP_ID", ""))
     parser.add_argument("--project-id", default=os.environ.get("ELEMENT_PROJECT_ID", ""))
     parser.add_argument("--branch-id", default="")
-    parser.add_argument("--branch-name", default=os.environ.get("ELEMENT_BRANCH", "main"))
+    parser.add_argument("--branch-name", default="")
     parser.add_argument("--name", default="")
     parser.add_argument("--space-id", default=os.environ.get("ELEMENT_SPACE_ID", ""))
     parser.add_argument("--dump-id", default="")
@@ -162,7 +265,11 @@ def main():
         if not args.client_id or not args.client_secret:
             print(json.dumps({"error": "ELEMENT_CLIENT_ID / ELEMENT_CLIENT_SECRET not set"}, ensure_ascii=False))
             sys.exit(1)
-        token = get_token(args)
+        try:
+            token = get_token(args)
+        except TokenFetchError as e:
+            print(json.dumps(e.payload, ensure_ascii=False))
+            sys.exit(1)
         print(json.dumps({"token": token}, ensure_ascii=False))
         return
 
@@ -170,7 +277,11 @@ def main():
     if not args.client_id or not args.client_secret:
         print(json.dumps({"error": "ELEMENT_CLIENT_ID / ELEMENT_CLIENT_SECRET not set"}, ensure_ascii=False))
         sys.exit(1)
-    token = get_token(args)
+    try:
+        token = get_token(args)
+    except TokenFetchError as e:
+        print(json.dumps(e.payload, ensure_ascii=False, indent=2))
+        sys.exit(1)
 
     # ── Приложения ─────────────────────────────────────────────────────────────
 
@@ -258,12 +369,13 @@ def main():
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
     elif action == "create-branch":
-        if not args.project_id or not args.branch_name:
+        branch_name = resolve_branch_name(args.branch_name)
+        if not args.project_id or not branch_name:
             print(json.dumps({"error": "--project-id and --branch-name required"}, ensure_ascii=False))
             sys.exit(1)
         url = f"{base}/console/api/v2/branches"
         body: dict = {
-            "name": args.branch_name,
+            "name": branch_name,
             "kind": "development",
             "project-id": args.project_id,
         }
@@ -278,17 +390,14 @@ def main():
             sys.exit(1)
         # Сначала получаем текущие данные ветки (нужны name и version-stamp)
         url_get = f"{base}/console/api/v2/branches/{args.branch_id}"
-        current = api_request("GET", url_get, token)
+        current = require_object_response(api_request("GET", url_get, token))
+        if current is None:
+            print(json.dumps(build_error("Unexpected response type"), ensure_ascii=False, indent=2))
+            sys.exit(1)
         if "error" in current:
             print(json.dumps(current, ensure_ascii=False, indent=2))
             sys.exit(1)
-        body = {
-            "name": current.get("name", args.branch_name),
-        }
-        if current.get("version-stamp"):
-            body["version-stamp"] = current["version-stamp"]
-        if args.app_id:
-            body["application"] = {"id": args.app_id}
+        body = build_branch_body(current, resolve_branch_name(args.branch_name), app_id=args.app_id)
         url = f"{base}/console/api/v2/branches/{args.branch_id}"
         result = api_request("PUT", url, token, body)
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -307,16 +416,14 @@ def main():
             sys.exit(1)
         # Получаем текущие данные ветки для оптимистической блокировки
         url_get = f"{base}/console/api/v2/branches/{args.branch_id}"
-        current = api_request("GET", url_get, token)
+        current = require_object_response(api_request("GET", url_get, token))
+        if current is None:
+            print(json.dumps(build_error("Unexpected response type"), ensure_ascii=False, indent=2))
+            sys.exit(1)
         if "error" in current:
             print(json.dumps(current, ensure_ascii=False, indent=2))
             sys.exit(1)
-        body = {
-            "name": current.get("name", args.branch_name),
-            "write-parameters": {"merge": True},
-        }
-        if current.get("version-stamp"):
-            body["version-stamp"] = current["version-stamp"]
+        body = build_branch_body(current, resolve_branch_name(args.branch_name), merge=True)
         url = f"{base}/console/api/v2/branches/{args.branch_id}"
         result = api_request("PUT", url, token, body)
         print(json.dumps(result, ensure_ascii=False, indent=2))

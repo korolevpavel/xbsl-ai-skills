@@ -72,21 +72,22 @@ def save_token_cache(cache_path: str, token: str) -> None:
 def fetch_token(base_url: str, client_id: str, client_secret: str) -> str:
     credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     url = f"{base_url}/console/sys/token"
+    data = urllib.parse.urlencode({"grant_type": "client_credentials"}).encode()
     req = urllib.request.Request(
         url,
         method="POST",
         headers={
             "Authorization": f"Basic {credentials}",
-            "Content-Type": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
             "Accept": "application/json",
         },
-        data=b"{}",
+        data=data,
     )
     try:
         with urllib.request.urlopen(req) as resp:
             body = json.loads(resp.read().decode())
-            # API возвращает токен в поле token или access_token
-            token = body.get("token") or body.get("access_token") or body.get("value")
+            # В документации токен приходит как id_token, но оставляем fallback для совместимости.
+            token = body.get("id_token") or body.get("token") or body.get("access_token") or body.get("value")
             if not token:
                 # Если поле не нашли — вернуть весь ответ для диагностики
                 return json.dumps({"error": "token field not found", "response": body}, ensure_ascii=False)

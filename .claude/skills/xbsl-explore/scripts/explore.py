@@ -260,7 +260,7 @@ def main() -> None:
 
     conflict = check_name_conflict(all_projects, args.name) if args.name else None
     filtered_projects = filter_projects_by_type(all_projects, args.type)
-    suggested_path = find_suggested_path(filtered_projects)
+    suggested_path = conflict["path"] if conflict else find_suggested_path(filtered_projects)
 
     print_json(build_result(filtered_projects, args.name, conflict, suggested_path))
 

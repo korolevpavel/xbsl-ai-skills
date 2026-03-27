@@ -5,7 +5,7 @@ addopts = "-q"
 
 [tool.coverage.run]
 branch = true
-source = [".claude/skills/xbsl-deploy/scripts"]
+source = [".claude/skills/xbsl-deploy/scripts", ".claude/skills/xbsl-form-add/scripts"]
 
 [tool.coverage.report]
 show_missing = true

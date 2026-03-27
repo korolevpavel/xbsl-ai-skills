@@ -15,9 +15,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
         scripts/explore.py
     xbsl-meta-add/       # создание объектов конфигурации
         references/      # спецификации по типам объектов (один .md на тип)
+    xbsl-form-add/       # создание форм интерфейса (КомпонентИнтерфейса)
+        references/      # спецификации ФормаОбъекта, ФормаСписка, elements
     xbsl-deploy/         # деплой на 1С:Предприятие.Элемент
         scripts/api.py   # HTTP-клиент Console API v2
         references/endpoints.md
+tools/                   # материалы и инструменты (в .gitignore)
 ```
 
 ## Скиллы
@@ -33,6 +36,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### xbsl-deploy
 Управляет приложениями на платформе 1С:Предприятие.Элемент через Console API v2. `scripts/api.py` — самодостаточный HTTP-клиент (только stdlib Python). Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
+
+### xbsl-form-add
+Создаёт форму интерфейса (`КомпонентИнтерфейса`) — `ФормаОбъекта` и/или `ФормаСписка`. Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/ФормаОбъекта.md` или `references/ФормаСписка.md`.
 
 ## Структура проекта 1С:Элемент
 

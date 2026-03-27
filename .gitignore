@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+uv.lock
 
 # macOS
 .DS_Store

@@ -57,13 +57,17 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-token
 
 ## Сценарий A: Создать новое приложение и задеплоить
 
-### A1. Проверь project-id
-Если `ELEMENT_PROJECT_ID` не задан:
+**По умолчанию**: новое приложение привязывается к существующему проекту.
+Загрузка файла сборки для создания нового проекта — только если пользователь явно попросил («создать проект из сборки», «загрузить сборку» и т.п.) — тогда используй Сценарий H.
+
+### A1. Определи проект
+Если `ELEMENT_PROJECT_ID` не задан — выведи список проектов и попроси пользователя выбрать:
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-projects
 ```
-Спроси пользователя: "Выбери проект из списка (укажи id или имя)."
-Сохраняй выбранный `project-id` для следующих шагов.
+Показывай только не удалённые (`"deleted": false`) проекты типа `Application`.
+
+Сохрани выбранный `project-id` для следующих шагов.
 
 ### A2. Определи space-id
 Если `ELEMENT_SPACE_ID` не задан:
@@ -75,36 +79,20 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-spaces
 - Если пространств **нет** — сообщи пользователю, создать пространство нужно через веб-консоль.
 
 ### A3. Создай приложение
-Спроси имя приложения если не указано. Затем:
+Спроси имя приложения если не указано.
+
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-app --name <name> --space-id <space-id>
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-app --name <name> --space-id <space-id> --project-id <project-id>
 ```
+
 Сохрани `id` из ответа как `app-id`.
 
-### A4. Найди или создай ветку
-```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-branches --project-id <project-id> --branch-name <branch>
-```
-Где `<branch>` — значение `ELEMENT_BRANCH` (по умолчанию: `main`).
-
-- Если ветка **найдена** → возьми её `id` как `branch-id`
-- Если ветка **не найдена** → создай:
-  ```bash
-  python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-branch --project-id <project-id> --branch-name <branch> --app-id <app-id>
-  ```
-  Используй `id` из ответа как `branch-id`.
-
-Если ветка найдена, но `branch.application.id != app-id` → привяжи:
-```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action update-branch --branch-id <branch-id> --app-id <app-id>
-```
-
-### A5. Запусти приложение
+### A4. Запусти приложение
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
 ```
 
-### A6. Жди Running
+### A5. Жди Running
 Опрашивай каждые 10 сек, до 5 мин:
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app-id>
@@ -112,7 +100,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app
 Жди пока `status` == `Running`. Если `status` == `Error` — сообщи `error` пользователю и остановись.
 Если 5 мин прошло, а статус не `Running` — сообщи пользователю текущий статус и предложи проверить логи в консоли Элемента.
 
-### A7. Верни ссылку
+### A6. Верни ссылку
 Из последнего ответа `get-app` возьми поле `uri` и отправь пользователю.
 
 ---
@@ -208,7 +196,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <ap
 
 ## Сценарий F: Удалить приложение
 
-**Предупреди пользователя** что действие необратимо. Жди подтверждения.
+**Обязательно запроси подтверждение у пользователя** перед любым удалением. Сообщи имя удаляемого объекта и что действие необратимо. Продолжай только после явного подтверждения («да», «удали», «confirm» и т.п.). Если пользователь не подтвердил — остановись.
 
 Если приложение не `Stopped`:
 ```bash
@@ -219,7 +207,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <ap
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action delete-app --app-id <app-id>
 ```
 
-Если ветка создавалась скиллом — предложи удалить и её:
+Если ветка создавалась скиллом — предложи удалить и её. Удаляй ветку только после отдельного подтверждения:
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action delete-branch --branch-id <branch-id>
 ```
@@ -282,3 +270,4 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action upload-build \
 - **Дамп** нужен только перед обновлением существующего приложения (Сценарий B). При создании нового — не нужен.
 - **space-id**: берётся из `ELEMENT_SPACE_ID` → автоопределения через `list-spaces` (если пространство одно — используется автоматически, предложи сохранить в `ELEMENT_SPACE_ID`)
 - При ошибке API — показывай поле `error` и `details` из ответа
+- **Удаление** (приложения, ветки, проекта) — всегда запрашивай явное подтверждение пользователя перед выполнением. Без подтверждения не удалять ничего.

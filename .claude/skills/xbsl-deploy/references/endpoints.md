@@ -25,14 +25,21 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 ### Тело создания приложения (POST)
 ```json
 {
-  "source": { "type": "repository" },
+  "source": {
+    "type": "repository",
+    "image-id": "<project-id>",
+    "project-version-id": "<build-image-id>"
+  },
   "display-name": "Имя приложения",
   "publication-context": "Имя приложения",
   "development-mode": false,
   "space-id": "<space-id>"
 }
 ```
-Поле `space-id` **обязательно**. Без него сервер вернёт 500.
+- `space-id` **обязателен**. Без него сервер вернёт 500.
+- `source.image-id` — ID проекта (используется сборка по умолчанию; должна быть установлена).
+- `source.project-version-id` — ID конкретной сборки (`image-id` из ответа `upload-build`). Приоритетнее чем `image-id`.
+- Только `type: "repository"` поддерживается.
 
 ### Поля приложения (ответ)
 - `id` — идентификатор
@@ -118,7 +125,7 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 {
   "name": "main",
   "kind": "development",
-  "project-id": "<project-id>",
+  "project": { "id": "<project-id>" },
   "application": { "id": "<app-id>" }
 }
 ```

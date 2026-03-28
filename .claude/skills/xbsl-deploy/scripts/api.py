@@ -7,7 +7,7 @@ HTTP-клиент для Console API v2 (1С:Предприятие.Элемен
     python3 api.py --action get-token
     python3 api.py --action list-apps
     python3 api.py --action get-app --app-id <id>
-    python3 api.py --action create-app --name <name>
+    python3 api.py --action create-app --name <name> [--project-id <id>] [--version-id <build-id>]
     python3 api.py --action start-app --app-id <id>
     python3 api.py --action stop-app --app-id <id>
     python3 api.py --action delete-app --app-id <id>
@@ -302,6 +302,7 @@ def main():
     parser.add_argument("--dump-id", default="")
     parser.add_argument("--file", default="")
     parser.add_argument("--version", default="")
+    parser.add_argument("--version-id", default="")
     parser.add_argument("--commit-id", default="")
     parser.add_argument("--commit-message", default="")
     args = parser.parse_args()
@@ -359,7 +360,9 @@ def main():
             sys.exit(1)
         url = f"{base}/console/api/v2/applications"
         source: dict = {"type": "repository"}
-        if args.project_id:
+        if args.version_id:
+            source["project-version-id"] = args.version_id
+        elif args.project_id:
             source["image-id"] = args.project_id
         body = {
             "source": source,
@@ -502,7 +505,7 @@ def main():
         body: dict = {
             "name": branch_name,
             "kind": "development",
-            "project-id": args.project_id,
+            "project": {"id": args.project_id},
         }
         if args.app_id:
             body["application"] = {"id": args.app_id}

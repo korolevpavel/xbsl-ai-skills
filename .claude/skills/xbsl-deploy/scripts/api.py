@@ -13,6 +13,12 @@ HTTP-клиент для Console API v2 (1С:Предприятие.Элемен
     python3 api.py --action delete-app --app-id <id>
     python3 api.py --action list-spaces
     python3 api.py --action list-projects
+    python3 api.py --action get-project --project-id <id>
+    python3 api.py --action delete-project --project-id <id>
+    python3 api.py --action upload-build --file <path> [--project-id <id>] [--space-id <id>] [--branch-name <name>] [--commit-id <hash>] [--commit-message <msg>]
+    python3 api.py --action list-builds --project-id <id>
+    python3 api.py --action get-build --project-id <id> --version <ver>
+    python3 api.py --action delete-build --project-id <id> --version <ver>
     python3 api.py --action list-branches --project-id <id> [--branch-name <name>]
     python3 api.py --action get-branch --branch-id <id>
     python3 api.py --action create-branch --project-id <id> --branch-name <name> [--app-id <id>]
@@ -211,6 +217,47 @@ def get_token(args) -> str:
     return token
 
 
+def api_request_binary(method: str, url: str, token: str, file_path: str, params: dict | None = None) -> dict | list:
+    """Отправить бинарный файл (application/octet-stream) с query-параметрами."""
+    if params:
+        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v})
+        if qs:
+            url = f"{url}?{qs}"
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+    except OSError as e:
+        return build_error("Cannot read file", details=str(e))
+
+    req = urllib.request.Request(
+        url,
+        method=method,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/octet-stream",
+            "Accept": "application/json",
+        },
+        data=data,
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            raw = resp.read().decode(errors="replace")
+    except urllib.error.HTTPError as e:
+        err_body = parse_json_or_text(e.read().decode(errors="replace"))
+        return build_error(f"HTTP {e.code}", details=err_body)
+    except urllib.error.URLError as e:
+        return build_error("Connection error", details=str(e.reason))
+    except OSError as e:
+        return build_error("Connection error", details=str(e))
+
+    if not raw.strip():
+        return {}
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return build_error("Invalid JSON response", details=raw)
+
+
 def api_request(method: str, url: str, token: str, body: dict | None = None) -> dict | list:
     data = json.dumps(body).encode() if body is not None else None
     headers = {
@@ -253,6 +300,10 @@ def main():
     parser.add_argument("--name", default="")
     parser.add_argument("--space-id", default=os.environ.get("ELEMENT_SPACE_ID", ""))
     parser.add_argument("--dump-id", default="")
+    parser.add_argument("--file", default="")
+    parser.add_argument("--version", default="")
+    parser.add_argument("--commit-id", default="")
+    parser.add_argument("--commit-message", default="")
     args = parser.parse_args()
 
     if not args.base_url:
@@ -354,6 +405,65 @@ def main():
     elif action == "list-projects":
         url = f"{base}/console/api/v2/projects"
         result = api_request("GET", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "get-project":
+        if not args.project_id:
+            print(json.dumps({"error": "--project-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/projects/{args.project_id}"
+        result = api_request("GET", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "delete-project":
+        if not args.project_id:
+            print(json.dumps({"error": "--project-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/projects/{args.project_id}"
+        result = api_request("DELETE", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "upload-build":
+        if not args.file:
+            print(json.dumps({"error": "--file required"}, ensure_ascii=False))
+            sys.exit(1)
+        # Если project-id задан — добавляем сборку к существующему проекту
+        # Если нет — создаём новый проект
+        if args.project_id:
+            url = f"{base}/console/api/v2/projects/{args.project_id}"
+        else:
+            url = f"{base}/console/api/v2/projects"
+        params = {
+            "SpaceId": args.space_id,
+            "BranchName": resolve_branch_name(args.branch_name) if args.branch_name else "",
+            "CommitId": args.commit_id,
+            "CommitMessage": args.commit_message,
+        }
+        result = api_request_binary("POST", url, token, args.file, params)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "list-builds":
+        if not args.project_id:
+            print(json.dumps({"error": "--project-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/projects/{args.project_id}/builds"
+        result = api_request("GET", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "get-build":
+        if not args.project_id or not args.version:
+            print(json.dumps({"error": "--project-id and --version required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/projects/{args.project_id}/{args.version}"
+        result = api_request("GET", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "delete-build":
+        if not args.project_id or not args.version:
+            print(json.dumps({"error": "--project-id and --version required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/projects/{args.project_id}/{args.version}"
+        result = api_request("DELETE", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
     # ── Ветки ──────────────────────────────────────────────────────────────────

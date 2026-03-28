@@ -16,7 +16,22 @@ compatibility:
 
 > Справочник по API: `references/endpoints.md` — читай его если нужны детали по полям запросов/ответов.
 
-## Шаг 0: Определи намерение
+## Шаг 0: Загрузи переменные окружения
+
+Перед любым обращением к API загрузи env vars. Выполни команду:
+
+```bash
+set -a && source .env 2>/dev/null; set +a
+```
+
+Если `.env` не найден — продолжай: нужные переменные могут быть уже заданы в системе.
+
+Обязательные переменные: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET`.
+Если хотя бы одна отсутствует — сообщи пользователю и остановись.
+
+---
+
+## Шаг 1: Определи намерение
 
 | Фраза пользователя | Сценарий |
 |---|---|
@@ -27,8 +42,9 @@ compatibility:
 | останови / стоп / выключи | **E: Остановить** |
 | удали / снести / delete / убери | **F: Удалить** |
 | принять изменения / смёрджи / merge | **G: Merge ветки** |
+| создать проект / загрузить сборку / новый проект из файла | **H: Создать проект из сборки** |
 
-## Шаг 1: Получи токен
+## Шаг 2: Получи токен
 
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-token
@@ -222,6 +238,39 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-branches --proje
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action merge-branch --branch-id <branch-id>
 ```
 Сообщи результат.
+
+---
+
+## Сценарий H: Создать проект из файла сборки
+
+Проект на Элементе создаётся загрузкой бинарного файла сборки (`.zip` или артефакт компилятора).
+Без файла создать проект через API нельзя.
+
+### H1. Уточни параметры
+Спроси пользователя:
+- путь к файлу сборки (`--file`)
+- имя ветки (`--branch-name`), если нужно зафиксировать (иначе используется `ELEMENT_BRANCH`)
+- хэш коммита и сообщение (`--commit-id`, `--commit-message`) — опционально
+
+### H2. Определи space-id
+Если `ELEMENT_SPACE_ID` не задан:
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-spaces
+```
+Если пространство одно — используй его автоматически.
+
+### H3. Загрузи сборку и создай проект
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action upload-build \
+  --file <path> \
+  --space-id <space-id> \
+  [--branch-name <branch>] \
+  [--commit-id <hash>] \
+  [--commit-message <msg>]
+```
+Чтобы добавить сборку к **существующему** проекту, добавь `--project-id <id>`.
+
+Из ответа возьми `project-id` для дальнейших операций (создание приложения, ветки и т.д.).
 
 ---
 

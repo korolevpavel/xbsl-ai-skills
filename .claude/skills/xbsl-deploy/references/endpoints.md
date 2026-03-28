@@ -79,6 +79,29 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 |---|---|---|
 | GET | `/console/api/v2/projects` | Список проектов |
 | GET | `/console/api/v2/projects/{id}` | Информация о проекте |
+| DELETE | `/console/api/v2/projects/{id}` | Удалить проект (перед удалением нужно удалить все приложения) |
+| POST | `/console/api/v2/projects` | Создать новый проект из файла сборки |
+| POST | `/console/api/v2/projects/{id}` | Добавить сборку к существующему проекту |
+| GET | `/console/api/v2/projects/{id}/builds` | Список сборок проекта |
+| GET | `/console/api/v2/projects/{id}/{version}` | Подробная информация о сборке |
+| DELETE | `/console/api/v2/projects/{id}/{version}` | Удалить сборку |
+
+### Загрузка файла сборки (POST)
+- Content-Type: `application/octet-stream` (бинарный файл)
+- Query params: `SpaceId`, `BranchName`, `CommitId`, `CommitMessage`, `Version`, `Modified`
+- Без `{id}` в пути — создаёт новый проект. С `{id}` — добавляет сборку к существующему.
+
+### Поля сборки (ответ)
+- `id` — идентификатор сборки
+- `assembly-version` — версия сборки
+- `created` — дата создания
+- `project-id` — идентификатор проекта
+- `project-name` — имя проекта
+- `project-version` — версия проекта
+- `branch-name` — имя ветки
+- `commit-id` — хэш коммита
+- `comment` — комментарий
+- `modified` — признак модификации относительно VCS
 
 ## Ветки
 

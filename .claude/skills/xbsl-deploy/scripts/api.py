@@ -11,6 +11,7 @@ HTTP-клиент для Console API v2 (1С:Предприятие.Элемен
     python3 api.py --action start-app --app-id <id>
     python3 api.py --action stop-app --app-id <id>
     python3 api.py --action delete-app --app-id <id>
+    python3 api.py --action list-spaces
     python3 api.py --action list-projects
     python3 api.py --action list-branches --project-id <id> [--branch-name <name>]
     python3 api.py --action get-branch --branch-id <id>
@@ -28,6 +29,7 @@ Env vars (приоритет над флагами):
     ELEMENT_APP_ID         — ID приложения по умолчанию
     ELEMENT_PROJECT_ID     — ID проекта по умолчанию
     ELEMENT_BRANCH         — имя ветки по умолчанию (default: main)
+    ELEMENT_SPACE_ID       — ID пространства (если не задан — определяется автоматически через list-spaces)
 """
 
 import argparse
@@ -338,6 +340,13 @@ def main():
             sys.exit(1)
         url = f"{base}/console/api/v2/applications/{args.app_id}/status/stop"
         result = api_request("PUT", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    # ── Пространства ───────────────────────────────────────────────────────────
+
+    elif action == "list-spaces":
+        url = f"{base}/console/api/v2/spaces"
+        result = api_request("GET", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
     # ── Проекты ────────────────────────────────────────────────────────────────

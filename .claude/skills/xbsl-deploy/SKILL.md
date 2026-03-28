@@ -49,14 +49,23 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-projects
 Спроси пользователя: "Выбери проект из списка (укажи id или имя)."
 Сохраняй выбранный `project-id` для следующих шагов.
 
-### A2. Создай приложение
+### A2. Определи space-id
+Если `ELEMENT_SPACE_ID` не задан:
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-spaces
+```
+- Если пространство **одно** — используй его `id` как `space-id`. Предложи пользователю сохранить в `.env`: `ELEMENT_SPACE_ID=<id>`.
+- Если пространств **несколько** — покажи список и спроси пользователя выбрать.
+- Если пространств **нет** — сообщи пользователю, создать пространство нужно через веб-консоль.
+
+### A3. Создай приложение
 Спроси имя приложения если не указано. Затем:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-app --name <name>
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-app --name <name> --space-id <space-id>
 ```
 Сохрани `id` из ответа как `app-id`.
 
-### A3. Найди или создай ветку
+### A4. Найди или создай ветку
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-branches --project-id <project-id> --branch-name <branch>
 ```
@@ -74,12 +83,12 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-branches --proje
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action update-branch --branch-id <branch-id> --app-id <app-id>
 ```
 
-### A4. Запусти приложение
+### A5. Запусти приложение
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
 ```
 
-### A5. Жди Running
+### A6. Жди Running
 Опрашивай каждые 10 сек, до 5 мин:
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app-id>
@@ -87,7 +96,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app
 Жди пока `status` == `Running`. Если `status` == `Error` — сообщи `error` пользователю и остановись.
 Если 5 мин прошло, а статус не `Running` — сообщи пользователю текущий статус и предложи проверить логи в консоли Элемента.
 
-### A6. Верни ссылку
+### A7. Верни ссылку
 Из последнего ответа `get-app` возьми поле `uri` и отправь пользователю.
 
 ---
@@ -222,5 +231,5 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action merge-branch --branch
 - **project-id**: берётся из `ELEMENT_PROJECT_ID` → аргумента → выбора пользователя
 - **branch**: берётся из `ELEMENT_BRANCH` (по умолчанию `main`)
 - **Дамп** нужен только перед обновлением существующего приложения (Сценарий B). При создании нового — не нужен.
-- **ELEMENT_SPACE_ID** — опциональный env var: если задан, передаётся при создании приложения (нужен когда аккаунт содержит несколько space-ов)
+- **space-id**: берётся из `ELEMENT_SPACE_ID` → автоопределения через `list-spaces` (если пространство одно — используется автоматически, предложи сохранить в `ELEMENT_SPACE_ID`)
 - При ошибке API — показывай поле `error` и `details` из ответа

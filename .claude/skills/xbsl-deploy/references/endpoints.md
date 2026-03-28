@@ -28,9 +28,11 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
   "source": { "type": "repository" },
   "display-name": "Имя приложения",
   "publication-context": "Имя приложения",
-  "development-mode": false
+  "development-mode": false,
+  "space-id": "<space-id>"
 }
 ```
+Поле `space-id` **обязательно**. Без него сервер вернёт 500.
 
 ### Поля приложения (ответ)
 - `id` — идентификатор
@@ -48,7 +50,28 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 - `Stopped` — остановлено
 - `Starting` — запускается
 - `Stopping` — останавливается
+- `Initializing` — инициализируется после создания
+- `Frozen` — заморожено
 - `Error` — ошибка (смотри поле `error`)
+
+## Пространства (Spaces)
+
+| Метод | Endpoint | Описание |
+|---|---|---|
+| GET | `/console/api/v2/spaces` | Список пространств |
+| GET | `/console/api/v2/spaces/{id}` | Информация о пространстве |
+| POST | `/console/api/v2/spaces` | Создать пространство |
+
+### Поля пространства
+- `id` — идентификатор
+- `name` — имя
+- `owner` — владелец
+- `applications-count` — количество приложений
+- `applications-quota` — квота приложений
+
+### Примечание
+`space-id` **обязателен** при создании приложения (POST `/console/api/v2/applications`).
+Если `ELEMENT_SPACE_ID` не задан — получи список пространств и определи нужное автоматически.
 
 ## Проекты
 
@@ -99,10 +122,27 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 
 | Метод | Endpoint | Описание |
 |---|---|---|
+| GET | `/console/api/v2/applications/{id}/dumps` | Список дампов |
 | POST | `/console/api/v2/applications/{id}/dumps` | Создать дамп |
 | GET | `/console/api/v2/applications/{id}/dumps/{dump-id}` | Статус дампа |
+| DELETE | `/console/api/v2/applications/{id}/dumps/{dump-id}` | Удалить дамп |
 
 ### Статусы дампа
 - `InProgress` / `Creating` — создаётся (ждать)
 - `Done` / `Completed` — готов (можно продолжать)
 - `Error` — ошибка (остановить деплой)
+
+## Задачи приложений
+
+| Метод | Endpoint | Описание |
+|---|---|---|
+| GET | `/console/api/v2/tasks/applications` | Список фоновых задач приложений |
+| GET | `/console/api/v2/tasks/{id}` | Информация о задаче |
+
+### Поля задачи
+- `id` — идентификатор
+- `status` — статус (`InProgress`, `Done`, `Error`)
+- `operation-type` — тип операции (например `CreateApplication`, `StartApplication`)
+- `start-date` / `end-date` — даты начала и окончания
+- `application-id` — идентификатор приложения
+- `error-message` — описание ошибки, если есть

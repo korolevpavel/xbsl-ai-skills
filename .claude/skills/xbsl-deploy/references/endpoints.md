@@ -82,7 +82,7 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 | DELETE | `/console/api/v2/projects/{id}` | Удалить проект (перед удалением нужно удалить все приложения) |
 | POST | `/console/api/v2/projects` | Создать новый проект из файла сборки |
 | POST | `/console/api/v2/projects/{id}` | Добавить сборку к существующему проекту |
-| GET | `/console/api/v2/projects/{id}/builds` | Список сборок проекта |
+| GET | `/console/api/v2/projects/{id}` | Список сборок проекта (тот же path, другой ответ — массив сборок) |
 | GET | `/console/api/v2/projects/{id}/{version}` | Подробная информация о сборке |
 | DELETE | `/console/api/v2/projects/{id}/{version}` | Удалить сборку |
 

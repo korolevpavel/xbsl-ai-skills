@@ -358,11 +358,14 @@ def main():
             print(json.dumps({"error": "--name required"}, ensure_ascii=False))
             sys.exit(1)
         url = f"{base}/console/api/v2/applications"
+        source: dict = {"type": "repository"}
+        if args.project_id:
+            source["image-id"] = args.project_id
         body = {
-            "source": {"type": "repository"},
+            "source": source,
             "display-name": args.name,
             "publication-context": args.name,
-            "development-mode": False,
+            "development-mode": True,
         }
         if args.space_id:
             body["space-id"] = args.space_id
@@ -446,7 +449,8 @@ def main():
         if not args.project_id:
             print(json.dumps({"error": "--project-id required"}, ensure_ascii=False))
             sys.exit(1)
-        url = f"{base}/console/api/v2/projects/{args.project_id}/builds"
+        # GET /console/api/v2/projects/{ProjectId} — список сборок проекта
+        url = f"{base}/console/api/v2/projects/{args.project_id}"
         result = api_request("GET", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
@@ -454,6 +458,7 @@ def main():
         if not args.project_id or not args.version:
             print(json.dumps({"error": "--project-id and --version required"}, ensure_ascii=False))
             sys.exit(1)
+        # GET /console/api/v2/projects/{ProjectId}/{Version}
         url = f"{base}/console/api/v2/projects/{args.project_id}/{args.version}"
         result = api_request("GET", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -462,6 +467,7 @@ def main():
         if not args.project_id or not args.version:
             print(json.dumps({"error": "--project-id and --version required"}, ensure_ascii=False))
             sys.exit(1)
+        # DELETE /console/api/v2/projects/{ProjectId}/{Version}
         url = f"{base}/console/api/v2/projects/{args.project_id}/{args.version}"
         result = api_request("DELETE", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))

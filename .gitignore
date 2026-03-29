@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *.pyo
+.coverage
 .venv/
 venv/
 uv.lock
@@ -18,3 +19,6 @@ uv.lock
 
 # Tools and materials (local only)
 tools/
+
+# Environment variables
+.env

@@ -68,6 +68,7 @@ def clear_element_env(monkeypatch) -> None:
         "ELEMENT_APP_ID",
         "ELEMENT_PROJECT_ID",
         "ELEMENT_BRANCH",
+        "ELEMENT_BRANCH_ID",
         "ELEMENT_SPACE_ID",
     ):
         monkeypatch.delenv(key, raising=False)
@@ -367,6 +368,153 @@ def test_api_request_returns_invalid_json_error(api, monkeypatch) -> None:
     }
 
 
+@pytest.mark.parametrize(
+    ("raw_response", "expected"),
+    [
+        (b'{"ok": true}', {"ok": True}),
+        (b"", {}),
+    ],
+)
+def test_api_request_binary_handles_success_and_empty_response(
+    api, monkeypatch, tmp_path: Path, raw_response: bytes, expected
+) -> None:
+    file_path = tmp_path / "build.zip"
+    file_path.write_bytes(b"binary-payload")
+    captured = {}
+
+    def fake_urlopen(request):
+        captured["method"] = request.get_method()
+        captured["url"] = request.full_url
+        captured["authorization"] = request.get_header("Authorization")
+        captured["accept"] = request.get_header("Accept")
+        captured["content_type"] = request.get_header("Content-type")
+        captured["data"] = request.data
+        return FakeResponse(raw_response)
+
+    monkeypatch.setattr(api.urllib.request, "urlopen", fake_urlopen)
+
+    result = api.api_request_binary(
+        "POST",
+        "https://example.com/upload",
+        "TOKEN",
+        str(file_path),
+        {
+            "SpaceId": "space-1",
+            "BranchName": "",
+            "CommitId": "abc123",
+            "CommitMessage": "deploy build",
+        },
+    )
+
+    assert result == expected
+    assert captured["method"] == "POST"
+    assert captured["url"] == "https://example.com/upload?SpaceId=space-1&CommitId=abc123&CommitMessage=deploy+build"
+    assert captured["authorization"] == "Bearer TOKEN"
+    assert captured["accept"] == "application/json"
+    assert captured["content_type"] == "application/octet-stream"
+    assert captured["data"] == b"binary-payload"
+
+
+def test_api_request_binary_returns_cannot_read_file(api) -> None:
+    assert api.api_request_binary("POST", "https://example.com/upload", "TOKEN", "/tmp/missing.zip") == {
+        "error": "Cannot read file",
+        "details": "[Errno 2] No such file or directory: '/tmp/missing.zip'",
+    }
+
+
+def test_api_request_binary_ignores_empty_query_params(api, monkeypatch, tmp_path: Path) -> None:
+    file_path = tmp_path / "build.zip"
+    file_path.write_bytes(b"binary-payload")
+    captured = {}
+
+    def fake_urlopen(request):
+        captured["url"] = request.full_url
+        return FakeResponse(b'{"ok": true}')
+
+    monkeypatch.setattr(api.urllib.request, "urlopen", fake_urlopen)
+
+    result = api.api_request_binary(
+        "POST",
+        "https://example.com/upload",
+        "TOKEN",
+        str(file_path),
+        {"SpaceId": "", "BranchName": "", "CommitId": "", "CommitMessage": ""},
+    )
+
+    assert result == {"ok": True}
+    assert captured["url"] == "https://example.com/upload"
+
+
+@pytest.mark.parametrize(
+    ("raw_body", "expected_details"),
+    [
+        (b'{"message":"bad request"}', {"message": "bad request"}),
+        (b"plain text error", "plain text error"),
+    ],
+)
+def test_api_request_binary_returns_error_details_for_http_error(api, monkeypatch, tmp_path: Path, raw_body: bytes, expected_details) -> None:
+    file_path = tmp_path / "build.zip"
+    file_path.write_bytes(b"binary-payload")
+    error = urllib.error.HTTPError(
+        url="https://example.com/upload",
+        code=400,
+        msg="Bad Request",
+        hdrs=None,
+        fp=io.BytesIO(raw_body),
+    )
+
+    def fake_urlopen(_request):
+        raise error
+
+    monkeypatch.setattr(api.urllib.request, "urlopen", fake_urlopen)
+
+    assert api.api_request_binary("POST", "https://example.com/upload", "TOKEN", str(file_path)) == {
+        "error": "HTTP 400",
+        "details": expected_details,
+    }
+
+
+def test_api_request_binary_returns_connection_error(api, monkeypatch, tmp_path: Path) -> None:
+    file_path = tmp_path / "build.zip"
+    file_path.write_bytes(b"binary-payload")
+    monkeypatch.setattr(
+        api.urllib.request,
+        "urlopen",
+        lambda _request: (_ for _ in ()).throw(api.urllib.error.URLError("connection refused")),
+    )
+
+    assert api.api_request_binary("POST", "https://example.com/upload", "TOKEN", str(file_path)) == {
+        "error": "Connection error",
+        "details": "connection refused",
+    }
+
+
+def test_api_request_binary_returns_oserror(api, monkeypatch, tmp_path: Path) -> None:
+    file_path = tmp_path / "build.zip"
+    file_path.write_bytes(b"binary-payload")
+    monkeypatch.setattr(
+        api.urllib.request,
+        "urlopen",
+        lambda _request: (_ for _ in ()).throw(OSError("socket closed")),
+    )
+
+    assert api.api_request_binary("POST", "https://example.com/upload", "TOKEN", str(file_path)) == {
+        "error": "Connection error",
+        "details": "socket closed",
+    }
+
+
+def test_api_request_binary_returns_invalid_json_error(api, monkeypatch, tmp_path: Path) -> None:
+    file_path = tmp_path / "build.zip"
+    file_path.write_bytes(b"binary-payload")
+    monkeypatch.setattr(api.urllib.request, "urlopen", lambda _request: FakeResponse(b"not-json"))
+
+    assert api.api_request_binary("POST", "https://example.com/upload", "TOKEN", str(file_path)) == {
+        "error": "Invalid JSON response",
+        "details": "not-json",
+    }
+
+
 def test_main_requires_base_url(api, monkeypatch, capsys) -> None:
     result = run_main(api, monkeypatch, capsys, ["--action", "list-projects"], expected_exit=1)
 
@@ -481,6 +629,16 @@ def test_main_non_token_action_prints_error_and_exits_on_token_fetch_failure(api
         (["--action", "delete-app"], "--app-id required"),
         (["--action", "start-app"], "--app-id required"),
         (["--action", "stop-app"], "--app-id required"),
+        (["--action", "get-project"], "--project-id required"),
+        (["--action", "delete-project"], "--project-id required"),
+        (["--action", "upload-build"], "--file required"),
+        (["--action", "list-builds"], "--project-id required"),
+        (["--action", "get-build"], "--project-id and --version required"),
+        (["--action", "delete-build"], "--project-id and --version required"),
+        (["--action", "sync-branch"], "--app-id required"),
+        (["--action", "sync-branch", "--app-id", "app-1"], "--branch-id or ELEMENT_BRANCH_ID required"),
+        (["--action", "project-update"], "--app-id required"),
+        (["--action", "project-update", "--app-id", "app-1"], "--version-id (assembly id) or --project-id required"),
         (["--action", "get-branch"], "--branch-id required"),
         (["--action", "create-branch"], "--project-id and --branch-name required"),
         (["--action", "update-branch"], "--branch-id required"),
@@ -554,6 +712,36 @@ def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv
             {"id": "app-2"},
         ),
         (
+            ["--action", "create-app", "--name", "demo", "--version-id", "version-1"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/applications",
+                "TOKEN",
+                {
+                    "source": {"type": "repository", "project-version-id": "version-1"},
+                    "display-name": "demo",
+                    "publication-context": "demo",
+                    "development-mode": True,
+                },
+            ),
+            {"id": "app-3"},
+        ),
+        (
+            ["--action", "create-app", "--name", "demo", "--project-id", "project-1"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/applications",
+                "TOKEN",
+                {
+                    "source": {"type": "repository", "image-id": "project-1"},
+                    "display-name": "demo",
+                    "publication-context": "demo",
+                    "development-mode": True,
+                },
+            ),
+            {"id": "app-4"},
+        ),
+        (
             ["--action", "delete-app", "--app-id", "app-1"],
             ("DELETE", "https://example.com/console/api/v2/applications/app-1", "TOKEN", None),
             {},
@@ -569,9 +757,88 @@ def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv
             {"status": "Stopping"},
         ),
         (
+            ["--action", "list-spaces"],
+            ("GET", "https://example.com/console/api/v2/spaces", "TOKEN", None),
+            [{"id": "space-1"}],
+        ),
+        (
             ["--action", "list-projects"],
             ("GET", "https://example.com/console/api/v2/projects", "TOKEN", None),
             [{"id": "project-1"}],
+        ),
+        (
+            ["--action", "get-project", "--project-id", "project-1"],
+            ("GET", "https://example.com/console/api/v2/projects/project-1", "TOKEN", None),
+            {"id": "project-1"},
+        ),
+        (
+            ["--action", "delete-project", "--project-id", "project-1"],
+            ("DELETE", "https://example.com/console/api/v2/projects/project-1", "TOKEN", None),
+            {},
+        ),
+        (
+            ["--action", "list-builds", "--project-id", "project-1"],
+            ("GET", "https://example.com/console/api/v2/projects/project-1/assemblies", "TOKEN", None),
+            [{"version": "1.2.3"}],
+        ),
+        (
+            ["--action", "get-build", "--project-id", "project-1", "--version", "1.2.3"],
+            ("GET", "https://example.com/console/api/v2/projects/project-1/assemblies/1.2.3", "TOKEN", None),
+            {"version": "1.2.3"},
+        ),
+        (
+            ["--action", "delete-build", "--project-id", "project-1", "--version", "1.2.3"],
+            ("DELETE", "https://example.com/console/api/v2/projects/project-1/assemblies/1.2.3", "TOKEN", None),
+            {},
+        ),
+        (
+            ["--action", "sync-branch", "--app-id", "app-1", "--branch-id", "branch-1"],
+            (
+                "POST",
+                "https://example.com/console/ui/module/call?locale=ru",
+                "TOKEN",
+                {
+                    "module": "e1c::console::Applications::ApplicationConfigurationUpdateForm",
+                    "method": "UpdateAppConfiguration",
+                    "params": [
+                        {"type": "e1c::console::Applications::Applications.Reference", "value": "app-1"},
+                        {"type": "e1c::console::Team::Branches.Reference", "value": "branch-1"},
+                        {"type": "Std::Boolean", "value": False},
+                        {"type": "Std::Boolean", "value": False},
+                    ],
+                },
+            ),
+            {"updated": True},
+        ),
+        (
+            ["--action", "project-update", "--app-id", "app-1", "--version-id", "assembly-1"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/applications/app-1/project/update",
+                "TOKEN",
+                {"source": {"type": "repository", "image-id": "assembly-1"}},
+            ),
+            {"updated": True},
+        ),
+        (
+            ["--action", "project-update", "--app-id", "app-1", "--project-id", "project-1", "--version", "1.2.3"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/applications/app-1/project/update",
+                "TOKEN",
+                {"source": {"type": "repository", "project-id": "project-1", "assembly-version": "1.2.3"}},
+            ),
+            {"updated-from-project": True},
+        ),
+        (
+            ["--action", "project-update", "--app-id", "app-1", "--project-id", "project-1"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/applications/app-1/project/update",
+                "TOKEN",
+                {"source": {"type": "repository", "project-id": "project-1"}},
+            ),
+            {"updated-from-project-no-version": True},
         ),
         (
             ["--action", "list-branches", "--project-id", "project-1", "--branch-name", "release"],
@@ -672,6 +939,127 @@ def test_main_single_request_actions(api, monkeypatch, capsys, argv: list[str], 
 
     assert calls == [expected_call]
     assert result == response
+
+
+@pytest.mark.parametrize(
+    ("argv", "expected_call", "response"),
+    [
+        (
+            [
+                "--action",
+                "upload-build",
+                "--file",
+                "/tmp/build.zip",
+                "--project-id",
+                "project-1",
+                "--space-id",
+                "space-1",
+                "--branch-name",
+                "release",
+                "--commit-id",
+                "abc123",
+                "--commit-message",
+                "deploy build",
+            ],
+            (
+                "POST",
+                "https://example.com/console/api/v2/projects/project-1/assemblies",
+                "TOKEN",
+                "/tmp/build.zip",
+                {
+                    "SpaceId": "space-1",
+                    "BranchName": "release",
+                    "CommitId": "abc123",
+                    "CommitMessage": "deploy build",
+                },
+            ),
+            {"id": "assembly-1"},
+        ),
+        (
+            ["--action", "upload-build", "--file", "/tmp/build.zip"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/projects",
+                "TOKEN",
+                "/tmp/build.zip",
+                {
+                    "SpaceId": "",
+                    "BranchName": "",
+                    "CommitId": "",
+                    "CommitMessage": "",
+                },
+            ),
+            {"id": "project-1"},
+        ),
+    ],
+)
+def test_main_upload_build_routes_to_binary_request(api, monkeypatch, capsys, argv: list[str], expected_call, response) -> None:
+    calls = []
+
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda method, url, token, file_path, params=None: calls.append((method, url, token, file_path, params)) or response,
+    )
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [*argv, "--base-url", "https://example.com", "--client-id", "client", "--client-secret", "secret"],
+    )
+
+    assert calls == [expected_call]
+    assert result == response
+
+
+def test_main_sync_branch_uses_branch_id_from_env(api, monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("ELEMENT_BRANCH_ID", "branch-env")
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    monkeypatch.setattr(
+        api,
+        "api_request",
+        lambda method, url, token, body=None: calls.append((method, url, token, body)) or {"updated": True},
+    )
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action",
+            "sync-branch",
+            "--app-id",
+            "app-1",
+            "--base-url",
+            "https://example.com",
+            "--client-id",
+            "client",
+            "--client-secret",
+            "secret",
+        ],
+    )
+
+    assert calls == [
+        (
+            "POST",
+            "https://example.com/console/ui/module/call?locale=ru",
+            "TOKEN",
+            {
+                "module": "e1c::console::Applications::ApplicationConfigurationUpdateForm",
+                "method": "UpdateAppConfiguration",
+                "params": [
+                    {"type": "e1c::console::Applications::Applications.Reference", "value": "app-1"},
+                    {"type": "e1c::console::Team::Branches.Reference", "value": "branch-env"},
+                    {"type": "Std::Boolean", "value": False},
+                    {"type": "Std::Boolean", "value": False},
+                ],
+            },
+        )
+    ]
+    assert result == {"updated": True}
 
 
 def test_main_update_branch_prints_get_error_and_exits(api, monkeypatch, capsys) -> None:

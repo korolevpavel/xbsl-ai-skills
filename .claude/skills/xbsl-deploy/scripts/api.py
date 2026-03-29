@@ -19,6 +19,8 @@ HTTP-клиент для Console API v2 (1С:Предприятие.Элемен
     python3 api.py --action list-builds --project-id <id>
     python3 api.py --action get-build --project-id <id> --version <ver>
     python3 api.py --action delete-build --project-id <id> --version <ver>
+    python3 api.py --action project-update --app-id <id> --version-id <assembly-id>
+    python3 api.py --action sync-branch --app-id <id> --branch-id <id>
     python3 api.py --action list-branches --project-id <id> [--branch-name <name>]
     python3 api.py --action get-branch --branch-id <id>
     python3 api.py --action create-branch --project-id <id> --branch-name <name> [--app-id <id>]
@@ -35,6 +37,7 @@ Env vars (приоритет над флагами):
     ELEMENT_APP_ID         — ID приложения по умолчанию
     ELEMENT_PROJECT_ID     — ID проекта по умолчанию
     ELEMENT_BRANCH         — имя ветки по умолчанию (default: main)
+    ELEMENT_BRANCH_ID      — ID ветки для sync-branch (внутренний ID ветки на платформе)
     ELEMENT_SPACE_ID       — ID пространства (если не задан — определяется автоматически через list-spaces)
 """
 
@@ -295,7 +298,7 @@ def main():
     parser.add_argument("--client-secret", default=os.environ.get("ELEMENT_CLIENT_SECRET", ""))
     parser.add_argument("--app-id", default=os.environ.get("ELEMENT_APP_ID", ""))
     parser.add_argument("--project-id", default=os.environ.get("ELEMENT_PROJECT_ID", ""))
-    parser.add_argument("--branch-id", default="")
+    parser.add_argument("--branch-id", default=os.environ.get("ELEMENT_BRANCH_ID", ""))
     parser.add_argument("--branch-name", default="")
     parser.add_argument("--name", default="")
     parser.add_argument("--space-id", default=os.environ.get("ELEMENT_SPACE_ID", ""))
@@ -436,7 +439,7 @@ def main():
         # Если project-id задан — добавляем сборку к существующему проекту
         # Если нет — создаём новый проект
         if args.project_id:
-            url = f"{base}/console/api/v2/projects/{args.project_id}"
+            url = f"{base}/console/api/v2/projects/{args.project_id}/assemblies"
         else:
             url = f"{base}/console/api/v2/projects"
         params = {
@@ -452,8 +455,7 @@ def main():
         if not args.project_id:
             print(json.dumps({"error": "--project-id required"}, ensure_ascii=False))
             sys.exit(1)
-        # GET /console/api/v2/projects/{ProjectId} — список сборок проекта
-        url = f"{base}/console/api/v2/projects/{args.project_id}"
+        url = f"{base}/console/api/v2/projects/{args.project_id}/assemblies"
         result = api_request("GET", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
@@ -461,8 +463,7 @@ def main():
         if not args.project_id or not args.version:
             print(json.dumps({"error": "--project-id and --version required"}, ensure_ascii=False))
             sys.exit(1)
-        # GET /console/api/v2/projects/{ProjectId}/{Version}
-        url = f"{base}/console/api/v2/projects/{args.project_id}/{args.version}"
+        url = f"{base}/console/api/v2/projects/{args.project_id}/assemblies/{args.version}"
         result = api_request("GET", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
@@ -470,9 +471,50 @@ def main():
         if not args.project_id or not args.version:
             print(json.dumps({"error": "--project-id and --version required"}, ensure_ascii=False))
             sys.exit(1)
-        # DELETE /console/api/v2/projects/{ProjectId}/{Version}
-        url = f"{base}/console/api/v2/projects/{args.project_id}/{args.version}"
+        url = f"{base}/console/api/v2/projects/{args.project_id}/assemblies/{args.version}"
         result = api_request("DELETE", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "sync-branch":
+        # Загрузить изменения из git-ветки (внутренний UI API платформы).
+        # Эквивалент кнопки "Загрузить из ветки" в IDE.
+        # branch-id — внутренний ID ветки на платформе (ELEMENT_BRANCH_ID).
+        if not args.app_id:
+            print(json.dumps({"error": "--app-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        if not args.branch_id:
+            print(json.dumps({"error": "--branch-id or ELEMENT_BRANCH_ID required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/ui/module/call?locale=ru"
+        body = {
+            "module": "e1c::console::Applications::ApplicationConfigurationUpdateForm",
+            "method": "UpdateAppConfiguration",
+            "params": [
+                {"type": "e1c::console::Applications::Applications.Reference", "value": args.app_id},
+                {"type": "e1c::console::Team::Branches.Reference", "value": args.branch_id},
+                {"type": "Std::Boolean", "value": False},
+                {"type": "Std::Boolean", "value": False},
+            ],
+        }
+        result = api_request("POST", url, token, body)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "project-update":
+        if not args.app_id:
+            print(json.dumps({"error": "--app-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        if not args.version_id and not args.project_id:
+            print(json.dumps({"error": "--version-id (assembly id) or --project-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/applications/{args.app_id}/project/update"
+        source: dict = {"type": "repository"}
+        if args.version_id:
+            source["image-id"] = args.version_id
+        else:
+            source["project-id"] = args.project_id
+            if args.version:
+                source["assembly-version"] = args.version
+        result = api_request("POST", url, token, {"source": source})
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
     # ── Ветки ──────────────────────────────────────────────────────────────────

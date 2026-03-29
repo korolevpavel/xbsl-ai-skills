@@ -87,20 +87,19 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 | GET | `/console/api/v2/projects` | Список проектов |
 | GET | `/console/api/v2/projects/{id}` | Информация о проекте |
 | DELETE | `/console/api/v2/projects/{id}` | Удалить проект (перед удалением нужно удалить все приложения) |
-| POST | `/console/api/v2/projects` | Создать новый проект из файла сборки |
-| POST | `/console/api/v2/projects/{id}` | Добавить сборку к существующему проекту |
-| GET | `/console/api/v2/projects/{id}` | Список сборок проекта (тот же path, другой ответ — массив сборок) |
-| GET | `/console/api/v2/projects/{id}/{version}` | Подробная информация о сборке |
-| DELETE | `/console/api/v2/projects/{id}/{version}` | Удалить сборку |
+| POST | `/console/api/v2/projects` | Создать новый проект из файла сборки (Content-Type: octet-stream) |
+| GET | `/console/api/v2/projects/{id}/assemblies` | Список сборок проекта |
+| POST | `/console/api/v2/projects/{id}/assemblies` | Добавить сборку к существующему проекту (Content-Type: octet-stream) |
+| GET | `/console/api/v2/projects/{id}/assemblies/{version}` | Подробная информация о сборке |
+| DELETE | `/console/api/v2/projects/{id}/assemblies/{version}` | Удалить сборку |
 
 ### Загрузка файла сборки (POST)
 - Content-Type: `application/octet-stream` (бинарный файл)
 - Query params: `SpaceId`, `BranchName`, `CommitId`, `CommitMessage`, `Version`, `Modified`
-- Без `{id}` в пути — создаёт новый проект. С `{id}` — добавляет сборку к существующему.
+- Без `{id}` в пути — создаёт новый проект. С `{id}/assemblies` — добавляет сборку к существующему.
 
-### Поля сборки (ответ)
-- `id` — идентификатор сборки
-- `assembly-version` — версия сборки
+### Поля сборки (ответ AssemblyDto)
+- `assembly-version` — версия сборки (используется как `{version}` в path)
 - `created` — дата создания
 - `project-id` — идентификатор проекта
 - `project-name` — имя проекта
@@ -110,13 +109,37 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 - `comment` — комментарий
 - `modified` — признак модификации относительно VCS
 
+### Обновление приложения на конкретную сборку
+
+```
+POST /console/api/v2/applications/{app-id}/project/update
+```
+
+```json
+{
+  "source": {
+    "type": "repository",
+    "image-id": "<assembly-id>"
+  }
+}
+```
+
+Поля `source`:
+- `image-id` — ID конкретной сборки (приоритетнее)
+- `project-id` + `assembly-version` — альтернатива: проект + версия сборки
+
+После `project/update` нужен stop → start для применения изменений.
+
 ## Ветки
+
+> **Важно**: ветки 1С:Элемент — это механизм **внутренней групповой разработки** платформы (аналог feature-branch для задач, типа `issue/CRM-1`). Это **не GitHub-ветки**. Работают только для проектов с включённым режимом групповой разработки. Если проект типа `Application` без этого режима — API вернёт 503 "does not use export branches". Это штатное поведение, не ошибка конфигурации.
 
 | Метод | Endpoint | Описание |
 |---|---|---|
 | GET | `/console/api/v2/branches` | Список веток (фильтр: `?project-id=...&name=...`) |
 | GET | `/console/api/v2/branches/{id}` | Получить ветку |
 | POST | `/console/api/v2/branches` | Создать ветку |
+| PUT | `/console/api/v2/branches` | Создать или обновить ветку по имени (upsert) |
 | PUT | `/console/api/v2/branches/{id}` | Обновить ветку (application, write-parameters) |
 | DELETE | `/console/api/v2/branches/{id}` | Удалить ветку |
 
@@ -130,7 +153,7 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 }
 ```
 
-### Тело merge ветки (PUT)
+### Тело merge ветки (PUT /{id})
 ```json
 {
   "name": "<branch-name>",
@@ -141,10 +164,10 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 
 ### Поля ветки
 - `id` — идентификатор
-- `name` — имя (= имя GitHub ветки)
+- `name` — имя ветки (внутреннее, напр. `issue/CRM-1`)
 - `kind` — `main` / `release` / `development`
 - `project` — ссылка на проект
-- `repository` — URL git-репозитория (GitHub, GitLab и др.; read-only)
+- `repository` — URL git-репозитория (информационное, read-only; не источник кода)
 - `application` — привязанное приложение `{ id, name, url }`
 - `version-stamp` — для оптимистической блокировки
 

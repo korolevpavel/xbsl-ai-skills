@@ -38,7 +38,7 @@ tools/                   # материалы и инструменты (в .git
 Управляет приложениями на платформе 1С:Предприятие.Элемент через Console API v2. `scripts/api.py` — самодостаточный HTTP-клиент (только stdlib Python). Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
 
 ### xbsl-form-add
-Создаёт форму интерфейса (`КомпонентИнтерфейса`) — `ФормаОбъекта` и/или `ФормаСписка`. Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/ФормаОбъекта.md` или `references/ФормаСписка.md`.
+Создаёт форму интерфейса (`КомпонентИнтерфейса`) — `ФормаОбъекта` и/или `ФормаСписка`. Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/ФормаОбъекта.md` или `references/ФормаСписка.md`. `scripts/form_info.py` — анализирует объект конфигурации и возвращает JSON с `object_path`, `fields`, `tc`, `namespace`, `suggested_layout`, `existing_forms`.
 
 ## Структура проекта 1С:Элемент
 
@@ -54,6 +54,29 @@ tools/                   # материалы и инструменты (в .git
 ```
 
 `explore.py` определяет проекты по наличию `Проект.yaml`, подсистемы — по `Подсистема.yaml`.
+
+## Команды разработки
+
+```bash
+# Запустить все тесты
+pytest
+
+# Запустить тесты одного скилла
+pytest tests/skills/xbsl_deploy/
+pytest tests/skills/xbsl_explore/
+pytest tests/skills/xbsl_form_add/
+
+# Запустить один тестовый файл
+pytest tests/skills/xbsl_deploy/test_api.py
+
+# Покрытие кода (только xbsl-deploy и xbsl-form-add)
+coverage run -m pytest && coverage report
+
+# Установить dev-зависимости (pytest, coverage)
+pip install -r requirements-dev.txt
+```
+
+Виртуальное окружение: `.venv/`, менеджер зависимостей — `uv` (`uv.lock`).
 
 ## Разработка скиллов
 

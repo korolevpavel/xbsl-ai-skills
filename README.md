@@ -14,7 +14,6 @@
 | [`xbsl-form-add`](.claude/skills/xbsl-form-add/SKILL.md) | Создание формы интерфейса (ФормаОбъекта и/или ФормаСписка) для объекта конфигурации |
 | [`xbsl-deploy`](.claude/skills/xbsl-deploy/SKILL.md) | Управление приложениями на 1С:Предприятие.Элемент: деплой, запуск, остановка, статус, merge |
 
-
 Спецификации по каждому типу объекта метаданных и справочник типов реквизитов хранятся в [`.claude/skills/xbsl-meta-add/references/`](.claude/skills/xbsl-meta-add/references/):
 
 | Файл | Тип объекта |
@@ -33,12 +32,10 @@
 | [`ТабличныеЧасти.md`](.claude/skills/xbsl-meta-add/references/ТабличныеЧасти.md) | Вложенные строки в Справочнике и Документе |
 | [`types.md`](.claude/skills/xbsl-meta-add/references/types.md) | Справочник типов реквизитов |
 
-`xbsl-deploy` использует Console API v2. Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
-
 ## Требования
 
 - [Claude Code](https://claude.ai/code) или другой AI-агент, поддерживающий скиллы
-- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid` и `xbsl-deploy`
+- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid`, `xbsl-form-add` и `xbsl-deploy`
 
 ## Установка
 
@@ -78,6 +75,41 @@ cp -r xbsl-ai-skills/.claude/skills/ /путь/к/твоему/проекту/.c
             Подсистема.yaml
             СтатусЗадачи.yaml     # объект метаданных
             СтатусЗадачи.xbsl     # методы объекта (опционально)
+```
+
+## Конфигурация xbsl-deploy
+
+Создай файл `.env` в корне проекта:
+
+```dotenv
+# Обязательные
+ELEMENT_BASE_URL=https://...
+ELEMENT_CLIENT_ID=...
+ELEMENT_CLIENT_SECRET=...
+
+# Опциональные (экономят время на каждом деплое)
+ELEMENT_APP_ID=...
+ELEMENT_PROJECT_ID=...
+ELEMENT_BRANCH=main
+ELEMENT_SPACE_ID=...
+```
+
+## Разработка
+
+```bash
+# Установить зависимости
+pip install -r requirements-dev.txt
+
+# Запустить все тесты
+pytest
+
+# Тесты одного скилла
+pytest tests/skills/xbsl_deploy/
+pytest tests/skills/xbsl_explore/
+pytest tests/skills/xbsl_form_add/
+
+# Покрытие кода
+coverage run -m pytest && coverage report
 ```
 
 ## Добавление новых скиллов

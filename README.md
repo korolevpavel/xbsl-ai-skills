@@ -1,5 +1,11 @@
 # XBSL Skills — AI-инструменты для 1С:Элемент
 
+[![Docs](https://img.shields.io/badge/docs-github_pages-108679?style=flat-square)](https://korolevpavel.github.io/xbsl-ai-skills/)
+[![License](https://img.shields.io/badge/license-MIT-d68048?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.x-2f6b94?style=flat-square)](#требования)
+
+
+
 Набор скиллов для работы с проектами на платформе **1С:Элемент (XBSL)**.
 
 Скиллы совместимы с [Claude Code](https://claude.ai/code) и другими AI-агентами, поддерживающими формат скиллов.

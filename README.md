@@ -4,6 +4,8 @@
 
 Скиллы совместимы с [Claude Code](https://claude.ai/code) и другими AI-агентами, поддерживающими формат скиллов.
 
+Публичный сайт документации: `https://korolevpavel.github.io/xbsl-ai-skills/`
+
 ## Скиллы
 
 | Скилл | Описание |
@@ -110,6 +112,17 @@ pytest tests/skills/xbsl_form_add/
 
 # Покрытие кода
 coverage run -m pytest && coverage report
+```
+
+## GitHub Pages
+
+Сайт собирается автоматически через GitHub Actions из `README.md` и файлов `.claude/skills/*/SKILL.md`.
+
+Локальная сборка:
+
+```bash
+pip install -r requirements-site.txt
+python scripts/build_site.py
 ```
 
 ## Добавление новых скиллов

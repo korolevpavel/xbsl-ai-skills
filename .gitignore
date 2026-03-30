@@ -19,6 +19,8 @@ uv.lock
 
 # Tools and materials (local only)
 tools/
+site/
+.site-deps/
 
 # Environment variables
 .env

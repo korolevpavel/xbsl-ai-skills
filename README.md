@@ -10,8 +10,6 @@
 
 Скиллы совместимы с [Claude Code](https://claude.ai/code) и другими AI-агентами, поддерживающими формат скиллов.
 
-Публичный сайт документации: `https://korolevpavel.github.io/xbsl-ai-skills/`
-
 ## Скиллы
 
 | Скилл | Описание |

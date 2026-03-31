@@ -20,6 +20,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     xbsl-deploy/         # деплой на 1С:Предприятие.Элемент
         scripts/api.py   # HTTP-клиент Console API v2
         references/endpoints.md
+    xbsl-pattern-register/  # паттерн движений по регистру накопления
+        scripts/extract_meta.py  # извлекает поля РегистрНакопления и Документа из YAML
+        references/движения.md   # шаблоны кода паттернов A1–A5, B
+        references/теория.md     # механика платформы
 tools/                   # материалы и инструменты (в .gitignore)
 ```
 
@@ -39,6 +43,9 @@ tools/                   # материалы и инструменты (в .git
 
 ### xbsl-form-add
 Создаёт форму интерфейса (`КомпонентИнтерфейса`) — `ФормаОбъекта` и/или `ФормаСписка`. Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/ФормаОбъекта.md` или `references/ФормаСписка.md`. `scripts/form_info.py` — анализирует объект конфигурации и возвращает JSON с `object_path`, `fields`, `tc`, `namespace`, `suggested_layout`, `existing_forms`.
+
+### xbsl-pattern-register
+Реализует движения документа по регистру накопления в `.xbsl`. Не создаёт объекты — только пишет код обработчика. Алгоритм: запустить `scripts/extract_meta.py` для регистра и документа → выбрать паттерн из `references/движения.md` → дополнить существующий `.xbsl` файл. Паттерны: A1 (приход), A2 (расход), A3 (обороты), A4 (отмена проведения), A5 (два регистра), B (контроль остатков через исключение).
 
 ## Структура проекта 1С:Элемент
 
@@ -65,6 +72,7 @@ pytest
 pytest tests/skills/xbsl_deploy/
 pytest tests/skills/xbsl_explore/
 pytest tests/skills/xbsl_form_add/
+# (xbsl-pattern-register тестируется вручную — тестов пока нет)
 
 # Запустить один тестовый файл
 pytest tests/skills/xbsl_deploy/test_api.py

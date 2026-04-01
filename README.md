@@ -125,6 +125,7 @@ pytest
 pytest tests/skills/xbsl_deploy/
 pytest tests/skills/xbsl_explore/
 pytest tests/skills/xbsl_form_add/
+pytest tests/skills/xbsl_pattern_register/
 
 # Покрытие кода
 coverage run -m pytest && coverage report

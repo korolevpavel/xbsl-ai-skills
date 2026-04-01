@@ -72,7 +72,7 @@ pytest
 pytest tests/skills/xbsl_deploy/
 pytest tests/skills/xbsl_explore/
 pytest tests/skills/xbsl_form_add/
-# (xbsl-pattern-register тестируется вручную — тестов пока нет)
+pytest tests/skills/xbsl_pattern_register/
 
 # Запустить один тестовый файл
 pytest tests/skills/xbsl_deploy/test_api.py

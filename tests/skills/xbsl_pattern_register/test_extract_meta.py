@@ -220,6 +220,83 @@ def test_main_prints_document_json(extract_meta, tmp_path: Path, monkeypatch, ca
     }
 
 
+def test_extract_info_register_returns_metadata_for_nonperiodic(extract_meta) -> None:
+    text = """
+Имя: ЦеныТоваров
+ВидЭлемента: РегистрСведений
+Периодичность: Непериодический
+Измерения:
+    - Имя: Товар
+    - Имя: Склад, Тип: Склады.Ссылка
+Ресурсы:
+    - Имя: Цена
+Реквизиты:
+    - Имя: Комментарий
+""".strip()
+
+    assert extract_meta.extract_info_register(text) == {
+        "element_type": "РегистрСведений",
+        "name": "ЦеныТоваров",
+        "periodicity": "Непериодический",
+        "is_periodic": False,
+        "dimensions": ["Товар", "Склад"],
+        "resources": ["Цена"],
+        "requisites": ["Комментарий"],
+    }
+
+
+def test_extract_info_register_periodic_sets_is_periodic_true(extract_meta) -> None:
+    text = """
+Имя: КурсыВалют
+ВидЭлемента: РегистрСведений
+Периодичность: День
+Измерения:
+    - Имя: Валюта
+Ресурсы:
+    - Имя: Курс
+    - Имя: Кратность
+""".strip()
+
+    result = extract_meta.extract_info_register(text)
+
+    assert result["periodicity"] == "День"
+    assert result["is_periodic"] is True
+    assert result["dimensions"] == ["Валюта"]
+    assert result["resources"] == ["Курс", "Кратность"]
+    assert result["requisites"] == []
+
+
+def test_main_prints_info_register_json(extract_meta, tmp_path: Path, monkeypatch, capsys) -> None:
+    yaml_path = tmp_path / "info_register.yaml"
+    write_file(
+        yaml_path,
+        """
+Имя: НастройкиПользователей
+ВидЭлемента: РегистрСведений
+Периодичность: Непериодический
+Измерения:
+    - Имя: Пользователь
+Ресурсы:
+    - Имя: Значение
+""".strip()
+        + "\n",
+    )
+
+    monkeypatch.setattr(sys, "argv", ["extract_meta.py", str(yaml_path)])
+
+    extract_meta.main()
+
+    assert json.loads(capsys.readouterr().out) == {
+        "element_type": "РегистрСведений",
+        "name": "НастройкиПользователей",
+        "periodicity": "Непериодический",
+        "is_periodic": False,
+        "dimensions": ["Пользователь"],
+        "resources": ["Значение"],
+        "requisites": [],
+    }
+
+
 def test_main_prints_json_error_for_unknown_element_type(extract_meta, tmp_path: Path, monkeypatch, capsys) -> None:
     yaml_path = tmp_path / "catalog.yaml"
     write_file(
@@ -239,7 +316,7 @@ def test_main_prints_json_error_for_unknown_element_type(extract_meta, tmp_path:
     assert exc_info.value.code == 1
     assert json.loads(capsys.readouterr().out) == {
         "error": "Неизвестный ВидЭлемента: 'Справочник'",
-        "supported": ["РегистрНакопления", "Документ"],
+        "supported": ["РегистрНакопления", "РегистрСведений", "Документ"],
     }
 
 

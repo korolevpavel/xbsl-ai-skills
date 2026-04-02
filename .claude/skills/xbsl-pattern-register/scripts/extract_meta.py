@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
 Извлекает метаданные из YAML-файла объекта конфигурации 1С:Элемент.
-Поддерживает: РегистрНакопления, Документ.
+Поддерживает: РегистрНакопления, РегистрСведений, Документ.
 
 Использование:
     python3 .claude/skills/xbsl-pattern-register/scripts/extract_meta.py <путь-к-файлу.yaml>
 
 Вывод: JSON
     Для РегистрНакопления — element_type, name, register_kind, dimensions, resources, needs_record_type.
-    Для Документа — element_type, name, header_fields, tables, handler_file.
+    Для РегистрСведений  — element_type, name, periodicity, is_periodic, dimensions, resources, requisites.
+    Для Документа        — element_type, name, header_fields, tables, handler_file.
 """
 
 import json
@@ -181,6 +182,25 @@ def extract_register(text: str) -> dict:
     }
 
 
+def extract_info_register(text: str) -> dict:
+    name = get_yaml_field(text, "Имя") or "???"
+    periodicity = get_yaml_field(text, "Периодичность") or "Непериодический"
+
+    dimensions = [d["Имя"] for d in parse_flat_list(text, "Измерения") if "Имя" in d]
+    resources = [r["Имя"] for r in parse_flat_list(text, "Ресурсы") if "Имя" in r]
+    requisites = [r["Имя"] for r in parse_flat_list(text, "Реквизиты") if "Имя" in r]
+
+    return {
+        "element_type": "РегистрСведений",
+        "name": name,
+        "periodicity": periodicity,
+        "is_periodic": periodicity != "Непериодический",
+        "dimensions": dimensions,
+        "resources": resources,
+        "requisites": requisites,
+    }
+
+
 def extract_document(text: str) -> dict:
     name = get_yaml_field(text, "Имя") or "???"
 
@@ -218,12 +238,14 @@ def main() -> None:
 
     if element_type == "РегистрНакопления":
         print_json(extract_register(text))
+    elif element_type == "РегистрСведений":
+        print_json(extract_info_register(text))
     elif element_type == "Документ":
         print_json(extract_document(text))
     else:
         print_json({
             "error": f"Неизвестный ВидЭлемента: '{element_type}'",
-            "supported": ["РегистрНакопления", "Документ"],
+            "supported": ["РегистрНакопления", "РегистрСведений", "Документ"],
         })
         sys.exit(1)
 

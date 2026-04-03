@@ -10,6 +10,13 @@
 
 Скиллы совместимы с [Claude Code](https://claude.ai/code) и другими AI-агентами, поддерживающими формат скиллов.
 
+## Видео
+
+Запись живого созвона: подключаем Claude Code и Codex к проекту на 1С:Элемент, работаем со скиллами, создаём объекты конфигурации и доводим всё до деплоя в 1CmyCloud.
+
+[![YouTube](https://img.shields.io/badge/YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/kWJOAJ5-6EY)
+[![ВКонтакте](https://img.shields.io/badge/ВКонтакте-0077FF?logo=vk&logoColor=white)](https://vk.com/video-232435421_456239040)
+
 ## Скиллы
 
 | Скилл | Описание |

@@ -1407,7 +1407,40 @@ def build_home_content(readme_html: str, skills: list[SkillPage]) -> str:
       </div>
     </section>
     """
-    return stats_html + catalog_html + readme_html
+    video_section, readme_html = _extract_video_section(readme_html)
+    video_section = _inject_youtube_thumbnail(video_section)
+    return stats_html + video_section + catalog_html + readme_html
+
+
+def _extract_video_section(html: str) -> tuple[str, str]:
+    """Extract the Видео h2 section. Returns (video_html, remaining_html)."""
+    match = re.search(r"<h2[^>]*>[^<]*Видео[^<]*</h2>", html)
+    if not match:
+        return "", html
+    start = match.start()
+    next_h2 = re.search(r"<h2", html[match.end():])
+    end = match.end() + next_h2.start() if next_h2 else len(html)
+    return html[start:end], html[:start] + html[end:]
+
+
+def _inject_youtube_thumbnail(html: str) -> str:
+    """Insert a clickable YouTube thumbnail before the shields badges paragraph."""
+    marker = "shields.io/badge/YouTube"
+    idx = html.find(marker)
+    if idx == -1:
+        return html
+    start_p = html.rfind("<p>", 0, idx)
+    if start_p == -1:
+        return html
+    thumbnail = (
+        '<a href="https://youtu.be/kWJOAJ5-6EY" target="_blank" rel="noreferrer"'
+        ' style="display:block;margin:16px 0 12px;">'
+        '<img src="https://img.youtube.com/vi/kWJOAJ5-6EY/maxresdefault.jpg"'
+        ' alt="Видео на YouTube"'
+        ' style="max-width:100%;border-radius:12px;box-shadow:var(--shadow);">'
+        "</a>"
+    )
+    return html[:start_p] + thumbnail + html[start_p:]
 
 
 def build_nav(skills: list[SkillPage], active_output_path: str) -> str:

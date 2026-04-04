@@ -26,7 +26,7 @@
 | [`xbsl-meta-add`](.claude/skills/xbsl-meta-add/SKILL.md) | Создание объекта конфигурации (Справочник, Документ, Перечисление и др.) по описанию |
 | [`xbsl-form-add`](.claude/skills/xbsl-form-add/SKILL.md) | Создание формы интерфейса (ФормаОбъекта и/или ФормаСписка) для объекта конфигурации |
 | [`xbsl-deploy`](.claude/skills/xbsl-deploy/SKILL.md) | Управление приложениями на 1С:Предприятие.Элемент: деплой, запуск, остановка, статус, merge |
-| [`xbsl-pattern-register`](.claude/skills/xbsl-pattern-register/SKILL.md) | Движения документа по регистру накопления: приход, расход, обороты, отмена проведения, контроль остатков |
+| [`xbsl-pattern-register`](.claude/skills/xbsl-pattern-register/SKILL.md) | Движения по регистру накопления (приход, расход, обороты, контроль остатков) и регистру сведений (запись, удаление, срез последних) |
 
 Спецификации по каждому типу объекта метаданных и справочник типов реквизитов хранятся в [`.claude/skills/xbsl-meta-add/references/`](.claude/skills/xbsl-meta-add/references/):
 

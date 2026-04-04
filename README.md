@@ -26,6 +26,7 @@
 | [`xbsl-meta-add`](.claude/skills/xbsl-meta-add/SKILL.md) | Создание объекта конфигурации (Справочник, Документ, Перечисление и др.) по описанию |
 | [`xbsl-form-add`](.claude/skills/xbsl-form-add/SKILL.md) | Создание формы интерфейса (ФормаОбъекта и/или ФормаСписка) для объекта конфигурации |
 | [`xbsl-deploy`](.claude/skills/xbsl-deploy/SKILL.md) | Управление приложениями на 1С:Предприятие.Элемент: деплой, запуск, остановка, статус, merge |
+| [`xbsl-pattern-register`](.claude/skills/xbsl-pattern-register/SKILL.md) | Движения по регистру накопления (приход, расход, обороты, контроль остатков) и регистру сведений (запись, удаление, срез последних) |
 
 Спецификации по каждому типу объекта метаданных и справочник типов реквизитов хранятся в [`.claude/skills/xbsl-meta-add/references/`](.claude/skills/xbsl-meta-add/references/):
 
@@ -48,7 +49,7 @@
 ## Требования
 
 - [Claude Code](https://claude.ai/code) или другой AI-агент, поддерживающий скиллы
-- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid`, `xbsl-form-add` и `xbsl-deploy`
+- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid`, `xbsl-form-add`, `xbsl-deploy` и `xbsl-pattern-register`
 
 ## Установка
 
@@ -74,6 +75,10 @@ cp -r xbsl-ai-skills/.claude/skills/ /путь/к/твоему/проекту/.c
 
 ```
 Задеплой ветку main на Элемент
+```
+
+```
+Добавь движения документа РасходнаяНакладная в регистр ТоварыНаСкладах
 ```
 
 ## Структура проекта 1С:Элемент
@@ -120,6 +125,7 @@ pytest
 pytest tests/skills/xbsl_deploy/
 pytest tests/skills/xbsl_explore/
 pytest tests/skills/xbsl_form_add/
+pytest tests/skills/xbsl_pattern_register/
 
 # Покрытие кода
 coverage run -m pytest && coverage report

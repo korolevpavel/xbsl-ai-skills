@@ -294,7 +294,68 @@ def test_main_prints_expected_json_for_found_object(form_info, tmp_path: Path, m
         },
         "is_hierarchical": False,
         "additional_hierarchies": [],
+        "report_params": [],
+        "data_source_kind": None,
+        "data_source": None,
     }
+
+
+def test_build_existing_forms_report_type_returns_forma_otcheta_key(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+    report_form_file = subsystem_dir / "АнализПродажФормаОтчета.yaml"
+    report_form_file.write_text("Имя: ФормаОтчета\n", encoding="utf-8")
+
+    result = form_info.build_existing_forms(str(subsystem_dir), "АнализПродаж.yaml", "Отчет")
+
+    assert result == {"ФормаОтчета": "АнализПродажФормаОтчета.yaml"}
+
+
+def test_build_existing_forms_non_report_type_returns_forma_obekta_and_spiska(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+
+    result = form_info.build_existing_forms(str(subsystem_dir), "Сотрудники.yaml", "Справочник")
+
+    assert set(result.keys()) == {"ФормаОбъекта", "ФормаСписка"}
+
+
+def test_build_result_for_report_returns_report_fields(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+    write_file(
+        subsystem_dir / "АнализПродаж.yaml",
+        """
+ВидЭлемента: Отчет
+Имя: АнализПродаж
+ОбластьВидимости: ВПодсистеме
+ВидИсточникаДанных: Запрос
+Представление: Анализ продаж
+ПараметрыЗапроса:
+    -
+        Имя: НачалоПериода
+        Тип: ДатаВремя
+    -
+        Имя: КонецПериода
+        Тип: ДатаВремя
+""".strip()
+        + "\n",
+    )
+    write_file(subsystem_dir / "АнализПродажФормаОтчета.yaml", "Имя: ФормаОтчета\n")
+
+    found = form_info.find_object(str(tmp_path), "АнализПродаж")
+    assert found is not None
+
+    result = form_info.build_result(found)
+
+    assert result["object_type"] == "Отчет"
+    assert result["suggested_layout"] == "report"
+    assert result["data_source_kind"] == "Запрос"
+    assert result["data_source"] is None
+    assert result["report_params"] == [
+        {"name": "НачалоПериода", "type": "ДатаВремя"},
+        {"name": "КонецПериода", "type": "ДатаВремя"},
+    ]
+    assert result["existing_forms"] == {"ФормаОтчета": "АнализПродажФормаОтчета.yaml"}
+    assert result["fields"] == []
+
 
 
 def test_main_infers_document_number_type_when_type_is_omitted(form_info, tmp_path: Path, monkeypatch, capsys) -> None:

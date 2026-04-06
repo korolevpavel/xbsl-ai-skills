@@ -23,6 +23,7 @@
 |-------|----------|
 | [`xbsl-uuid`](.claude/skills/xbsl-uuid/SKILL.md) | Генерация UUID v4 для объектов конфигурации |
 | [`xbsl-init`](.claude/skills/xbsl-init/SKILL.md) | Инициализация нового проекта: создаёт Проект.yaml, Проект.xbsl и Подсистема.yaml в правильном формате |
+| [`xbsl-subsystem-add`](.claude/skills/xbsl-subsystem-add/SKILL.md) | Добавление новой подсистемы в существующий проект: создаёт папку и Подсистема.yaml |
 | [`xbsl-explore`](.claude/skills/xbsl-explore/SKILL.md) | Разведка структуры проекта: находит проекты, подсистемы, объекты, проверяет конфликты имён |
 | [`xbsl-meta-add`](.claude/skills/xbsl-meta-add/SKILL.md) | Создание объекта конфигурации (Справочник, Документ, Перечисление и др.) по описанию |
 | [`xbsl-form-add`](.claude/skills/xbsl-form-add/SKILL.md) | Создание формы интерфейса (ФормаОбъекта и/или ФормаСписка) для объекта конфигурации |

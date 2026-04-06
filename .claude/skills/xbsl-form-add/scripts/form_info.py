@@ -269,9 +269,11 @@ def build_result(found: ObjectMatch) -> dict:
     obj_type = get_yaml_field(found.object_text, "ВидЭлемента") or UNKNOWN_OBJECT_TYPE
     fields = normalize_fields(obj_type, parse_list_section(found.object_text, "Реквизиты"))
     tc_list = parse_list_section(found.object_text, "ТабличныеЧасти")
+    additional_hierarchies = parse_list_section(found.object_text, "ДополнительныеИерархии")
 
     field_count = len(fields)
     tc_count = len(tc_list)
+    is_hierarchical = get_yaml_field(found.object_text, "Иерархический") == "Истина"
 
     return {
         "object_path": found.object_path,
@@ -284,6 +286,11 @@ def build_result(found: ObjectMatch) -> dict:
         "tc": [{"name": tc.get("Имя", "?")} for tc in tc_list],
         "suggested_layout": suggest_layout(field_count, tc_count),
         "existing_forms": build_existing_forms(found.object_path, found.object_file),
+        "is_hierarchical": is_hierarchical,
+        "additional_hierarchies": [
+            {"name": h.get("Имя", ""), "field": h.get("ПолеРодителя", "")}
+            for h in additional_hierarchies
+        ],
     }
 
 

@@ -43,6 +43,12 @@ python3 .claude/skills/xbsl-form-add/scripts/form_info.py --name <ИмяОбъе
 - `tc` — список табличных частей
 - `suggested_layout` — рекомендация: `simple` / `panels` / `tabs`
 - `existing_forms` — какие формы уже существуют
+- `is_hierarchical` — `true` если справочник имеет `Иерархический: Истина` (паттерн А)
+- `additional_hierarchies` — список доп. иерархий `[{name, field}]` (паттерн Б, пуст при А)
+
+**Иерархический справочник**: если `is_hierarchical: true` или `additional_hierarchies` не пуст —
+используй шаблон «Иерархический список с деревом» из `references/ФормаСписка.md` для ФормаСписка
+и добавь поле `Родитель` в ФормаОбъекта согласно `references/ФормаОбъекта.md`.
 
 Если скрипт вернул `error`:
 - сообщи пользователю текст ошибки;

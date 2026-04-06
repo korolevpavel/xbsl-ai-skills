@@ -292,6 +292,8 @@ def test_main_prints_expected_json_for_found_object(form_info, tmp_path: Path, m
             "ФормаОбъекта": "EmployeesФормаОбъекта.yaml",
             "ФормаСписка": None,
         },
+        "is_hierarchical": False,
+        "additional_hierarchies": [],
     }
 
 
@@ -360,6 +362,60 @@ def test_main_reports_ambiguity_and_exits(form_info, tmp_path: Path, monkeypatch
             },
         ],
     }
+
+
+def test_build_result_detects_simple_hierarchy(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+    write_file(
+        subsystem_dir / "Категории.yaml",
+        "Имя: Категории\nВидЭлемента: Справочник\nИерархический: Истина\nРеквизиты:\n    - Имя: Наименование\n",
+    )
+    found = form_info.find_object(str(tmp_path), "Категории")
+    result = form_info.build_result(found)
+
+    assert result["is_hierarchical"] is True
+    assert result["additional_hierarchies"] == []
+
+
+def test_build_result_detects_additional_hierarchies(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+    write_file(
+        subsystem_dir / "Задачи.yaml",
+        (
+            "Имя: Задачи\nВидЭлемента: Справочник\n"
+            "ДополнительныеИерархии:\n"
+            "    -\n"
+            "        Ид: aaa\n"
+            "        Имя: Проект\n"
+            "        ПолеРодителя: Проект\n"
+            "    -\n"
+            "        Ид: bbb\n"
+            "        Имя: Исполнитель\n"
+            "        ПолеРодителя: Исполнитель\n"
+            "Реквизиты:\n    - Имя: Наименование\n"
+        ),
+    )
+    found = form_info.find_object(str(tmp_path), "Задачи")
+    result = form_info.build_result(found)
+
+    assert result["is_hierarchical"] is False
+    assert result["additional_hierarchies"] == [
+        {"name": "Проект", "field": "Проект"},
+        {"name": "Исполнитель", "field": "Исполнитель"},
+    ]
+
+
+def test_build_result_non_hierarchical_catalog(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+    write_file(
+        subsystem_dir / "Товары.yaml",
+        "Имя: Товары\nВидЭлемента: Справочник\nРеквизиты:\n    - Имя: Наименование\n",
+    )
+    found = form_info.find_object(str(tmp_path), "Товары")
+    result = form_info.build_result(found)
+
+    assert result["is_hierarchical"] is False
+    assert result["additional_hierarchies"] == []
 
 
 def test_script_entrypoint_prints_error_and_exits_when_object_not_found(tmp_path: Path, monkeypatch, capsys) -> None:

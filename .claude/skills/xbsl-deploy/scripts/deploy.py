@@ -102,8 +102,11 @@ def wait_stable(app_id: str, timeout: int) -> str:
     sys.exit(1)
 
 
-def check_deploy_errors(app_id: str, app_data: dict) -> None:
-    """Проверить ошибки применения проекта после достижения Running."""
+def check_deploy_errors(app_id: str, app_data: dict, since: float = 0.0) -> None:
+    """Проверить ошибки применения проекта после достижения Running.
+
+    since — unix-timestamp начала деплоя; показываем только задачи не старше него.
+    """
     app_error = app_data.get('error', '')
     if app_error:
         print(f'\n⚠ Приложение сообщает об ошибке:\n  {app_error}')
@@ -111,7 +114,13 @@ def check_deploy_errors(app_id: str, app_data: dict) -> None:
     try:
         tasks = api('list-app-tasks', '--app-id', app_id)
         if isinstance(tasks, list):
-            error_tasks = [t for t in tasks if t.get('status') == 'Error']
+            error_tasks = [t for t in tasks if t.get('status') in ('Error', 'Failed')]
+            if since:
+                import datetime as _dt
+                error_tasks = [
+                    t for t in error_tasks
+                    if _parse_iso(t.get('start-date', '')) >= since
+                ]
             for t in error_tasks:
                 msg = t.get('error-message', '(нет описания)')
                 op = t.get('operation-type', '')
@@ -122,6 +131,16 @@ def check_deploy_errors(app_id: str, app_data: dict) -> None:
                     print(f'  (операция: {op}, задача: {tid})')
     except Exception:
         pass  # не блокируем успешный деплой если задачи недоступны
+
+
+def _parse_iso(s: str) -> float:
+    """Преобразовать ISO 8601 строку в unix-timestamp. Возвращает 0.0 при ошибке."""
+    try:
+        import datetime
+        dt = datetime.datetime.fromisoformat(s.replace('Z', '+00:00'))
+        return dt.timestamp()
+    except Exception:
+        return 0.0
 
 
 def get_last_build_version(project_id: str) -> str:
@@ -190,6 +209,7 @@ def main() -> None:
     # ── Путь 2: из git-ветки ──────────────────────────────────────────────────
     if args.from_branch:
         print('▶ Загружаем изменения из git-ветки...')
+        deploy_start = time.time()
         api('sync-branch', '--app-id', app_id, '--branch-id', args.branch_id)
         print('  ожидаем завершения синхронизации...')
         stable = wait_stable(app_id, START_TIMEOUT)
@@ -200,7 +220,7 @@ def main() -> None:
             poll_status(app_id, 'Running', START_TIMEOUT)
         app_data = api('get-app', '--app-id', app_id)
         uri = app_data.get('uri', '')
-        check_deploy_errors(app_id, app_data)
+        check_deploy_errors(app_id, app_data, since=deploy_start)
         print(f'\n✓ Деплой завершён. Приложение доступно: {uri}')
         return
 
@@ -257,6 +277,7 @@ def main() -> None:
 
     # ── Шаг 4: переключить приложение на новую сборку ────────────────────────
     print('▶ Переключаем приложение на новую сборку...')
+    deploy_start = time.time()
     api('project-update', '--app-id', app_id, '--version-id', image_id)
 
     # project-update может сам запустить перезапуск (Updating → Running).
@@ -280,7 +301,7 @@ def main() -> None:
     # ── Готово ────────────────────────────────────────────────────────────────
     app_data = api('get-app', '--app-id', app_id)
     uri = app_data.get('uri', '')
-    check_deploy_errors(app_id, app_data)
+    check_deploy_errors(app_id, app_data, since=deploy_start)
     print(f'\n✓ Деплой завершён. Приложение доступно: {uri}')
 
 

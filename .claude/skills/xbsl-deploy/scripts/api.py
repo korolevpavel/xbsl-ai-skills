@@ -626,8 +626,11 @@ def main():
         if not args.app_id:
             print(json.dumps({"error": "--app-id required"}, ensure_ascii=False))
             sys.exit(1)
-        url = f"{base}/console/api/v2/tasks/applications?application-id={args.app_id}"
+        url = f"{base}/console/api/v2/tasks/application-tasks"
         result = api_request("GET", url, token)
+        # Фильтруем по application-id на клиенте (API не поддерживает query-фильтр)
+        if isinstance(result, list):
+            result = [t for t in result if t.get("application-id") == args.app_id]
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
     else:

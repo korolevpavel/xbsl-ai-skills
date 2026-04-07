@@ -316,6 +316,7 @@ def test_main_source_deploy_restarts_manually_when_needed(deploy, monkeypatch, c
             "stop-app": {},
             "start-app": {},
             "get-app": {"uri": "https://demo.example.com"},
+            "list-app-tasks": [],
         }[action],
     )
     monkeypatch.setattr(
@@ -385,6 +386,7 @@ def test_main_source_deploy_restarts_manually_when_needed(deploy, monkeypatch, c
         ("api", "stop-app", ["--app-id", "app-1"]),
         ("api", "start-app", ["--app-id", "app-1"]),
         ("api", "get-app", ["--app-id", "app-1"]),
+        ("api", "list-app-tasks", ["--app-id", "app-1"]),
     ]
     assert poll_calls == [
         ("app-1", "Stopped", deploy.STOP_TIMEOUT),
@@ -407,6 +409,7 @@ def test_main_source_deploy_skips_restart_when_platform_already_running(deploy, 
             "upload-build": {"assembly-id": "image-2"},
             "project-update": {},
             "get-app": {"uri": "https://running.example.com"},
+            "list-app-tasks": [],
         }[action],
     )
     monkeypatch.setattr(deploy, "wait_stable", lambda _app_id, _timeout: "Running")
@@ -423,6 +426,7 @@ def test_main_source_deploy_skips_restart_when_platform_already_running(deploy, 
         ("upload-build", ["--file", str(tmp_path / "demo.xasm"), "--project-id", "project-1"]),
         ("project-update", ["--app-id", "app-1", "--version-id", "image-2"]),
         ("get-app", ["--app-id", "app-1"]),
+        ("list-app-tasks", ["--app-id", "app-1"]),
     ]
     assert "Приложение уже запущено платформой после обновления" in captured.out
 
@@ -442,6 +446,7 @@ def test_main_source_deploy_restarts_without_stop_when_already_stopped(deploy, m
             "project-update": {},
             "start-app": {},
             "get-app": {"uri": "https://stopped.example.com"},
+            "list-app-tasks": [],
         }[action],
     )
     monkeypatch.setattr(deploy, "wait_stable", lambda _app_id, _timeout: "Stopped")
@@ -463,6 +468,7 @@ def test_main_source_deploy_restarts_without_stop_when_already_stopped(deploy, m
         ("project-update", ["--app-id", "app-1", "--version-id", "image-3"]),
         ("start-app", ["--app-id", "app-1"]),
         ("get-app", ["--app-id", "app-1"]),
+        ("list-app-tasks", ["--app-id", "app-1"]),
     ]
     assert poll_calls == [("app-1", "Running", deploy.START_TIMEOUT)]
     assert "✓ Деплой завершён. Приложение доступно: https://stopped.example.com" in captured.out
@@ -504,6 +510,7 @@ def test_main_branch_deploy_restarts_when_not_running(deploy, monkeypatch, capsy
             "sync-branch": {},
             "start-app": {},
             "get-app": {"uri": "https://branch.example.com"},
+            "list-app-tasks": [],
         }[action],
     )
     monkeypatch.setattr(deploy, "wait_stable", lambda _app_id, _timeout: "Stopped")
@@ -519,6 +526,7 @@ def test_main_branch_deploy_restarts_when_not_running(deploy, monkeypatch, capsy
         ("sync-branch", ["--app-id", "app-1", "--branch-id", "branch-1"]),
         ("start-app", ["--app-id", "app-1"]),
         ("get-app", ["--app-id", "app-1"]),
+        ("list-app-tasks", ["--app-id", "app-1"]),
     ]
     assert poll_calls == [("app-1", "Running", deploy.START_TIMEOUT)]
     assert "✓ Деплой завершён. Приложение доступно: https://branch.example.com" in captured.out
@@ -535,6 +543,7 @@ def test_main_branch_deploy_skips_restart_when_already_running(deploy, monkeypat
         lambda action, *extra_args: calls.append((action, list(extra_args))) or {
             "sync-branch": {},
             "get-app": {"uri": "https://branch-running.example.com"},
+            "list-app-tasks": [],
         }[action],
     )
     monkeypatch.setattr(deploy, "wait_stable", lambda _app_id, _timeout: "Running")
@@ -545,6 +554,7 @@ def test_main_branch_deploy_skips_restart_when_already_running(deploy, monkeypat
     assert calls == [
         ("sync-branch", ["--app-id", "app-1", "--branch-id", "branch-1"]),
         ("get-app", ["--app-id", "app-1"]),
+        ("list-app-tasks", ["--app-id", "app-1"]),
     ]
     assert "✓ Деплой завершён. Приложение доступно: https://branch-running.example.com" in captured.out
 
@@ -559,6 +569,7 @@ def test_script_entrypoint_executes_main(monkeypatch, capsys) -> None:
             json.dumps({}),
             json.dumps({"status": "Running"}),
             json.dumps({"uri": "https://entrypoint.example.com"}),
+            json.dumps([]),
         ]
     )
 
@@ -579,5 +590,6 @@ def test_script_entrypoint_executes_main(monkeypatch, capsys) -> None:
         [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "sync-branch", "--app-id", "app-1", "--branch-id", "branch-1"],
         [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "get-app", "--app-id", "app-1"],
         [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "get-app", "--app-id", "app-1"],
+        [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "list-app-tasks", "--app-id", "app-1"],
     ]
     assert "https://entrypoint.example.com" in capsys.readouterr().out

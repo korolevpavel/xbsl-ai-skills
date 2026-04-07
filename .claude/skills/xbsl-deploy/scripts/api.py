@@ -29,6 +29,7 @@ HTTP-клиент для Console API v2 (1С:Предприятие.Элемен
     python3 api.py --action create-dump --app-id <id>
     python3 api.py --action get-dump --app-id <id> --dump-id <id>
     python3 api.py --action merge-branch --branch-id <id>
+    python3 api.py --action list-app-tasks --app-id <id>
 
 Env vars (приоритет над флагами):
     ELEMENT_BASE_URL       — базовый URL (например https://1cmycloud.com)
@@ -618,6 +619,14 @@ def main():
             print(json.dumps({"error": "--app-id and --dump-id required"}, ensure_ascii=False))
             sys.exit(1)
         url = f"{base}/console/api/v2/applications/{args.app_id}/dumps/{args.dump_id}"
+        result = api_request("GET", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "list-app-tasks":
+        if not args.app_id:
+            print(json.dumps({"error": "--app-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/tasks/applications?application-id={args.app_id}"
         result = api_request("GET", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 

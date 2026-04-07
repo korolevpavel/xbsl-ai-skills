@@ -102,6 +102,28 @@ def wait_stable(app_id: str, timeout: int) -> str:
     sys.exit(1)
 
 
+def check_deploy_errors(app_id: str, app_data: dict) -> None:
+    """Проверить ошибки применения проекта после достижения Running."""
+    app_error = app_data.get('error', '')
+    if app_error:
+        print(f'\n⚠ Приложение сообщает об ошибке:\n  {app_error}')
+
+    try:
+        tasks = api('list-app-tasks', '--app-id', app_id)
+        if isinstance(tasks, list):
+            error_tasks = [t for t in tasks if t.get('status') == 'Error']
+            for t in error_tasks:
+                msg = t.get('error-message', '(нет описания)')
+                op = t.get('operation-type', '')
+                tid = t.get('id', '')
+                print(f'\n⚠ Платформа зафиксировала ошибку применения проекта:')
+                print(f'  {msg}')
+                if op or tid:
+                    print(f'  (операция: {op}, задача: {tid})')
+    except Exception:
+        pass  # не блокируем успешный деплой если задачи недоступны
+
+
 def get_last_build_version(project_id: str) -> str:
     """Получить версию последней сборки проекта (для автоинкремента)."""
     try:
@@ -178,6 +200,7 @@ def main() -> None:
             poll_status(app_id, 'Running', START_TIMEOUT)
         app_data = api('get-app', '--app-id', app_id)
         uri = app_data.get('uri', '')
+        check_deploy_errors(app_id, app_data)
         print(f'\n✓ Деплой завершён. Приложение доступно: {uri}')
         return
 
@@ -257,6 +280,7 @@ def main() -> None:
     # ── Готово ────────────────────────────────────────────────────────────────
     app_data = api('get-app', '--app-id', app_id)
     uri = app_data.get('uri', '')
+    check_deploy_errors(app_id, app_data)
     print(f'\n✓ Деплой завершён. Приложение доступно: {uri}')
 
 

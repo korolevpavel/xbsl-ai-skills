@@ -28,7 +28,7 @@ import sys
 import zipfile
 
 # Расширения файлов, включаемых в сборку
-INCLUDE_EXTENSIONS = {'.yaml', '.xbsl', '.md', '.txt'}
+INCLUDE_EXTENSIONS = {'.yaml', '.xbsl', '.xbql', '.md', '.txt'}
 
 # Каталоги и файлы, исключаемые из сборки
 EXCLUDE_DIRS = {'.claude', '.git', '__pycache__', 'node_modules', '.github'}

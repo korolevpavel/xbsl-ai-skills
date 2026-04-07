@@ -254,8 +254,15 @@ def normalize_fields(obj_type: str, fields: list[dict]) -> list[dict]:
     return normalized_fields
 
 
-def build_existing_forms(object_path: str, object_file: str) -> dict[str, str | None]:
+def build_existing_forms(object_path: str, object_file: str, obj_type: str) -> dict[str, str | None]:
     object_stem = os.path.splitext(object_file)[0]
+
+    if obj_type == "Отчет":
+        form_report_file = f"{object_stem}ФормаОтчета.yaml"
+        return {
+            "ФормаОтчета": form_report_file if os.path.isfile(os.path.join(object_path, form_report_file)) else None,
+        }
+
     form_obj_file = f"{object_stem}ФормаОбъекта.yaml"
     form_list_file = f"{object_stem}ФормаСписка.yaml"
 
@@ -275,6 +282,19 @@ def build_result(found: ObjectMatch) -> dict:
     tc_count = len(tc_list)
     is_hierarchical = get_yaml_field(found.object_text, "Иерархический") == "Истина"
 
+    is_report = obj_type == "Отчет"
+    if is_report:
+        report_params_raw = parse_list_section(found.object_text, "ПараметрыЗапроса")
+        report_params = [{"name": p.get("Имя", "?"), "type": p.get("Тип", "")} for p in report_params_raw]
+        data_source_kind = get_yaml_field(found.object_text, "ВидИсточникаДанных")
+        data_source = get_yaml_field(found.object_text, "ИсточникДанных")
+        layout = "report"
+    else:
+        report_params = []
+        data_source_kind = None
+        data_source = None
+        layout = suggest_layout(field_count, tc_count)
+
     return {
         "object_path": found.object_path,
         "object_file": found.object_file,
@@ -284,13 +304,16 @@ def build_result(found: ObjectMatch) -> dict:
         "tc_count": tc_count,
         "fields": [{"name": field.get("Имя", "?"), "type": field.get("Тип", "")} for field in fields],
         "tc": [{"name": tc.get("Имя", "?")} for tc in tc_list],
-        "suggested_layout": suggest_layout(field_count, tc_count),
-        "existing_forms": build_existing_forms(found.object_path, found.object_file),
+        "suggested_layout": layout,
+        "existing_forms": build_existing_forms(found.object_path, found.object_file, obj_type),
         "is_hierarchical": is_hierarchical,
         "additional_hierarchies": [
             {"name": h.get("Имя", ""), "field": h.get("ПолеРодителя", "")}
             for h in additional_hierarchies
         ],
+        "report_params": report_params,
+        "data_source_kind": data_source_kind,
+        "data_source": data_source,
     }
 
 

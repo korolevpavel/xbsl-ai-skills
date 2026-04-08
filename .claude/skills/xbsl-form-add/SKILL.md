@@ -31,10 +31,10 @@ description: >
 - При создании `ФормаОтчета` → прочитай `references/ФормаОтчета.md`
 - Читай `references/elements.md` **только если** нужны нестандартные элементы: вложенные файлы, изображения, сворачиваемые блоки, статусы с цветом, надписи/labels, кнопки действий, вкладки (Страницы) — иначе пропусти
 
-**Шаг 2 — Анализ объекта.** Запусти скрипт:
+**Шаг 2 — Анализ объекта.** Вызови скилл `xbsl-form-info`:
 
 ```
-python3 .claude/skills/xbsl-form-add/scripts/form_info.py --name <ИмяОбъекта> --root .
+python3 .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
 ```
 
 Из результата возьми:

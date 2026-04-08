@@ -11,7 +11,7 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-form-add/scripts/form_info.py"
+SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-form-info/scripts/form_info.py"
 
 
 def load_form_info_module():

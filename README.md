@@ -26,7 +26,9 @@
 | [`xbsl-subsystem-add`](.claude/skills/xbsl-subsystem-add/SKILL.md) | Добавление новой подсистемы в существующий проект: создаёт папку и Подсистема.yaml |
 | [`xbsl-explore`](.claude/skills/xbsl-explore/SKILL.md) | Разведка структуры проекта: находит проекты, подсистемы, объекты, проверяет конфликты имён |
 | [`xbsl-meta-add`](.claude/skills/xbsl-meta-add/SKILL.md) | Создание объекта конфигурации (Справочник, Документ, Перечисление и др.) по описанию |
+| [`xbsl-form-info`](.claude/skills/xbsl-form-info/SKILL.md) | Анализ объекта конфигурации: возвращает реквизиты, ТЧ, пространство имён и существующие формы |
 | [`xbsl-form-add`](.claude/skills/xbsl-form-add/SKILL.md) | Создание формы интерфейса (ФормаОбъекта и/или ФормаСписка) для объекта конфигурации |
+| [`xbsl-file-add`](.claude/skills/xbsl-file-add/SKILL.md) | Добавление файловых вложений (СписокФайлов) к объекту конфигурации: стандартные вложения, одиночный файл, категории |
 | [`xbsl-deploy`](.claude/skills/xbsl-deploy/SKILL.md) | Управление приложениями на 1С:Предприятие.Элемент: деплой, запуск, остановка, статус, merge |
 | [`xbsl-pattern-register`](.claude/skills/xbsl-pattern-register/SKILL.md) | Движения по регистру накопления (приход, расход, обороты, контроль остатков) и регистру сведений (запись, удаление, срез последних) |
 
@@ -51,7 +53,7 @@
 ## Требования
 
 - [Claude Code](https://claude.ai/code) или другой AI-агент, поддерживающий скиллы
-- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid`, `xbsl-form-add`, `xbsl-deploy` и `xbsl-pattern-register`
+- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-file-add`, `xbsl-deploy` и `xbsl-pattern-register`
 
 ## Установка
 
@@ -81,6 +83,10 @@ cp -r xbsl-ai-skills/.claude/skills/ /путь/к/твоему/проекту/.c
 
 ```
 Добавь движения документа РасходнаяНакладная в регистр ТоварыНаСкладах
+```
+
+```
+Добавь к справочнику Контрагенты возможность прикреплять файлы
 ```
 
 ## Структура проекта 1С:Элемент
@@ -128,6 +134,7 @@ pytest
 # Тесты одного скилла
 pytest tests/skills/xbsl_deploy/
 pytest tests/skills/xbsl_explore/
+pytest tests/skills/xbsl_form_info/
 pytest tests/skills/xbsl_form_add/
 pytest tests/skills/xbsl_pattern_register/
 

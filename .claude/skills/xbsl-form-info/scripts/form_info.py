@@ -5,7 +5,7 @@
 наличие уже созданных файлов форм.
 
 Использование:
-    python3 .claude/skills/xbsl-form-add/scripts/form_info.py --name <ИмяОбъекта> [--root .]
+    python3 .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> [--root .]
 
 Пример вывода:
 {

@@ -17,8 +17,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     xbsl-subsystem-add/  # добавление подсистемы в существующий проект
     xbsl-meta-add/       # создание объектов конфигурации
         references/      # спецификации по типам объектов (один .md на тип)
+    xbsl-form-info/      # анализ объекта: реквизиты, ТЧ, формы, namespace
+        scripts/form_info.py
     xbsl-form-add/       # создание форм интерфейса (КомпонентИнтерфейса)
         references/      # спецификации ФормаОбъекта, ФормаСписка, elements
+    xbsl-file-add/       # добавление файловых вложений (СписокФайлов)
+        references/      # паттерны P1–P4 вложений
     xbsl-deploy/         # деплой на 1С:Предприятие.Элемент
         scripts/api.py   # HTTP-клиент Console API v2
         references/endpoints.md
@@ -28,6 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
         references/движения-рс.md # шаблоны кода паттернов C1–C4 (РегистрСведений)
         references/теория.md      # механика платформы
 tools/                   # материалы и инструменты (в .gitignore)
+scripts/build_site.py    # сборка GitHub Pages из README и SKILL.md файлов
 ```
 
 ## Скиллы
@@ -50,8 +55,14 @@ tools/                   # материалы и инструменты (в .git
 ### xbsl-deploy
 Управляет приложениями на платформе 1С:Предприятие.Элемент через Console API v2. `scripts/api.py` — самодостаточный HTTP-клиент (только stdlib Python). Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
 
+### xbsl-form-info
+Анализирует существующий объект конфигурации и возвращает JSON: `object_path`, `fields`, `tc`, `namespace`, `suggested_layout`, `existing_forms`. **Вызывается перед `xbsl-form-add` и `xbsl-file-add`** для получения структуры объекта.
+
 ### xbsl-form-add
-Создаёт форму интерфейса (`КомпонентИнтерфейса`) — `ФормаОбъекта` и/или `ФормаСписка`. Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/ФормаОбъекта.md` или `references/ФормаСписка.md`. `scripts/form_info.py` — анализирует объект конфигурации и возвращает JSON с `object_path`, `fields`, `tc`, `namespace`, `suggested_layout`, `existing_forms`.
+Создаёт форму интерфейса (`КомпонентИнтерфейса`) — `ФормаОбъекта` и/или `ФормаСписка`. Оркестрирует xbsl-explore, xbsl-form-info и xbsl-uuid. Читает спецификацию из `references/ФормаОбъекта.md` или `references/ФормаСписка.md`.
+
+### xbsl-file-add
+Добавляет файловые вложения (`СписокФайлов`) к существующему объекту. Паттерны: P1 — стандартные вложения через встроенный реквизит `Файлы`; P2 — одиночный файл (`ДвоичныйОбъект.Ссылка?`); P3 — категория файлов (`Массив<ДвоичныйОбъект.Ссылка>` с лимитами); P4 — несколько категорий. Оркестрирует xbsl-form-info и xbsl-uuid.
 
 ### xbsl-pattern-register
 Реализует движения по регистру накопления и регистру сведений в `.xbsl`. Не создаёт объекты — только пишет код обработчика. Алгоритм: запустить `scripts/extract_meta.py` для регистра и документа → выбрать паттерн → дополнить существующий `.xbsl` файл. Паттерны РН: A1 (приход), A2 (расход), A3 (обороты), A4 (отмена проведения), A5 (два регистра), B (контроль остатков). Паттерны РС: C1 (запись/обновление), C2 (добавить без замены), C3 (удалить по фильтру), C4 (срез последних).
@@ -82,14 +93,19 @@ pytest
 # Запустить тесты одного скилла
 pytest tests/skills/xbsl_deploy/
 pytest tests/skills/xbsl_explore/
+pytest tests/skills/xbsl_form_info/
 pytest tests/skills/xbsl_form_add/
 pytest tests/skills/xbsl_pattern_register/
 
 # Запустить один тестовый файл
 pytest tests/skills/xbsl_deploy/test_api.py
 
-# Покрытие кода (только xbsl-deploy и xbsl-form-add)
+# Покрытие кода (источник: scripts/ в xbsl-deploy и xbsl-form-add, настроено в pyproject.toml)
 coverage run -m pytest && coverage report
+
+# Сборка GitHub Pages локально
+pip install -r requirements-site.txt
+python scripts/build_site.py
 
 # Установить dev-зависимости (pytest, coverage)
 pip install -r requirements-dev.txt

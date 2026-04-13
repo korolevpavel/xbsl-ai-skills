@@ -97,24 +97,78 @@ def make_patterns(old_name: str) -> list[tuple[re.Pattern, str]]:
     ]
 
 
-def apply_substitutions(content: str, old_name: str, new_name: str) -> str:
-    """Применяет все замены к тексту, возвращает изменённый текст."""
+def apply_substitutions(
+    content: str,
+    old_name: str,
+    new_name: str,
+    new_presentation: str | None = None,
+    old_presentation: str | None = None,
+    replace_labels: bool = False,
+) -> str:
+    """Применяет все замены к тексту, возвращает изменённый текст.
+
+    replace_labels=True только для файлов объекта и его форм (файлы из списка переименований).
+    Для всех остальных файлов (Подсистема.yaml, документы и т.д.) поля Заголовок/Представление
+    не трогаются.
+    """
     escaped = re.escape(old_name)
-    # Составные имена — сначала, чтобы не мешать замене самостоятельного слова
-    content = re.sub(
-        r"\b" + escaped + r"(?=[А-ЯЁA-Z])",
-        new_name,
-        content,
-        flags=re.UNICODE,
-    )
-    # Самостоятельное слово
-    content = re.sub(
-        r"\b" + escaped + r"\b",
-        new_name,
-        content,
-        flags=re.UNICODE,
-    )
+    compound_re = re.compile(r"\b" + escaped + r"(?=[А-ЯЁA-Z])", re.UNICODE)
+    standalone_re = re.compile(r"\b" + escaped + r"\b", re.UNICODE)
+
+    # Базовая замена — построчно, пропуская строки Представление:/Заголовок:
+    # (их обрабатывает _replace_label_fields — только для файлов семейства объекта)
+    lines = content.splitlines(keepends=True)
+    result: list[str] = []
+    for line in lines:
+        if _LABEL_LINE_RE.match(line):
+            result.append(line)
+        else:
+            line = compound_re.sub(new_name, line)
+            line = standalone_re.sub(new_name, line)
+            result.append(line)
+    content = "".join(result)
+
+    # Поля Представление/Заголовок — только для файла объекта и его форм
+    if replace_labels:
+        content = _replace_label_fields(content, old_name, new_presentation or new_name, old_presentation)
     return content
+
+
+_LABEL_FIELD_RE = re.compile(
+    r"^(\s*(?:Представление|Заголовок)\s*:\s*)(.+)$",
+    re.MULTILINE | re.UNICODE,
+)
+
+# Строки, начинающиеся с Представление: или Заголовок: — не трогаются базовой заменой
+_LABEL_LINE_RE = re.compile(
+    r"^\s*(?:Представление|Заголовок)\s*:",
+    re.UNICODE,
+)
+
+
+def _replace_label_fields(
+    content: str,
+    old_name: str,
+    new_presentation: str,
+    old_presentation: str | None = None,
+) -> str:
+    """
+    Заменяет значения полей Представление/Заголовок если:
+    - значение является «корнем» старого имени (old_name начинается с этого значения, минимум 3 символа), или
+    - значение совпадает с явно заданным old_presentation.
+    Использует new_presentation как новое значение (может содержать пробелы).
+    """
+    def replacer(m: re.Match) -> str:
+        prefix, value = m.group(1), m.group(2).strip()
+        if value == new_presentation:
+            return m.group(0)
+        if old_presentation and value == old_presentation:
+            return prefix + new_presentation
+        if len(value) >= 3 and old_name.startswith(value):
+            return prefix + new_presentation
+        return m.group(0)
+
+    return _LABEL_FIELD_RE.sub(replacer, content)
 
 
 def changed_lines(original: str, modified: str, filepath: str) -> list[str]:
@@ -169,42 +223,79 @@ def files_to_rename(project_files: list[str], old_name: str, new_name: str) -> l
 # Поиск объекта
 # ---------------------------------------------------------------------------
 
-def find_object_file(project_files: list[str], old_name: str) -> str | None:
-    """Находит файл объекта по полю Имя: {old_name}."""
+def find_object_files(project_files: list[str], old_name: str) -> list[tuple[str, str]]:
+    """Находит все YAML-файлы с полем Имя: {old_name}.
+
+    Возвращает список (path, вид_элемента).
+    """
+    result: list[tuple[str, str]] = []
     for path in project_files:
         if not path.endswith(YAML_EXT):
             continue
         text = read_text(path)
         if text and get_yaml_field(text, "Имя") == old_name:
-            return path
-    return None
+            kind = get_yaml_field(text, "ВидЭлемента") or "?"
+            result.append((path, kind))
+    return result
 
 
 # ---------------------------------------------------------------------------
 # Основная логика
 # ---------------------------------------------------------------------------
 
+def object_family(object_file: str, old_name: str) -> set[str]:
+    """Возвращает множество путей файлов семейства объекта: сам файл + его .xbsl и формы.
+
+    Семейство определяется по директории и имени: все файлы в той же папке,
+    чьё basename начинается с old_name (учитывает СтароеИмя.xbsl, СтароеИмяФорма*.yaml и т.д.).
+    """
+    obj_dir = os.path.dirname(object_file)
+    prefix = old_name.lower()
+    family: set[str] = set()
+    try:
+        for entry in os.scandir(obj_dir):
+            if entry.name.lower().startswith(prefix) and (
+                entry.name.endswith(YAML_EXT) or entry.name.endswith(XBSL_EXT)
+            ):
+                family.add(entry.path)
+    except OSError:
+        pass
+    family.add(object_file)
+    return family
+
+
 def build_plan(
     project_files: list[str],
     old_name: str,
     new_name: str,
+    new_presentation: str | None = None,
+    old_presentation: str | None = None,
+    object_file: str | None = None,
 ) -> tuple[list[tuple[str, str, str]], list[tuple[str, str]]]:
     """
     Возвращает:
     - text_changes: список (path, original, modified) для файлов с заменами в тексте
     - renames: список (old_path, new_path) для файлов на переименование
+
+    object_file — путь к файлу переименуемого объекта (из find_object_files).
+    replace_labels=True только для файлов семейства этого объекта.
     """
+    renames = files_to_rename(project_files, old_name, new_name)
+
+    # Семейство объекта — файлы, в которых меняются Представление/Заголовок
+    label_files: set[str] = object_family(object_file, old_name) if object_file else set()
+
     text_changes: list[tuple[str, str, str]] = []
 
     for path in project_files:
         text = read_text(path)
         if text is None:
             continue
-        modified = apply_substitutions(text, old_name, new_name)
+        replace_labels = path in label_files
+        modified = apply_substitutions(text, old_name, new_name, new_presentation, old_presentation, replace_labels)
         if modified != text:
             text_changes.append((path, text, modified))
 
-    renames = files_to_rename(project_files, old_name, new_name)
     return text_changes, renames
 
 
@@ -259,7 +350,26 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--old-name", required=True, help="Текущее имя объекта")
     parser.add_argument("--new-name", required=True, help="Новое имя объекта")
+    parser.add_argument(
+        "--new-presentation",
+        default=None,
+        help="Человекочитаемое представление (Представление/Заголовок). "
+             "Если не задано — используется --new-name.",
+    )
+    parser.add_argument(
+        "--old-presentation",
+        default=None,
+        help="Старое представление объекта (Представление/Заголовок). "
+             "Используется для замены значений в полях Заголовок/Представление, "
+             "которые не совпадают с техническим именем (напр. «Место хранения» для МестаХранения).",
+    )
     parser.add_argument("--root", default=".", help="Корневая папка поиска (по умолчанию: .)")
+    parser.add_argument(
+        "--object-file",
+        default=None,
+        help="Путь к файлу переименуемого объекта (относительно --root или абсолютный). "
+             "Обязателен если в проекте несколько объектов с одинаковым именем.",
+    )
     parser.add_argument(
         "--apply",
         action="store_true",
@@ -273,6 +383,8 @@ def main() -> None:
     root = os.path.abspath(args.root)
     old_name: str = args.old_name
     new_name: str = args.new_name
+    new_presentation: str = args.new_presentation if args.new_presentation else new_name
+    old_presentation: str | None = args.old_presentation
 
     project_roots = find_project_roots(root)
     if not project_roots:
@@ -284,16 +396,34 @@ def main() -> None:
     for proj_root in project_roots:
         all_files.extend(collect_project_files(proj_root))
 
-    # Проверяем что объект существует
-    object_file = find_object_file(all_files, old_name)
-    if object_file is None:
-        print(f"Ошибка: объект с именем «{old_name}» не найден в проектах.", file=sys.stderr)
-        sys.exit(1)
+    # Определяем файл объекта
+    if args.object_file:
+        object_file = os.path.abspath(os.path.join(root, args.object_file))
+        if not os.path.isfile(object_file):
+            print(f"Ошибка: файл «{args.object_file}» не найден.", file=sys.stderr)
+            sys.exit(1)
+    else:
+        matches = find_object_files(all_files, old_name)
+        if not matches:
+            print(f"Ошибка: объект с именем «{old_name}» не найден в проектах.", file=sys.stderr)
+            sys.exit(1)
+        if len(matches) > 1:
+            print(f"Найдено несколько объектов с именем «{old_name}»:", file=sys.stderr)
+            for path, kind in matches:
+                print(f"  [{kind}]  {os.path.relpath(path, root)}", file=sys.stderr)
+            print(
+                f"\nУкажите нужный объект через --object-file <путь>",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+        object_file = matches[0][0]
 
     print(f"Объект: {os.path.relpath(object_file, root)}")
     print(f"Переименование: «{old_name}» → «{new_name}»")
+    if new_presentation != new_name:
+        print(f"Представление: «{new_presentation}»")
 
-    text_changes, renames = build_plan(all_files, old_name, new_name)
+    text_changes, renames = build_plan(all_files, old_name, new_name, new_presentation, old_presentation, object_file)
 
     print_plan(text_changes, renames, root)
 

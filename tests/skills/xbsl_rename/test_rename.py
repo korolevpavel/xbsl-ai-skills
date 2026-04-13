@@ -151,7 +151,9 @@ def test_find_object_file_skips_unreadable_yaml(rename, tmp_path: Path, monkeypa
 
     project_files = rename.collect_project_files(str(project_dir))
 
-    assert rename.find_object_file(project_files, "Номенклатура") == str(target_path)
+    matches = rename.find_object_files(project_files, "Номенклатура")
+    assert len(matches) == 1
+    assert matches[0][0] == str(target_path)
 
 
 def test_build_plan_collects_text_changes_and_renames(rename, tmp_path: Path) -> None:

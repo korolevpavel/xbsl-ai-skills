@@ -189,10 +189,26 @@ def test_build_row_yaml_switches_between_photo_and_standard_cards(generate) -> N
         None,
         [{"name": "Статус", "type": "Строка"}],
     )
+    with_photo_document = generate.build_row_yaml(
+        "uid-row",
+        "Задачи",
+        "Acme::CRM::Основное",
+        "Название",
+        "Фото",
+        [
+            {"name": "Статус", "type": "Строка"},
+            {"name": "Дата", "type": "Дата"},
+        ],
+        "Документ",
+    )
 
     assert "Тип: ПроизвольнаяКарточка" in with_photo
     assert "Изображение: =ДанныеСтроки.Данные.Фото ?? Ресурс{Аккаунт.svg}.Ссылка" in with_photo
     assert "Значение: =ДанныеСтроки.Данные.Название" in with_photo
+    assert "Значение: =ДанныеСтроки.Данные.Статус" not in with_photo
+    assert "Изображение: =ДанныеСтроки.Данные.Фото ?? Ресурс{Файл.svg}.Ссылка" in with_photo_document
+    assert "Значение: =ДанныеСтроки.Данные.Статус" in with_photo_document
+    assert 'Значение: =ДанныеСтроки.Данные.Дата.Представление("дд ММММ гггг ЧЧ:мм")' in with_photo_document
     assert "Тип: СтандартнаяКарточка" in without_photo
     assert "Заголовок: =ДанныеСтроки.Данные.Название" in without_photo
     assert "Содержимое: =ДанныеСтроки.Данные.Статус" in without_photo
@@ -364,8 +380,9 @@ def test_main_dry_run_prints_summary_and_does_not_write_files(generate, tmp_path
 
     assert "[DRY-RUN] xbsl-form-cards для Задачи" in captured.out
     assert "Заголовок: Название" in captured.out
-    assert "Содержимое: Автор, ДатаПубликации" in captured.out
     assert "Фото: Фото  → ПроизвольнаяКарточка, МинимальнаяШирина: 250" in captured.out
+    assert "Содержимое:" not in captured.out
+    assert "Под фото:" not in captured.out
     assert "⚠️  Форма списка уже существует: СтараяФормаСписка — будет перезаписана" in captured.out
     assert str(object_path / "ЗадачиФормаСписка.yaml") in captured.out
     assert str(object_path / "СтрокаСпискаЗадачи.yaml") in captured.out
@@ -373,6 +390,35 @@ def test_main_dry_run_prints_summary_and_does_not_write_files(generate, tmp_path
     assert object_yaml.read_text(encoding="utf-8") == original_text
     assert not (object_path / "ЗадачиФормаСписка.yaml").exists()
     assert not (object_path / "СтрокаСпискаЗадачи.yaml").exists()
+
+
+def test_main_dry_run_prints_photo_extra_for_non_catalog_object(generate, tmp_path: Path, monkeypatch, capsys) -> None:
+    object_path = tmp_path / "Demo" / "TestApp" / "Продажи"
+    object_path.mkdir(parents=True)
+    write_file(object_path / "Задачи.yaml", "Имя: Задачи\nОбластьВидимости: ВПодсистеме\n")
+
+    monkeypatch.setattr(
+        generate,
+        "get_form_info",
+        lambda _object_name, _root: make_form_info(
+            "Задачи",
+            object_path,
+            [
+                {"name": "Название", "type": "Строка"},
+                {"name": "Фото", "type": "ДвоичныйОбъект.Ссылка?"},
+                {"name": "Автор", "type": "Пользователи.Ссылка?"},
+                {"name": "ДатаПубликации", "type": "Дата"},
+            ],
+            object_type="Документ",
+        ),
+    )
+
+    generate.main(["--object", "Задачи", "--root", str(tmp_path)])
+
+    captured = capsys.readouterr()
+
+    assert "Фото: Фото  → ПроизвольнаяКарточка, МинимальнаяШирина: 250" in captured.out
+    assert "Под фото: Автор, ДатаПубликации" in captured.out
 
 
 def test_main_apply_writes_files_and_updates_object_yaml(generate, tmp_path: Path, monkeypatch, capsys) -> None:
@@ -446,4 +492,3 @@ def test_main_exits_when_string_title_field_is_missing(generate, tmp_path: Path,
 
     assert exc_info.value.code == 1
     assert "Ошибка: не найдено строковое поле для заголовка карточки в объекте Задачи." in captured.err
-

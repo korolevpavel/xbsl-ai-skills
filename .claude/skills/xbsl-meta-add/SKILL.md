@@ -43,6 +43,35 @@ python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
 
 ---
 
+## Добавление маршрутов в существующий сервис
+
+Если пользователь хочет добавить endpoint в уже существующий HttpСервис:
+
+### Шаг 1 — Dry-run
+
+```bash
+python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+  --service <ИмяСервиса> \
+  --add-routes "DELETE /{id}, GET /{id}/items" \
+  --root <корень>
+```
+
+Показать вывод пользователю. Если `⚠️  обработчик уже существует` — он будет пропущен.
+
+### Шаг 2 — Применить
+
+```bash
+python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+  --service <ИмяСервиса> --add-routes "..." --root <корень> --apply
+```
+
+### Шаг 3 — Итог
+
+- `<ИмяСервиса>.yaml` — добавлены новые `ШаблоныUrl`
+- `<ИмяСервиса>.xbsl` — добавлены новые методы-обработчики
+
+---
+
 ## Все остальные типы объектов
 
 ## Шаг 0: Определи тип объекта

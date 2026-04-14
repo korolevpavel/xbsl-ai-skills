@@ -2,21 +2,18 @@
 """
 Генерирует HttpСервис (.yaml + .xbsl) для проекта 1С:Элемент.
 
-Использование:
-    # Dry-run (показывает план):
+Режим 1 — создать новый сервис:
     python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \\
       --name КонтрагентыHttpСервис \\
       --url /api/counterparties \\
       --routes "GET /, POST /, GET /{id}, PUT /{id}, DELETE /{id}" \\
-      --root tools/test-app-1cmycloud
+      --root tools/test-app-1cmycloud [--apply]
 
-    # Применить:
+Режим 2 — добавить маршруты в существующий сервис:
     python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \\
-      --name КонтрагентыHttpСервис \\
-      --url /api/counterparties \\
-      --routes "GET /, POST /, GET /{id}" \\
-      --root tools/test-app-1cmycloud \\
-      --apply
+      --service КонтрагентыHttpСервис \\
+      --add-routes "DELETE /{id}, PATCH /{id}/photo" \\
+      --root tools/test-app-1cmycloud [--apply]
 """
 
 from __future__ import annotations
@@ -366,6 +363,91 @@ def build_xbsl(templates: list[tuple[str, list[str]]]) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Добавление маршрутов в существующий сервис
+# ---------------------------------------------------------------------------
+
+def find_service_files(name: str, root: str) -> tuple[str, str] | None:
+    """Ищет .yaml и .xbsl файлы существующего сервиса по имени.
+    Возвращает (yaml_path, xbsl_path) или None если не найден."""
+    project_dirs = find_project_dirs(root)
+    for proj_dir in project_dirs:
+        try:
+            entries = sorted(os.scandir(proj_dir), key=lambda e: e.name)
+        except OSError:
+            continue
+        for entry in entries:
+            if not entry.is_dir():
+                continue
+            yaml_path = os.path.join(entry.path, f"{name}.yaml")
+            if not os.path.isfile(yaml_path):
+                continue
+            text = read_text(yaml_path) or ""
+            # Проверяем что это HttpСервис с нужным именем
+            if "ВидЭлемента: HttpСервис" not in text:
+                continue
+            xbsl_path = os.path.join(entry.path, f"{name}.xbsl")
+            return yaml_path, xbsl_path
+    return None
+
+
+def yaml_append_templates(yaml_text: str, templates: list[tuple[str, list[str]]]) -> str:
+    """Добавляет новые шаблоны URL в конец существующего YAML."""
+    new_lines: list[str] = []
+    for path, methods in templates:
+        tpl_nm = template_name(path)
+        new_lines.append(f"    -")
+        new_lines.append(f"        Имя: {tpl_nm}")
+        new_lines.append(f"        Шаблон: {path}")
+        new_lines.append(f"        Методы:")
+        for method in methods:
+            hdl = handler_name(method, path, tpl_nm)
+            new_lines.append(f"            -")
+            new_lines.append(f"                Метод: {method}")
+            new_lines.append(f"                Обработчик: {hdl}")
+
+    suffix = "\n".join(new_lines) + "\n"
+    return yaml_text.rstrip("\n") + "\n" + suffix
+
+
+def xbsl_append_handlers(xbsl_text: str, templates: list[tuple[str, list[str]]]) -> str:
+    """Добавляет новые обработчики в XBSL — перед _ОбработатьОшибку, если есть."""
+    new_blocks: list[str] = []
+    for path, methods in templates:
+        tpl_nm = template_name(path)
+        for method in methods:
+            hdl = handler_name(method, path, tpl_nm)
+            has_param = has_path_param(path)
+            key = (method, has_param)
+            if key == ("GET", False):
+                new_blocks.append(_xbsl_get_list(hdl))
+            elif key == ("POST", False):
+                new_blocks.append(_xbsl_create(hdl))
+            elif key == ("GET", True):
+                param = _extract_path_param(path)
+                new_blocks.append(_xbsl_get_by_id(hdl, param))
+            else:
+                new_blocks.append(_xbsl_stub(hdl, method))
+
+    if not new_blocks:
+        return xbsl_text
+
+    insertion = "\n\n".join(new_blocks)
+
+    # Вставить перед _ОбработатьОшибку если есть, иначе в конец
+    marker = "метод _ОбработатьОшибку"
+    if marker in xbsl_text:
+        idx = xbsl_text.index(marker)
+        return xbsl_text[:idx] + insertion + "\n\n" + xbsl_text[idx:]
+
+    return xbsl_text.rstrip("\n") + "\n\n" + insertion + "\n"
+
+
+def get_existing_handlers(xbsl_text: str) -> set[str]:
+    """Возвращает множество имён методов из XBSL."""
+    return set(re.findall(r"^метод\s+(\w+)\s*\(", xbsl_text, re.MULTILINE))
+
+
+# ---------------------------------------------------------------------------
 # Dry-run вывод
 # ---------------------------------------------------------------------------
 
@@ -403,15 +485,14 @@ def print_plan(
 
 
 # ---------------------------------------------------------------------------
-# Основная логика
+# Основная логика — режим создания
 # ---------------------------------------------------------------------------
 
-def run(args: argparse.Namespace) -> None:
+def run_create(args: argparse.Namespace) -> None:
     root = os.path.abspath(args.root)
     routes = parse_routes(args.routes)
     templates = group_by_template(routes)
 
-    # Найти путь размещения
     suggested_path, conflict = get_suggested_path(args.name, root, args.subsystem)
 
     yaml_path = os.path.join(suggested_path, f"{args.name}.yaml")
@@ -429,11 +510,76 @@ def run(args: argparse.Namespace) -> None:
     if not args.apply:
         return
 
-    yaml_content = build_yaml(args.name, args.url, args.access, templates)
-    xbsl_content = build_xbsl(templates)
+    write_text(yaml_path, build_yaml(args.name, args.url, args.access, templates))
+    write_text(xbsl_path, build_xbsl(templates))
+    print()
+    print("Готово.")
 
-    write_text(yaml_path, yaml_content)
-    write_text(xbsl_path, xbsl_content)
+
+# ---------------------------------------------------------------------------
+# Основная логика — режим добавления маршрутов
+# ---------------------------------------------------------------------------
+
+def run_add_routes(args: argparse.Namespace) -> None:
+    root = os.path.abspath(args.root)
+    routes = parse_routes(args.add_routes)
+    templates = group_by_template(routes)
+
+    found = find_service_files(args.service, root)
+    if not found:
+        print(f"Ошибка: сервис '{args.service}' не найден в {root}", file=sys.stderr)
+        sys.exit(1)
+    yaml_path, xbsl_path = found
+
+    # Проверяем дублирующиеся обработчики
+    existing_xbsl = read_text(xbsl_path) or ""
+    existing_handlers = get_existing_handlers(existing_xbsl)
+    duplicates: list[str] = []
+    for path, methods in templates:
+        tpl_nm = template_name(path)
+        for method in methods:
+            hdl = handler_name(method, path, tpl_nm)
+            if hdl in existing_handlers:
+                duplicates.append(hdl)
+
+    prefix = "[DRY-RUN]" if not args.apply else "[ПРИМЕНЯЮ]"
+    print(f"{prefix} добавление маршрутов в {args.service}")
+    print()
+    print("Новые маршруты:")
+    for path, methods in templates:
+        tpl_nm = template_name(path)
+        for method in methods:
+            hdl = handler_name(method, path, tpl_nm)
+            warn = "  ⚠️  обработчик уже существует" if hdl in existing_handlers else ""
+            print(f"  {method:<8} {path:<20} → {hdl}{warn}")
+    print()
+
+    action = "Будет обновлено" if not args.apply else "Обновлено"
+    print(f"{action}:")
+    print(f"  {yaml_path}  (ШаблоныUrl)")
+    print(f"  {xbsl_path}  (новые методы)")
+
+    if not args.apply:
+        print()
+        print("Чтобы применить: добавьте --apply")
+        return
+
+    if duplicates:
+        print()
+        print(f"⚠️  Обработчики уже существуют, пропускаем: {', '.join(duplicates)}")
+        # Убираем дубликаты из шаблонов
+        templates = [
+            (path, [m for m in methods
+                    if handler_name(m, path, template_name(path)) not in existing_handlers])
+            for path, methods in templates
+        ]
+        templates = [(p, ms) for p, ms in templates if ms]
+
+    if templates:
+        yaml_text = read_text(yaml_path) or ""
+        write_text(yaml_path, yaml_append_templates(yaml_text, templates))
+        write_text(xbsl_path, xbsl_append_handlers(existing_xbsl, templates))
+
     print()
     print("Готово.")
 
@@ -446,26 +592,36 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Генерирует HttpСервис (.yaml + .xbsl) для проекта 1С:Элемент"
     )
-    parser.add_argument("--name", required=True, help="Имя объекта (например КонтрагентыHttpСервис)")
-    parser.add_argument("--url", required=True, help="КорневойUrl (например /api/counterparties)")
-    parser.add_argument(
-        "--routes",
-        required=True,
-        help='Маршруты через запятую: "GET /, POST /, GET /{id}"',
-    )
-    parser.add_argument("--root", default=".", help="Корень проекта (по умолчанию .)")
-    parser.add_argument("--subsystem", default=None, help="Подсказка: имя подсистемы для размещения")
-    parser.add_argument(
-        "--access",
-        default="РазрешеноВсем",
-        help="Глобальный контроль доступа (по умолчанию РазрешеноВсем)",
-    )
-    parser.add_argument("--apply", action="store_true", help="Применить изменения (без флага — dry-run)")
+
+    # Режим 1: создать новый сервис
+    parser.add_argument("--name", default=None, help="Имя нового сервиса")
+    parser.add_argument("--url", default=None, help="КорневойUrl (например /api/counterparties)")
+    parser.add_argument("--routes", default=None, help='Маршруты: "GET /, POST /, GET /{id}"')
+    parser.add_argument("--subsystem", default=None, help="Имя подсистемы для размещения")
+    parser.add_argument("--access", default="РазрешеноВсем", help="Контроль доступа")
+
+    # Режим 2: добавить маршруты в существующий
+    parser.add_argument("--service", default=None, help="Имя существующего сервиса")
+    parser.add_argument("--add-routes", default=None, dest="add_routes",
+                        help='Новые маршруты: "DELETE /{id}, PATCH /{id}/photo"')
+
+    # Общие
+    parser.add_argument("--root", default=".", help="Корень проекта")
+    parser.add_argument("--apply", action="store_true", help="Применить (без — dry-run)")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> None:
-    run(parse_args(argv))
+    args = parse_args(argv)
+
+    if args.service and args.add_routes:
+        run_add_routes(args)
+    elif args.name and args.url and args.routes:
+        run_create(args)
+    else:
+        print("Ошибка: укажите либо --name/--url/--routes (создать), "
+              "либо --service/--add-routes (добавить маршруты)", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

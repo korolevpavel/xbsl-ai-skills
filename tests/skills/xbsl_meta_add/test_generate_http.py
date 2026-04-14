@@ -1,4 +1,4 @@
-"""Тесты для generate_http.py — генератора HttpСервис."""
+"""Тесты для generate_http.py — генератора и редактора HttpСервис."""
 
 from __future__ import annotations
 
@@ -21,6 +21,10 @@ from generate_http import (
     build_xbsl,
     find_project_dirs,
     get_suggested_path,
+    find_service_files,
+    yaml_append_templates,
+    xbsl_append_handlers,
+    get_existing_handlers,
     main,
 )
 
@@ -373,3 +377,167 @@ class TestApply:
         proj_path = tmp_path / "Vendor" / "MyProject" / "Основное"
         assert not (proj_path / "МойСервис.yaml").exists()
         assert not (proj_path / "МойСервис.xbsl").exists()
+
+
+# ---------------------------------------------------------------------------
+# find_service_files
+# ---------------------------------------------------------------------------
+
+class TestFindServiceFiles:
+    def test_finds_existing_service(self, tmp_path):
+        proj = tmp_path / "V" / "P"
+        sub = proj / "Основное"
+        sub.mkdir(parents=True)
+        (proj / "Проект.yaml").write_text("Имя: P\n", encoding="utf-8")
+        (sub / "Подсистема.yaml").write_text("Имя: Основное\n", encoding="utf-8")
+        yaml_content = "ВидЭлемента: HttpСервис\nИмя: МойСервис\n"
+        (sub / "МойСервис.yaml").write_text(yaml_content, encoding="utf-8")
+        (sub / "МойСервис.xbsl").write_text("", encoding="utf-8")
+
+        result = find_service_files("МойСервис", str(tmp_path))
+        assert result is not None
+        yaml_path, xbsl_path = result
+        assert yaml_path.endswith("МойСервис.yaml")
+        assert xbsl_path.endswith("МойСервис.xbsl")
+
+    def test_returns_none_when_not_found(self, tmp_path):
+        proj = tmp_path / "V" / "P"
+        proj.mkdir(parents=True)
+        (proj / "Проект.yaml").write_text("Имя: P\n", encoding="utf-8")
+        assert find_service_files("НесуществующийСервис", str(tmp_path)) is None
+
+    def test_ignores_non_http_service(self, tmp_path):
+        proj = tmp_path / "V" / "P"
+        sub = proj / "Основное"
+        sub.mkdir(parents=True)
+        (proj / "Проект.yaml").write_text("Имя: P\n", encoding="utf-8")
+        (sub / "Подсистема.yaml").write_text("Имя: Основное\n", encoding="utf-8")
+        # Файл с тем же именем, но не HttpСервис
+        (sub / "МойСервис.yaml").write_text("ВидЭлемента: Справочник\nИмя: МойСервис\n", encoding="utf-8")
+        assert find_service_files("МойСервис", str(tmp_path)) is None
+
+
+# ---------------------------------------------------------------------------
+# yaml_append_templates / xbsl_append_handlers
+# ---------------------------------------------------------------------------
+
+class TestYamlAppendTemplates:
+    def test_appends_new_template(self):
+        yaml = "ВидЭлемента: HttpСервис\nШаблоныUrl:\n    -\n        Имя: Список\n        Шаблон: /\n"
+        result = yaml_append_templates(yaml, [("/{id}/photo", ["GET"])])
+        assert "Шаблон: /{id}/photo" in result
+        assert "PhotoПоРодителю" in result or "ПолучитьПоИд" in result
+
+    def test_original_content_preserved(self):
+        yaml = "ВидЭлемента: HttpСервис\nШаблоныUrl:\n    -\n        Шаблон: /\n"
+        result = yaml_append_templates(yaml, [("/{id}", ["DELETE"])])
+        assert "ВидЭлемента: HttpСервис" in result
+        assert "Шаблон: /" in result
+        assert "Шаблон: /{id}" in result
+
+
+class TestXbslAppendHandlers:
+    def _base_xbsl(self):
+        return (
+            "метод ПолучитьСписок(Запрос: HttpСервисЗапрос)\n    попытка\n    поймать Исключение: Исключение\n    ;\n;\n\n"
+            "метод _ОбработатьОшибку(Ответ: HttpСервисОтвет, Исключение: Исключение)\n    Ответ.КодСтатуса = 500\n;\n"
+        )
+
+    def test_inserts_before_error_helper(self):
+        xbsl = self._base_xbsl()
+        result = xbsl_append_handlers(xbsl, [("/{id}", ["DELETE"])])
+        idx_delete = result.index("метод Удалить")
+        idx_error = result.index("метод _ОбработатьОшибку")
+        assert idx_delete < idx_error
+
+    def test_appends_to_end_if_no_helper(self):
+        xbsl = "метод ПолучитьСписок(Запрос: HttpСервисЗапрос)\n;\n"
+        result = xbsl_append_handlers(xbsl, [("/", ["POST"])])
+        assert "метод Создать" in result
+
+    def test_original_handlers_preserved(self):
+        xbsl = self._base_xbsl()
+        result = xbsl_append_handlers(xbsl, [("/{id}", ["PUT"])])
+        assert "метод ПолучитьСписок" in result
+        assert "метод _ОбработатьОшибку" in result
+        assert "метод Обновить" in result
+
+
+class TestGetExistingHandlers:
+    def test_finds_methods(self):
+        xbsl = "метод ПолучитьСписок(Запрос: HttpСервисЗапрос)\n;\n\nметод Создать(Запрос: HttpСервисЗапрос)\n;\n"
+        handlers = get_existing_handlers(xbsl)
+        assert "ПолучитьСписок" in handlers
+        assert "Создать" in handlers
+
+    def test_empty_file(self):
+        assert get_existing_handlers("") == set()
+
+
+# ---------------------------------------------------------------------------
+# Интеграционный тест: add-routes
+# ---------------------------------------------------------------------------
+
+class TestAddRoutes:
+    def _make_service(self, tmp_path) -> str:
+        """Создаёт проект с существующим HttpСервис."""
+        proj = tmp_path / "V" / "P"
+        sub = proj / "Основное"
+        sub.mkdir(parents=True)
+        (proj / "Проект.yaml").write_text("Имя: P\n", encoding="utf-8")
+        (sub / "Подсистема.yaml").write_text("Имя: Основное\n", encoding="utf-8")
+
+        # Создаём сервис через main
+        main([
+            "--name", "МойСервис",
+            "--url", "/api/test",
+            "--routes", "GET /, POST /",
+            "--root", str(tmp_path),
+            "--apply",
+        ])
+        return str(tmp_path)
+
+    def test_adds_new_route_to_yaml(self, tmp_path):
+        root = self._make_service(tmp_path)
+        main(["--service", "МойСервис", "--add-routes", "DELETE /{id}", "--root", root, "--apply"])
+
+        yaml_path = tmp_path / "V" / "P" / "Основное" / "МойСервис.yaml"
+        content = yaml_path.read_text(encoding="utf-8")
+        assert "Шаблон: /{id}" in content
+        assert "Удалить" in content
+
+    def test_adds_handler_to_xbsl(self, tmp_path):
+        root = self._make_service(tmp_path)
+        main(["--service", "МойСервис", "--add-routes", "DELETE /{id}", "--root", root, "--apply"])
+
+        xbsl_path = tmp_path / "V" / "P" / "Основное" / "МойСервис.xbsl"
+        content = xbsl_path.read_text(encoding="utf-8")
+        assert "метод Удалить" in content
+
+    def test_skips_duplicate_handler(self, tmp_path):
+        root = self._make_service(tmp_path)
+        # GET / уже существует как ПолучитьСписок
+        main(["--service", "МойСервис", "--add-routes", "GET /", "--root", root, "--apply"])
+
+        xbsl_path = tmp_path / "V" / "P" / "Основное" / "МойСервис.xbsl"
+        content = xbsl_path.read_text(encoding="utf-8")
+        # ПолучитьСписок должен встречаться ровно один раз
+        assert content.count("метод ПолучитьСписок") == 1
+
+    def test_error_on_missing_service(self, tmp_path):
+        proj = tmp_path / "V" / "P"
+        proj.mkdir(parents=True)
+        (proj / "Проект.yaml").write_text("Имя: P\n", encoding="utf-8")
+
+        with pytest.raises(SystemExit):
+            main(["--service", "НесуществующийСервис", "--add-routes", "GET /", "--root", str(tmp_path), "--apply"])
+
+    def test_dry_run_does_not_modify_files(self, tmp_path):
+        root = self._make_service(tmp_path)
+        yaml_before = (tmp_path / "V" / "P" / "Основное" / "МойСервис.yaml").read_text()
+        xbsl_before = (tmp_path / "V" / "P" / "Основное" / "МойСервис.xbsl").read_text()
+
+        main(["--service", "МойСервис", "--add-routes", "DELETE /{id}", "--root", root])
+
+        assert (tmp_path / "V" / "P" / "Основное" / "МойСервис.yaml").read_text() == yaml_before
+        assert (tmp_path / "V" / "P" / "Основное" / "МойСервис.xbsl").read_text() == xbsl_before

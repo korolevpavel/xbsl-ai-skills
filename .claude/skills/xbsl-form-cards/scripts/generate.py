@@ -260,6 +260,35 @@ def build_form_yaml(
 # Генерация файла 2: СтрокаСписка<Объект>.yaml
 # ---------------------------------------------------------------------------
 
+def _photo_card_items_yaml(photo: str, placeholder: str, title: str, extra_fields: list[dict]) -> str:
+    """
+    Строит YAML элементов внутри Группа для фото-карточки:
+    Картинка + Надпись(title) + опциональные Надписи для extra_fields.
+    Отступ 16 пробелов для '-', 20 для свойств.
+    """
+    lines = [
+        f"                -\n"
+        f"                    Тип: Картинка\n"
+        f"                    Высота: 200\n"
+        f"                    Масштабирование: Пропорционально\n"
+        f"                    РастягиватьПоГоризонтали: Истина\n"
+        f"                    Изображение: =ДанныеСтроки.Данные.{photo} ?? {placeholder}\n"
+        f"                -\n"
+        f"                    Тип: Надпись\n"
+        f"                    РастягиватьПоГоризонтали: Истина\n"
+        f"                    ВыравниваниеВГруппеПоГоризонтали: Центр\n"
+        f"                    Значение: =ДанныеСтроки.Данные.{title}\n"
+    ]
+    for f in extra_fields:
+        lines.append(
+            f"                -\n"
+            f"                    Тип: Надпись\n"
+            f"                    РастягиватьПоГоризонтали: Истина\n"
+            f"                    Значение: {_field_expr(f)}\n"
+        )
+    return "".join(lines)
+
+
 def build_row_yaml(
     uid: str,
     obj: str,
@@ -267,12 +296,16 @@ def build_row_yaml(
     title: str,
     photo: str | None,
     content_fields: list[dict],
+    obj_type: str = "Справочник",
 ) -> str:
     row_type = f"ПроизвольнаяСтрокаСписка<СтрокаДинамическогоСписка<{namespace}::{obj}ФормаСписка.ДанныеСтрокиСписка>>"
 
     if photo:
-        # ПроизвольнаяКарточка с фото + надписью под ним
-        placeholder = "Ресурс{Аккаунт.svg}.Ссылка"
+        # Справочник: только фото + заголовок (минималистичная карточка)
+        # Документ и прочие: фото + заголовок + вторичные поля
+        extra = [] if obj_type == "Справочник" else content_fields
+        placeholder = "Ресурс{Аккаунт.svg}.Ссылка" if obj_type == "Справочник" else "Ресурс{Файл.svg}.Ссылка"
+        items = _photo_card_items_yaml(photo, placeholder, title, extra)
         return (
             f"ВидЭлемента: КомпонентИнтерфейса\n"
             f"Ид: {uid}\n"
@@ -289,17 +322,7 @@ def build_row_yaml(
             f"            Компоновка: Вертикальная\n"
             f"            РастягиватьПоГоризонтали: Истина\n"
             f"            Содержимое:\n"
-            f"                -\n"
-            f"                    Тип: Картинка\n"
-            f"                    Высота: 200\n"
-            f"                    Масштабирование: Пропорционально\n"
-            f"                    РастягиватьПоГоризонтали: Истина\n"
-            f"                    Изображение: =ДанныеСтроки.Данные.{photo} ?? {placeholder}\n"
-            f"                -\n"
-            f"                    Тип: Надпись\n"
-            f"                    РастягиватьПоГоризонтали: Истина\n"
-            f"                    ВыравниваниеВГруппеПоГоризонтали: Центр\n"
-            f"                    Значение: =ДанныеСтроки.Данные.{title}\n"
+            f"{items}"
         )
 
     # СтандартнаяКарточка без фото
@@ -461,17 +484,23 @@ def run(args: argparse.Namespace) -> None:
 
     existing_form = existing_forms.get("ФормаСписка")
 
+    # Поля, которые войдут в карточку под фото (только для не-Справочников)
+    photo_extra = [] if (not photo or object_type == "Справочник") else content_fields
+
     # --- Dry-run вывод ---
     card_type = "ПроизвольнаяКарточка" if photo else "СтандартнаяКарточка"
-    content_desc = ", ".join(f["name"] for f in content_fields) if content_fields else "(нет)"
 
     print(f"[{'DRY-RUN' if not args.apply else 'ПРИМЕНЯЮ'}] xbsl-form-cards для {obj}\n")
     print(f"Карточка:")
     print(f"  Заголовок: {title}")
-    print(f"  Содержимое: {content_desc}")
     if photo:
         print(f"  Фото: {photo}  → {card_type}, МинимальнаяШирина: {min_width}")
+        if photo_extra:
+            extra_desc = ", ".join(f["name"] for f in photo_extra)
+            print(f"  Под фото: {extra_desc}")
     else:
+        content_desc = ", ".join(f["name"] for f in content_fields) if content_fields else "(нет)"
+        print(f"  Содержимое: {content_desc}")
         print(f"  Тип карточки: {card_type}, МинимальнаяШирина: {min_width}")
     print()
 
@@ -497,7 +526,7 @@ def run(args: argparse.Namespace) -> None:
     uid2 = str(uuid.uuid4())
 
     form_yaml = build_form_yaml(uid1, obj, namespace, title, photo, content_fields, min_width)
-    row_yaml = build_row_yaml(uid2, obj, namespace, title, photo, content_fields)
+    row_yaml = build_row_yaml(uid2, obj, namespace, title, photo, content_fields, object_type)
 
     write_text(form_path, form_yaml)
     write_text(row_path, row_yaml)

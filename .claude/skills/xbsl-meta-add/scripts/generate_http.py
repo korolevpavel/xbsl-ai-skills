@@ -391,22 +391,72 @@ def find_service_files(name: str, root: str) -> tuple[str, str] | None:
 
 
 def yaml_append_templates(yaml_text: str, templates: list[tuple[str, list[str]]]) -> str:
-    """Добавляет новые шаблоны URL в конец существующего YAML."""
-    new_lines: list[str] = []
+    """Добавляет новые шаблоны URL или методы в существующие шаблоны YAML.
+    Если шаблон с таким путём уже есть — добавляет методы в него.
+    Иначе — добавляет новый шаблон в конец."""
+    result = yaml_text
+    new_template_lines: list[str] = []
+
     for path, methods in templates:
         tpl_nm = template_name(path)
-        new_lines.append(f"    -")
-        new_lines.append(f"        Имя: {tpl_nm}")
-        new_lines.append(f"        Шаблон: {path}")
-        new_lines.append(f"        Методы:")
-        for method in methods:
-            hdl = handler_name(method, path, tpl_nm)
-            new_lines.append(f"            -")
-            new_lines.append(f"                Метод: {method}")
-            new_lines.append(f"                Обработчик: {hdl}")
+        path_escaped = re.escape(path)
+        if re.search(rf"        Шаблон: {path_escaped}\n", result):
+            # Путь уже есть — вставляем методы в существующий шаблон
+            result = _yaml_insert_methods(result, path, methods, tpl_nm)
+        else:
+            # Новый путь — добавляем новый блок
+            new_template_lines.append(f"    -")
+            new_template_lines.append(f"        Имя: {tpl_nm}")
+            new_template_lines.append(f"        Шаблон: {path}")
+            new_template_lines.append(f"        Методы:")
+            for method in methods:
+                hdl = handler_name(method, path, tpl_nm)
+                new_template_lines.append(f"            -")
+                new_template_lines.append(f"                Метод: {method}")
+                new_template_lines.append(f"                Обработчик: {hdl}")
 
-    suffix = "\n".join(new_lines) + "\n"
-    return yaml_text.rstrip("\n") + "\n" + suffix
+    if new_template_lines:
+        suffix = "\n".join(new_template_lines) + "\n"
+        result = result.rstrip("\n") + "\n" + suffix
+
+    return result
+
+
+def _yaml_insert_methods(yaml_text: str, path: str, methods: list[str], tpl_nm: str) -> str:
+    """Вставляет методы в существующий шаблон YAML с заданным путём."""
+    path_escaped = re.escape(path)
+    m = re.search(rf"        Шаблон: {path_escaped}\n", yaml_text)
+    if not m:
+        return yaml_text
+
+    # Конец блока — следующий "    -\n" на уровне шаблона или конец файла
+    search_from = m.end()
+    next_block = re.search(r"\n    -\n", yaml_text[search_from:])
+    block_end = search_from + next_block.start() + 1 if next_block else len(yaml_text)
+    block = yaml_text[search_from:block_end]
+
+    # Вставляем после последнего Обработчик: в блоке
+    last_hdl = None
+    for hdl_m in re.finditer(r"                Обработчик: \S+[^\n]*\n", block):
+        last_hdl = hdl_m
+
+    if last_hdl:
+        insert_pos = search_from + last_hdl.end()
+    else:
+        # Нет методов — вставить после "        Методы:\n"
+        methods_m = re.search(r"        Методы:\n", block)
+        if not methods_m:
+            return yaml_text
+        insert_pos = search_from + methods_m.end()
+
+    new_lines: list[str] = []
+    for method in methods:
+        hdl = handler_name(method, path, tpl_nm)
+        new_lines += [f"            -",
+                      f"                Метод: {method}",
+                      f"                Обработчик: {hdl}"]
+    insertion = "\n".join(new_lines) + "\n"
+    return yaml_text[:insert_pos] + insertion + yaml_text[insert_pos:]
 
 
 def xbsl_append_handlers(xbsl_text: str, templates: list[tuple[str, list[str]]]) -> str:

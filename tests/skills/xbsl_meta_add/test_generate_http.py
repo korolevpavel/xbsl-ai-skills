@@ -435,6 +435,32 @@ class TestYamlAppendTemplates:
         assert "Шаблон: /" in result
         assert "Шаблон: /{id}" in result
 
+    def test_merges_method_into_existing_template(self):
+        """PATCH /{id} должен добавиться в существующий блок /{id}, а не создать дубль."""
+        yaml = (
+            "ВидЭлемента: HttpСервис\nШаблоныUrl:\n"
+            "    -\n        Имя: ЭлементПоИд\n        Шаблон: /{id}\n"
+            "        Методы:\n"
+            "            -\n                Метод: GET\n                Обработчик: ПолучитьПоИд\n"
+        )
+        result = yaml_append_templates(yaml, [("/{id}", ["PATCH"])])
+        assert result.count("Шаблон: /{id}") == 1, "Не должно быть дублирующего блока /{id}"
+        assert "Метод: PATCH" in result
+        assert "Обработчик: ОбновитьЧастично" in result
+
+    def test_mixed_new_and_existing_templates(self):
+        """Новый путь добавляется как блок, существующий — метод внутрь."""
+        yaml = (
+            "ВидЭлемента: HttpСервис\nШаблоныUrl:\n"
+            "    -\n        Имя: Список\n        Шаблон: /\n"
+            "        Методы:\n"
+            "            -\n                Метод: GET\n                Обработчик: ПолучитьСписок\n"
+        )
+        result = yaml_append_templates(yaml, [("/", ["POST"]), ("/{id}", ["GET"])])
+        assert result.count("Шаблон: /\n") == 1, "Не должно быть дублирующего блока /"
+        assert "Метод: POST" in result
+        assert "Шаблон: /{id}" in result
+
 
 class TestXbslAppendHandlers:
     def _base_xbsl(self):

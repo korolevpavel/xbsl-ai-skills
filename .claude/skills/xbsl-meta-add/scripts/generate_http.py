@@ -5,7 +5,7 @@
 Режим 1 — создать новый сервис:
     python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \\
       --name КонтрагентыHttpСервис \\
-      --url /api/counterparties \\
+      --url /counterparties \\
       --routes "GET /, POST /, GET /{id}, PUT /{id}, DELETE /{id}" \\
       --root tools/test-app-1cmycloud [--apply]
 
@@ -225,7 +225,7 @@ def handler_name(method: str, path: str, tpl_name: str) -> str:
 # Генерация YAML
 # ---------------------------------------------------------------------------
 
-def build_yaml(name: str, url: str, access: str,
+def build_yaml(name: str, url: str, access: str | None,
                templates: list[tuple[str, list[str]]]) -> str:
     """Собирает YAML для HttpСервис."""
     uid = str(uuid.uuid4())
@@ -235,11 +235,14 @@ def build_yaml(name: str, url: str, access: str,
         f"Имя: {name}",
         f"ОбластьВидимости: ВПодсистеме",
         f"КорневойUrl: {url}",
-        f"КонтрольДоступа:",
-        f"    Разрешения:",
-        f"        Вызов: {access}",
-        f"ШаблоныUrl:",
     ]
+    if access:
+        lines += [
+            f"КонтрольДоступа:",
+            f"    Разрешения:",
+            f"        Вызов: {access}",
+        ]
+    lines.append(f"ШаблоныUrl:")
 
     for path, methods in templates:
         tpl_nm = template_name(path)
@@ -264,17 +267,20 @@ def _xbsl_get_list(handler: str) -> str:
     return f"""\
 метод {handler}(Запрос: HttpСервисЗапрос)
     попытка
-        пер Ограничение: Число = 100
+        знч ОграничениеПоУмолчанию = 100
+        пер Ограничение: Число
         знч ПараметрЛимит = Запрос.Параметры.ПолучитьПервый("limit")
         если ПараметрЛимит != Неопределено
-            Ограничение = Мин(новый Число(ПараметрЛимит), 100)
+            Ограничение = Мин(новый Число(ПараметрЛимит), ОграничениеПоУмолчанию)
+        иначе
+            Ограничение = ОграничениеПоУмолчанию
         ;
         // TODO: получить данные
         // знч Данные = <Справочник>.ПолучитьСписок(Ограничение)
-        Запрос.Ответ.Заголовки.Установить("Content-Type", "application/json")
+        // Запрос.Ответ.Заголовки.Установить("Content-Type", "application/json")
         // Запрос.Ответ.УстановитьТело(СериализацияJson.ЗаписатьОбъект(Данные))
     поймать Исключение: Исключение
-        _ОбработатьОшибку(Запрос.Ответ, Исключение)
+        ОбработатьОшибку(Запрос.Ответ, Исключение)
     ;
 ;"""
 
@@ -289,7 +295,7 @@ def _xbsl_create(handler: str) -> str:
         Запрос.Ответ.УстановитьКодСтатуса(201)
         // Запрос.Ответ.УстановитьТело(Ссылка.Ид.ВСтроку())
     поймать Исключение: Исключение
-        _ОбработатьОшибку(Запрос.Ответ, Исключение)
+        ОбработатьОшибку(Запрос.Ответ, Исключение)
     ;
 ;"""
 
@@ -307,7 +313,7 @@ def _xbsl_get_by_id(handler: str, param: str) -> str:
         // ;
         // Запрос.Ответ.УстановитьТело(СериализацияJson.ЗаписатьОбъект(Объект))
     поймать Исключение: Исключение
-        _ОбработатьОшибку(Запрос.Ответ, Исключение)
+        ОбработатьОшибку(Запрос.Ответ, Исключение)
     ;
 ;"""
 
@@ -318,15 +324,16 @@ def _xbsl_stub(handler: str, method: str) -> str:
     попытка
         // TODO: реализовать {method}
     поймать Исключение: Исключение
-        _ОбработатьОшибку(Запрос.Ответ, Исключение)
+        ОбработатьОшибку(Запрос.Ответ, Исключение)
     ;
 ;"""
 
 
 def _xbsl_error_helper() -> str:
     return """\
-метод _ОбработатьОшибку(Ответ: HttpСервисОтвет, Исключение: Исключение)
+метод ОбработатьОшибку(Ответ: HttpСервисОтвет, Исключение: Исключение)
     Ответ.УстановитьКодСтатуса(500)
+    Ответ.Заголовки.Установить("Content-Type", "text/plain; charset=utf-8")
     Ответ.УстановитьТело(Исключение.Описание)
 ;"""
 
@@ -460,7 +467,7 @@ def _yaml_insert_methods(yaml_text: str, path: str, methods: list[str], tpl_nm: 
 
 
 def xbsl_append_handlers(xbsl_text: str, templates: list[tuple[str, list[str]]]) -> str:
-    """Добавляет новые обработчики в XBSL — перед _ОбработатьОшибку, если есть."""
+    """Добавляет новые обработчики в XBSL — перед ОбработатьОшибку, если есть."""
     new_blocks: list[str] = []
     for path, methods in templates:
         tpl_nm = template_name(path)
@@ -483,8 +490,8 @@ def xbsl_append_handlers(xbsl_text: str, templates: list[tuple[str, list[str]]])
 
     insertion = "\n\n".join(new_blocks)
 
-    # Вставить перед _ОбработатьОшибку если есть, иначе в конец
-    marker = "метод _ОбработатьОшибку"
+    # Вставить перед ОбработатьОшибку если есть, иначе в конец
+    marker = "метод ОбработатьОшибку"
     if marker in xbsl_text:
         idx = xbsl_text.index(marker)
         return xbsl_text[:idx] + insertion + "\n\n" + xbsl_text[idx:]
@@ -645,10 +652,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     # Режим 1: создать новый сервис
     parser.add_argument("--name", default=None, help="Имя нового сервиса")
-    parser.add_argument("--url", default=None, help="КорневойUrl (например /api/counterparties)")
+    parser.add_argument("--url", default=None, help="КорневойUrl (например /counterparties). Платформа добавляет /api/ автоматически — итоговый URL: {app}/api/<url>")
     parser.add_argument("--routes", default=None, help='Маршруты: "GET /, POST /, GET /{id}"')
     parser.add_argument("--subsystem", default=None, help="Имя подсистемы для размещения")
-    parser.add_argument("--access", default="РазрешеноВсем", help="Контроль доступа")
+    parser.add_argument("--access", default=None, help="Контроль доступа (РазрешеноВсем | РазрешеноАутентифицированным | РазрешеноАдминистраторам). Если не задан — КонтрольДоступа не добавляется (= «Авто»)")
 
     # Режим 2: добавить маршруты в существующий
     parser.add_argument("--service", default=None, help="Имя существующего сервиса")

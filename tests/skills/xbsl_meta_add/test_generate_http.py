@@ -205,6 +205,12 @@ class TestBuildYaml:
         yaml = build_yaml("Сервис", "/api/x", "РазрешеноАутентифицированным", [("/", ["GET"])])
         assert "РазрешеноАутентифицированным" in yaml
 
+    def test_no_access_block_when_none(self):
+        """По умолчанию (access=None) КонтрольДоступа не добавляется."""
+        yaml = build_yaml("Сервис", "/x", None, [("/", ["GET"])])
+        assert "КонтрольДоступа" not in yaml
+        assert "Разрешения" not in yaml
+
 
 # ---------------------------------------------------------------------------
 # build_xbsl
@@ -229,7 +235,7 @@ class TestBuildXbsl:
 
     def test_error_helper_always_present(self):
         xbsl = build_xbsl([("/", ["GET"])])
-        assert "метод _ОбработатьОшибку" in xbsl
+        assert "метод ОбработатьОшибку" in xbsl
 
     def test_try_catch_in_all_handlers(self):
         xbsl = build_xbsl([("/", ["GET", "POST"]), ("/{id}", ["GET", "PUT", "DELETE"])])
@@ -323,7 +329,7 @@ class TestApply:
         assert "метод ПолучитьСписок" in content
         assert "метод Создать" in content
         assert "метод ПолучитьПоИд" in content
-        assert "метод _ОбработатьОшибку" in content
+        assert "метод ОбработатьОшибку" in content
 
     def test_conflict_detection(self, tmp_path):
         root = self._make_project(tmp_path)
@@ -466,14 +472,14 @@ class TestXbslAppendHandlers:
     def _base_xbsl(self):
         return (
             "метод ПолучитьСписок(Запрос: HttpСервисЗапрос)\n    попытка\n    поймать Исключение: Исключение\n    ;\n;\n\n"
-            "метод _ОбработатьОшибку(Ответ: HttpСервисОтвет, Исключение: Исключение)\n    Ответ.КодСтатуса = 500\n;\n"
+            "метод ОбработатьОшибку(Ответ: HttpСервисОтвет, Исключение: Исключение)\n    Ответ.КодСтатуса = 500\n;\n"
         )
 
     def test_inserts_before_error_helper(self):
         xbsl = self._base_xbsl()
         result = xbsl_append_handlers(xbsl, [("/{id}", ["DELETE"])])
         idx_delete = result.index("метод Удалить")
-        idx_error = result.index("метод _ОбработатьОшибку")
+        idx_error = result.index("метод ОбработатьОшибку")
         assert idx_delete < idx_error
 
     def test_appends_to_end_if_no_helper(self):
@@ -485,7 +491,7 @@ class TestXbslAppendHandlers:
         xbsl = self._base_xbsl()
         result = xbsl_append_handlers(xbsl, [("/{id}", ["PUT"])])
         assert "метод ПолучитьСписок" in result
-        assert "метод _ОбработатьОшибку" in result
+        assert "метод ОбработатьОшибку" in result
         assert "метод Обновить" in result
 
 

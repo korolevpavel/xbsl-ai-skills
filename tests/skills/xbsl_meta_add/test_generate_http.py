@@ -224,7 +224,7 @@ class TestBuildXbsl:
     def test_get_by_id_pattern(self):
         xbsl = build_xbsl([("/{id}", ["GET"])])
         assert "метод ПолучитьПоИд" in xbsl
-        assert "ПараметрыПути" in xbsl
+        assert "Запрос.Параметры.ПолучитьПервый" in xbsl
         assert '"id"' in xbsl
 
     def test_error_helper_always_present(self):

@@ -215,8 +215,8 @@ def test_main_uses_explicit_overrides(build, monkeypatch, capsys, tmp_path: Path
     monkeypatch.setattr(
         build,
         "build_xasm",
-        lambda project_dir, output_dir, version, commit, branch: calls.append(
-            (project_dir, output_dir, version, commit, branch)
+        lambda project_dir, output_dir, version, commit, branch, kind="application": calls.append(
+            (project_dir, output_dir, version, commit, branch, kind)
         ) or "/tmp/custom.xasm",
     )
 
@@ -239,7 +239,7 @@ def test_main_uses_explicit_overrides(build, monkeypatch, capsys, tmp_path: Path
     )
 
     assert calls == [
-        (str(project_dir.resolve()), "/tmp/out", "2.0-5", "override-commit", "release"),
+        (str(project_dir.resolve()), "/tmp/out", "2.0-5", "override-commit", "release", "application"),
     ]
     assert captured.out.strip() == "/tmp/custom.xasm"
     assert captured.err == ""
@@ -256,15 +256,15 @@ def test_main_autofinds_project_and_uses_last_build_env(build, monkeypatch, caps
     monkeypatch.setattr(
         build,
         "build_xasm",
-        lambda project_dir, output_dir, version, commit, branch: calls.append(
-            (project_dir, output_dir, version, commit, branch)
+        lambda project_dir, output_dir, version, commit, branch, kind="application": calls.append(
+            (project_dir, output_dir, version, commit, branch, kind)
         ) or "/tmp/auto.xasm",
     )
 
     captured = run_main(build, monkeypatch, capsys, ["--output", "/tmp/out"])
 
     assert calls == [
-        (str(project_dir.resolve()), "/tmp/out", "3.1-10", "abc123", "feature/demo"),
+        (str(project_dir.resolve()), "/tmp/out", "3.1-10", "abc123", "feature/demo", "application"),
     ]
     assert captured.out.strip() == "/tmp/auto.xasm"
 

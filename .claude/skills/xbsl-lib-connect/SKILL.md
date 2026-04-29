@@ -211,11 +211,10 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 
 На основе JSON-ответа вывести пользователю:
 
+Если `subsystems` непустой — вывести:
+
 **Подсистемы библиотеки:**
 - `{LIB_VENDOR}::{LIB_NAME}::{subsystem.name}` — {subsystem.title}
-
-**Доступные типы (ОбластьВидимости: Глобально):**
-- `{type.name}` ({type.kind})
 
 **Как использовать в коде:**
 
@@ -233,6 +232,11 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 # В XBSL-коде — полное имя типа:
 перем х: {LIB_VENDOR}::{LIB_NAME}::{Подсистема}::{ИмяТипа}
 ```
+
+Если `subsystems` пустой — блок "Как использовать в коде" **не выводить**.
+
+**Доступные типы (ОбластьВидимости: Глобально):**
+- `{type.name}` ({type.kind})
 
 ---
 

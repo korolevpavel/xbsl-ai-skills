@@ -17,6 +17,9 @@ compatibility:
 
 Скилл подключает внешнюю библиотеку к проекту 1С:Элемент.
 
+**Вспомогательный скрипт:** `.claude/skills/xbsl-lib-connect/scripts/lib_connect.py`
+(actions: `inspect`, `find-xlib`, `patch-yaml`, `analyze`, `validate-version`, `cleanup`)
+
 **Важно:** выпуск релиза библиотеки невозможно автоматизировать через API — только через
 веб-панель управления. Скилл выполняет всё вокруг этого шага, а для самого релиза даёт
 пошаговую инструкцию и ждёт номер версии от пользователя.
@@ -51,11 +54,13 @@ git clone --depth 1 <URL> "$TMP_DIR"
 
 Найти `.xlib` в клоне:
 ```bash
-find "$TMP_DIR" -name "*.xlib" | head -5
+python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action find-xlib --dir "$TMP_DIR"
 ```
 
-- Если найден → использовать его как `LIB_PATH`
-- Если не найден → проверить `Проект.yaml` в клоне на наличие `ВидПроекта: Библиотека`
+- Массив содержит **1 элемент** → использовать его как `LIB_PATH`
+- Массив содержит **>1 элемента** → показать список пользователю, попросить выбрать
+- Массив **пустой** → проверить `Проект.yaml` в клоне на наличие `ВидПроекта: Библиотека`
   - Есть → собрать (Шаг 2А: сборка из исходников)
   - Нет → **ошибка**: "Репозиторий не содержит .xlib и не является проектом библиотеки"
 
@@ -63,12 +68,12 @@ find "$TMP_DIR" -name "*.xlib" | head -5
 Использовать путь напрямую: `LIB_PATH=<путь>`
 
 ### C. Локальная папка с исходниками
-Проверить `Проект.yaml` в папке:
+Сначала поискать `.xlib` в папке:
 ```bash
-grep "ВидПроекта" <папка>/*/Проект.yaml
+python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action find-xlib --dir <папка>
 ```
-Если `ВидПроекта: Библиотека` → собрать (Шаг 2А).
-Иначе → **ошибка**: "Папка не является проектом библиотеки (ВидПроекта != Библиотека)"
+Если найдены → выбрать (как в п. A). Иначе — проверить `Проект.yaml` и собрать (Шаг 2А).
 
 ---
 
@@ -91,24 +96,17 @@ python3 .claude/skills/xbsl-deploy/scripts/build.py \
 
 ## Шаг 2 — Прочитать метаданные .xlib
 
-`.xlib` — это ZIP-архив. Распаковать `Assembly.yaml` из него:
-
 ```bash
-python3 -c "
-import zipfile, sys
-with zipfile.ZipFile('$LIB_PATH') as z:
-    print(z.read('Assembly.yaml').decode())
-"
+python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action inspect --file "$LIB_PATH"
 ```
 
-Из `Assembly.yaml` извлечь:
-- `Vendor` — поставщик (например, `e1c`)
-- `Name` — имя библиотеки (например, `TelegramBot`)
-- `Version` — версия сборки
-- `ProjectKind` — должно быть `Library`
-- `TechnologyVersion` — версия технологии (если есть)
-
-**Если `ProjectKind` не `Library`** → ошибка: "Файл является сборкой приложения (.xasm), а не библиотекой (.xlib). Подавать приложение как библиотеку нельзя."
+Из JSON-ответа извлечь и сохранить:
+- `vendor` → `LIB_VENDOR`
+- `name` → `LIB_NAME`
+- `version` → `LIB_VERSION`
+- `technology_version` → для Шага 3
+- `project_kind` → если не `Library` — скрипт завершится с ошибкой
 
 ---
 
@@ -119,29 +117,24 @@ with zipfile.ZipFile('$LIB_PATH') as z:
 grep "ВерсияТехнологии" <путь>/*/Проект.yaml
 ```
 
-Если в `Assembly.yaml` библиотеки есть `TechnologyVersion` и в `Проект.yaml` проекта
-есть `ВерсияТехнологии` — сравнить:
-
-- Совпадают или поле отсутствует → продолжить
-- **Не совпадают** → предупредить:
-  > ⚠️ Версия технологии библиотеки (`{lib_version}`) отличается от версии проекта
-  > (`{project_version}`). Библиотека может не работать. Продолжить?
-
-Спросить пользователя — продолжить или остановиться.
+Если `technology_version` из Шага 2 не пустой и в `Проект.yaml` есть `ВерсияТехнологии`
+— сравнить. При несовпадении предупредить пользователя и спросить — продолжить или нет.
 
 ---
 
 ## Шаг 4 — Проверить, не подключена ли уже
 
-Найти целевой `Проект.yaml` (обычно запросить у пользователя путь к проекту):
-
+Использовать dry-run режим patch-yaml для проверки:
 ```bash
-cat <путь>/*/Проект.yaml | grep -A 10 "Библиотеки:"
+python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action patch-yaml \
+    --project-yaml <путь>/Проект.yaml \
+    --name "$LIB_NAME" --vendor "$LIB_VENDOR" --version "0.0.0" \
+    --dry-run
 ```
 
-Если в разделе `Библиотеки` уже есть запись с `Поставщик: {Vendor}` и `Имя: {Name}`:
-- Сообщить текущую версию: "Библиотека {Vendor}::{Name} уже подключена (версия X.Y)"
-- Предложить: **обновить** (продолжить — в конце обновим версию) или **выйти**
+Сравнить `before` и `after` в ответе: если в `before` уже есть блок с `$LIB_NAME` и
+`$LIB_VENDOR` — сообщить текущую версию и предложить обновить или выйти.
 
 ---
 
@@ -150,11 +143,9 @@ cat <путь>/*/Проект.yaml | grep -A 10 "Библиотеки:"
 ### 5.1 Получить space-id
 
 Если `ELEMENT_SPACE_ID` задан — использовать его. Иначе:
-
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py list-spaces
 ```
-
 Если пространство одно — взять его id. Если несколько — спросить пользователя.
 
 ### 5.2 Найти существующий проект библиотеки
@@ -162,26 +153,23 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py list-spaces
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py list-projects
 ```
-
-В ответе найти проект с совпадением `vendor` = `{Vendor}` и `name` = `{Name}`.
+Найти проект с `vendor` = `$LIB_VENDOR` и `name` = `$LIB_NAME`.
 
 ### 5.3 Загрузить
 
 **Проект не найден** → создать новый:
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py upload-build \
-    --file "$LIB_PATH" \
-    --space-id <space_id>
+    --file "$LIB_PATH" --space-id <space_id>
 ```
 
-**Проект найден** (project-id = `<pid>`) → добавить новую сборку:
+**Проект найден** (project-id = `<pid>`) → добавить сборку:
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py upload-build \
-    --file "$LIB_PATH" \
-    --project-id <pid>
+    --file "$LIB_PATH" --project-id <pid>
 ```
 
-После успешной загрузки сообщить пользователю: "Сборка `{Name} {Version}` загружена в панель управления."
+После успешной загрузки сообщить: "Сборка `$LIB_NAME $LIB_VERSION` загружена."
 
 ---
 
@@ -192,109 +180,99 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py upload-build \
 > **Необходимо выпустить релиз библиотеки вручную в панели управления.**
 >
 > 1. Откройте панель управления: `{ELEMENT_BASE_URL}`
-> 2. Перейдите на вкладку **Проекты** → найдите **{Name}** (поставщик: {Vendor})
+> 2. Перейдите на вкладку **Проекты** → найдите **{LIB_NAME}** (поставщик: {LIB_VENDOR})
 > 3. Откройте вкладку **Релизы** → нажмите **+ Выпустить новый релиз**
-> 4. Выберите только что загруженную сборку (версия: {Version})
-> 5. Задайте номер версии релиза (например, `1.0.0`) — **без суффикса**
+> 4. Выберите только что загруженную сборку (версия: {LIB_VERSION})
+> 5. Задайте номер версии релиза (например, `1.0.0`) — **без суффикса, без дефисов**
 > 6. Нажмите **Выпустить релиз**
 >
 > После этого введите номер версии релиза:
 
-Ждать ввода пользователя. Сохранить в `RELEASE_VERSION`.
+Получить ввод пользователя → `RELEASE_VERSION`.
+
+Проверить формат:
+```bash
+python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action validate-version --version "$RELEASE_VERSION"
+```
+При `valid: false` — сообщить ошибку и попросить ввести снова.
 
 ---
 
 ## Шаг 7 — Обновить Проект.yaml целевого проекта
 
-Открыть `Проект.yaml` целевого проекта. Найти или создать раздел `Библиотеки`.
-
-**Если раздела нет** — добавить в конец файла:
-```yaml
-Библиотеки:
-    -
-        Имя: {Name}
-        Поставщик: {Vendor}
-        Версия: {RELEASE_VERSION}
+Сначала показать план изменений (dry-run):
+```bash
+python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action patch-yaml \
+    --project-yaml <путь>/Проект.yaml \
+    --name "$LIB_NAME" --vendor "$LIB_VENDOR" --version "$RELEASE_VERSION" \
+    --dry-run
 ```
 
-**Если раздел есть и библиотека уже в нём** (обновление) — заменить строку `Версия`:
-```yaml
-        Версия: {RELEASE_VERSION}
-```
+Показать пользователю содержимое `after` из ответа. Получить подтверждение.
 
-**Если раздел есть, но библиотеки нет** — добавить новый элемент в список.
-
-Пример итогового раздела:
-```yaml
-Библиотеки:
-    -
-        Имя: TelegramBot
-        Поставщик: e1c
-        Версия: 1.0.0
+Применить:
+```bash
+python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action patch-yaml \
+    --project-yaml <путь>/Проект.yaml \
+    --name "$LIB_NAME" --vendor "$LIB_VENDOR" --version "$RELEASE_VERSION"
 ```
 
 ---
 
 ## Шаг 8 — Анализ библиотеки и рекомендации
 
-Распаковать `.xlib` во временную папку и проанализировать структуру:
-
 ```bash
-UNZIP_DIR=$(mktemp -d /tmp/xlib_inspect_XXXXXX)
-python3 -c "
-import zipfile, os
-with zipfile.ZipFile('$LIB_PATH') as z:
-    z.extractall('$UNZIP_DIR')
-"
-# Найти подсистемы
-find "$UNZIP_DIR" -name "Подсистема.yaml"
-# Найти объекты с глобальной видимостью
-grep -rl "ОбластьВидимости: Глобально" "$UNZIP_DIR"
+python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action analyze --file "$LIB_PATH"
 ```
 
-Вывести пользователю:
+На основе JSON-ответа вывести пользователю:
 
 **Подсистемы библиотеки:**
-- `{Vendor}::{Name}::{ИмяПодсистемы}` — {Представление подсистемы}
+- `{LIB_VENDOR}::{LIB_NAME}::{subsystem.name}` — {subsystem.title}
 
 **Доступные типы (ОбластьВидимости: Глобально):**
-- Справочники, Документы, Структуры, ОбщиеМодули — перечислить имена
+- `{type.name}` ({type.kind})
 
 **Как использовать в коде:**
 
 ```yaml
-# В Подсистема.yaml целевого проекта — объявить использование подсистемы библиотеки:
+# В Подсистема.yaml целевого проекта:
 Использование:
-    - {Vendor}::{Name}::{Subsystem}
+    - {LIB_VENDOR}::{LIB_NAME}::{Подсистема}
 
-# В объекте интерфейса (.yaml) — импортировать подсистему:
+# В объекте интерфейса (.yaml):
 Импорт:
-    - {Vendor}::{Name}::{Subsystem}
+    - {LIB_VENDOR}::{LIB_NAME}::{Подсистема}
 ```
 
 ```
-# В XBSL-коде — использовать полное имя типа:
-перем х: {Vendor}::{Name}::{Subsystem}::{TypeName}
+# В XBSL-коде — полное имя типа:
+перем х: {LIB_VENDOR}::{LIB_NAME}::{Подсистема}::{ИмяТипа}
 ```
 
 ---
 
-## Шаг 9 — Предложить пересборку (опционально)
+## Шаг 9 — Очистка и предложение пересборки
 
-Если задана переменная `ELEMENT_APP_ID`:
+Удалить временные папки:
+```bash
+[ -n "$TMP_DIR" ] && python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+    --action cleanup --dir "$TMP_DIR"
+```
 
-> Приложение уже задеплоено. Пересобрать и обновить с новой библиотекой?
-
-Если пользователь соглашается — вызвать скилл `xbsl-deploy` (сценарий I: деплой из исходников).
+Если задана переменная `ELEMENT_APP_ID` — предложить пересобрать через `xbsl-deploy`
+(сценарий I: деплой из исходников).
 
 ---
 
 ## Итог
 
-Сообщить пользователю:
-
 ```
-✓ Библиотека {Vendor}::{Name} v{RELEASE_VERSION} подключена к проекту.
+✓ Библиотека {LIB_VENDOR}::{LIB_NAME} v{RELEASE_VERSION} подключена к проекту.
 ✓ Проект.yaml обновлён.
 
 Следующий шаг: пересобрать приложение, чтобы изменения вступили в силу.

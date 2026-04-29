@@ -34,6 +34,8 @@
 | [`xbsl-pattern-register`](.claude/skills/xbsl-pattern-register/SKILL.md) | Движения по регистру накопления (приход, расход, обороты, контроль остатков) и регистру сведений (запись, удаление, срез последних) |
 | [`xbsl-form-cards`](.claude/skills/xbsl-form-cards/SKILL.md) | Создание формы списка в виде карточек (матричная компоновка) для Справочников и Документов |
 | [`xbsl-rename`](.claude/skills/xbsl-rename/SKILL.md) | Безопасное переименование объекта конфигурации и обновление всех ссылок во всём проекте |
+| [`xbsl-form-dashboard`](.claude/skills/xbsl-form-dashboard/SKILL.md) | Создание главной страницы приложения с виджетами: KPI-счётчики, навигационные карточки, таблицы, диаграммы, карусели и бенто-сетки |
+| [`xbsl-lib-connect`](.claude/skills/xbsl-lib-connect/SKILL.md) | Подключение внешней библиотеки (.xlib) к проекту: из файла, папки с исходниками или GitHub/GitLab URL |
 
 Спецификации по каждому типу объекта метаданных и справочник типов реквизитов хранятся в [`.claude/skills/xbsl-meta-add/references/`](.claude/skills/xbsl-meta-add/references/):
 
@@ -56,7 +58,7 @@
 ## Требования
 
 - [Claude Code](https://claude.ai/code) или другой AI-агент, поддерживающий скиллы
-- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-form-cards`, `xbsl-file-add`, `xbsl-deploy`, `xbsl-pattern-register` и `xbsl-rename`
+- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-form-cards`, `xbsl-form-dashboard`, `xbsl-file-add`, `xbsl-deploy`, `xbsl-pattern-register`, `xbsl-lib-connect` и `xbsl-rename`
 
 ## Установка
 

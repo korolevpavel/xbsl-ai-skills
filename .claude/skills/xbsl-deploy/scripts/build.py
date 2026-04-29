@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
 """
-Сборка .xasm файла для загрузки в 1С:Предприятие.Элемент.
+Сборка .xasm / .xlib файла для загрузки в 1С:Предприятие.Элемент.
 
-.xasm — ZIP-архив, содержащий:
-  - Assembly.yaml          (манифест, корень архива)
+.xasm — ZIP-архив сборки приложения, содержащий:
+  - Assembly.yaml          (манифест, ProjectKind: Application)
   - {vendor}/{name}/...    (файлы проекта: .yaml, .xbsl, .md)
+
+.xlib — ZIP-архив сборки библиотеки, содержащий:
+  - Assembly.yaml          (манифест, ProjectKind: Library)
+  - {vendor}/{name}/...    (файлы проекта)
 
 Использование:
     python3 build.py [--project-dir PATH] [--output DIR]
                      [--version VER] [--last-build VER]
                      [--commit HASH] [--branch NAME]
+                     [--kind application|library]
 
 Примеры:
     python3 build.py
     python3 build.py --last-build 1.0-20 --output /tmp
     python3 build.py --version 1.0-21 --output /tmp
+    python3 build.py --kind library --output /tmp
 
 Env vars:
     LAST_BUILD_VERSION  — последняя версия сборки (для автоинкремента)
@@ -33,6 +39,14 @@ INCLUDE_EXTENSIONS = {'.yaml', '.xbsl', '.xbql', '.md', '.txt'}
 # Каталоги и файлы, исключаемые из сборки
 EXCLUDE_DIRS = {'.claude', '.git', '__pycache__', 'node_modules', '.github'}
 EXCLUDE_FILES = {'.gitignore', '.env', '.DS_Store'}
+
+
+def detect_project_kind(project_dir: str) -> str:
+    """Определить вид проекта из Проект.yaml: 'library' или 'application'."""
+    meta = parse_simple_yaml(os.path.join(project_dir, 'Проект.yaml'))
+    if meta.get('ВидПроекта', '') == 'Библиотека':
+        return 'library'
+    return 'application'
 
 
 def find_project_dir(start: str) -> str | None:
@@ -78,7 +92,7 @@ def should_include(rel_path: str) -> bool:
     if any(p in EXCLUDE_DIRS or p.startswith('.') for p in parts):
         return False
     filename = parts[-1]
-    if filename in EXCLUDE_FILES or filename.endswith('.xasm'):
+    if filename in EXCLUDE_FILES or filename.endswith('.xasm') or filename.endswith('.xlib'):
         return False
     ext = os.path.splitext(filename)[1].lower()
     return ext in INCLUDE_EXTENSIONS
@@ -96,9 +110,10 @@ def next_version(base_version: str, last_build: str) -> str:
 
 
 def build_xasm(project_dir: str, output_dir: str,
-               version: str, commit: str, branch: str) -> str:
+               version: str, commit: str, branch: str,
+               kind: str = 'application') -> str:
     """
-    Собрать .xasm архив из файлов проекта.
+    Собрать .xasm (приложение) или .xlib (библиотека) архив из файлов проекта.
 
     Структура архива:
         Assembly.yaml
@@ -117,10 +132,14 @@ def build_xasm(project_dir: str, output_dir: str,
     vendor = meta.get('Поставщик', os.path.basename(vendor_dir))
     name = meta.get('Имя', os.path.basename(project_dir))
 
+    is_library = (kind == 'library')
+    project_kind = 'Library' if is_library else 'Application'
+    ext = '.xlib' if is_library else '.xasm'
+
     now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y.%m.%d %H:%M:%S')
     assembly_yaml = (
         f"ManifestVersion: 1.0\n"
-        f"ProjectKind: Application\n"
+        f"ProjectKind: {project_kind}\n"
         f"Vendor: {vendor}\n"
         f"Name: {name}\n"
         f"Version: {version}\n"
@@ -128,9 +147,11 @@ def build_xasm(project_dir: str, output_dir: str,
         f"BranchName: {branch}\n"
         f"CommitId: {commit}\n"
     )
+    if is_library:
+        assembly_yaml += "Release:\n"
 
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, f"{name} {version}.xasm")
+    output_path = os.path.join(output_dir, f"{name} {version}{ext}")
 
     with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
         # Манифест — в корне архива
@@ -151,7 +172,7 @@ def build_xasm(project_dir: str, output_dir: str,
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Build .xasm assembly for 1С:Предприятие.Элемент'
+        description='Build .xasm/.xlib assembly for 1С:Предприятие.Элемент'
     )
     parser.add_argument(
         '--project-dir',
@@ -159,7 +180,7 @@ def main():
     )
     parser.add_argument(
         '--output', default='.',
-        help='Каталог для сохранения .xasm (default: .)'
+        help='Каталог для сохранения файла сборки (default: .)'
     )
     parser.add_argument(
         '--version',
@@ -172,6 +193,11 @@ def main():
     )
     parser.add_argument('--commit', help='Переопределить git commit hash')
     parser.add_argument('--branch', help='Переопределить имя ветки')
+    parser.add_argument(
+        '--kind', choices=['application', 'library'],
+        help='Вид проекта: application (.xasm) или library (.xlib). '
+             'По умолчанию определяется из ВидПроекта в Проект.yaml.'
+    )
     args = parser.parse_args()
 
     # — Найти каталог проекта
@@ -196,8 +222,11 @@ def main():
     base_version = meta.get('Версия', '1.0')
     version = args.version or next_version(base_version, args.last_build)
 
+    # — Вид проекта
+    kind = args.kind or detect_project_kind(project_dir)
+
     # — Сборка
-    output_path = build_xasm(project_dir, args.output, version, commit, branch)
+    output_path = build_xasm(project_dir, args.output, version, commit, branch, kind)
 
     # Вывод пути — используется скриптами и CI
     print(output_path)

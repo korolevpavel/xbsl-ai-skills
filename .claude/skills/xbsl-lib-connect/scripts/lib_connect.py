@@ -7,7 +7,7 @@
   find-xlib       — найти все *.xlib файлы в папке рекурсивно
   patch-yaml      — добавить/обновить библиотеку в разделе Библиотеки Проект.yaml
   analyze         — извлечь подсистемы и публичные типы из .xlib
-  validate-version — проверить формат версии релиза (X.Y.Z)
+  validate-version — проверить формат версии релиза (X.Y.Z или X.Y.Z-N)
   cleanup         — удалить временную папку
 
 Использование:
@@ -262,10 +262,10 @@ def action_analyze(file: str) -> None:
 # ---------------------------------------------------------------------------
 
 def action_validate_version(version: str) -> None:
-    if re.fullmatch(r'\d+\.\d+(\.\d+)*', version):
+    if re.fullmatch(r'\d+\.\d+(\.\d+)*(-\d+)?', version):
         out({"valid": True})
     else:
-        die({"valid": False, "error": "Формат должен быть X.Y.Z, например 1.0.0"})
+        die({"valid": False, "error": "Формат должен быть X.Y.Z или X.Y.Z-N, например 1.0.0 или 1.0.0-1"})
 
 
 # ---------------------------------------------------------------------------

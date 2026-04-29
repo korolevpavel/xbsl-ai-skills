@@ -26,19 +26,10 @@ compatibility:
 
 ---
 
-## Шаг 0 — Загрузить env vars
+## Шаг 0 — Подключение к облаку
 
-```bash
-echo "BASE_URL: $ELEMENT_BASE_URL"
-echo "CLIENT_ID: $ELEMENT_CLIENT_ID"
-echo "CLIENT_SECRET: $ELEMENT_CLIENT_SECRET"
-echo "SPACE_ID: $ELEMENT_SPACE_ID"
-```
-
-Обязательные: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET`.
-Опциональный: `ELEMENT_SPACE_ID` (если не задан — получить через `list-spaces`).
-
-Если обязательных нет — сообщить пользователю и остановиться.
+Выполни **Шаг 0** из скилла `xbsl-deploy` (проверка env vars + получение токена).
+Продолжать только если токен получен успешно.
 
 ---
 
@@ -140,36 +131,14 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 
 ## Шаг 5 — Загрузить .xlib в облако
 
-### 5.1 Получить space-id
+Выполни **Сценарий H** из скилла `xbsl-deploy` («Создать проект из файла сборки»),
+передав `$LIB_PATH` как файл сборки.
 
-Если `ELEMENT_SPACE_ID` задан — использовать его. Иначе:
-```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py list-spaces
-```
-Если пространство одно — взять его id. Если несколько — спросить пользователя.
+Сценарий H уже обрабатывает: определение `space-id`, поиск существующего проекта
+по `vendor`/`name` через `list-projects`, загрузку через `upload-build`.
 
-### 5.2 Найти существующий проект библиотеки
-
-```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py list-projects
-```
-Найти проект с `vendor` = `$LIB_VENDOR` и `name` = `$LIB_NAME`.
-
-### 5.3 Загрузить
-
-**Проект не найден** → создать новый:
-```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py upload-build \
-    --file "$LIB_PATH" --space-id <space_id>
-```
-
-**Проект найден** (project-id = `<pid>`) → добавить сборку:
-```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py upload-build \
-    --file "$LIB_PATH" --project-id <pid>
-```
-
-После успешной загрузки сообщить: "Сборка `$LIB_NAME $LIB_VERSION` загружена."
+После успешного выполнения Сценария H сохранить `project-id` вернувшегося проекта
+→ он понадобится для инструкции по выпуску релиза в Шаге 6.
 
 ---
 

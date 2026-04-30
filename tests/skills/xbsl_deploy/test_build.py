@@ -89,6 +89,28 @@ def test_parse_simple_yaml_reads_flat_key_values(build, tmp_path: Path) -> None:
     }
 
 
+def test_parse_simple_yaml_ignores_nested_fields(build, tmp_path: Path) -> None:
+    yaml_path = tmp_path / "Проект.yaml"
+    yaml_path.write_text(
+        "Имя: DemoYandexMaps\n"
+        "Версия: 1.0.0\n"
+        "ВидПроекта: Приложение\n"
+        "Поставщик: korolevpavel\n"
+        "Библиотеки:\n"
+        "    -\n"
+        "        Имя: YandexMaps\n"
+        "        Поставщик: korolevpavel\n"
+        "        Версия: 1.1.0\n",
+        encoding="utf-8",
+    )
+
+    result = build.parse_simple_yaml(str(yaml_path))
+
+    assert result["Имя"] == "DemoYandexMaps"
+    assert result["Версия"] == "1.0.0"
+    assert result["Поставщик"] == "korolevpavel"
+
+
 def test_git_info_returns_commit_and_branch(build, monkeypatch) -> None:
     calls = []
 

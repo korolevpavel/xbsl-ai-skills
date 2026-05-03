@@ -63,6 +63,8 @@ def parse_simple_yaml(path: str) -> dict:
     result = {}
     with open(path, encoding='utf-8') as f:
         for line in f:
+            if line.startswith(' ') or line.startswith('\t'):
+                continue
             line = line.strip()
             if ':' in line and not line.startswith('#'):
                 key, _, val = line.partition(':')

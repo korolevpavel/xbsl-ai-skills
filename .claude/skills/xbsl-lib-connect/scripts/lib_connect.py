@@ -38,6 +38,8 @@ def parse_simple_yaml(text: str) -> dict:
     """Минимальный парсер YAML: читает пары key: value (плоский уровень)."""
     result = {}
     for line in text.splitlines():
+        if line.startswith(' ') or line.startswith('\t'):
+            continue
         line = line.strip()
         if ':' in line and not line.startswith('#') and not line.startswith('-'):
             key, _, val = line.partition(':')
@@ -262,7 +264,7 @@ def action_analyze(file: str) -> None:
 # ---------------------------------------------------------------------------
 
 def action_validate_version(version: str) -> None:
-    if re.fullmatch(r'\d+\.\d+(\.\d+)*(-\d+)?', version):
+    if re.fullmatch(r'\d+\.\d+(\.\d+(-\d+)?)?', version):
         out({"valid": True})
     else:
         die({"valid": False, "error": "Формат должен быть X.Y.Z или X.Y.Z-N, например 1.0.0 или 1.0.0-1"})

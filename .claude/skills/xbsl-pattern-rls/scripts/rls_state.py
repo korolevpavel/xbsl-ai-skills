@@ -11,7 +11,7 @@
   "object_name": "Задачи",
   "object_path": "/path/to/subsystem",
   "yaml_file": "Задачи.yaml",
-  "xbsl_file": "Задачи.Объект.xbsl",
+  "xbsl_file": "Задачи.xbsl",
   "xbsl_exists": true,
   "control_access": {
     "exists": false,
@@ -194,8 +194,8 @@ def find_object(root: str, name: str) -> ObjectMatch | None:
 
 
 def find_xbsl_file(object_path: str, object_name: str) -> tuple[str | None, bool]:
-    """Возвращает (имя_файла, существует). Приоритет: .Объект.xbsl, затем .xbsl."""
-    for candidate in (f"{object_name}.Объект.xbsl", f"{object_name}.xbsl"):
+    """Возвращает (имя_файла, существует). Приоритет: .xbsl (RLS-модуль), затем .Объект.xbsl (lifecycle)."""
+    for candidate in (f"{object_name}.xbsl", f"{object_name}.Объект.xbsl"):
         if os.path.isfile(os.path.join(object_path, candidate)):
             return candidate, True
     return None, False

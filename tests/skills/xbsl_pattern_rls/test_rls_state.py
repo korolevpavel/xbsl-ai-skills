@@ -140,11 +140,12 @@ def test_build_pattern_hints_skips_non_ref_fields(rls_state) -> None:
 
 # --- find_xbsl_file ---
 
-def test_find_xbsl_file_prefers_object_suffix(rls_state, tmp_path: Path) -> None:
+def test_find_xbsl_file_prefers_plain_xbsl(rls_state, tmp_path: Path) -> None:
+    # RLS-обработчики идут в Имя.xbsl, а не в Имя.Объект.xbsl (lifecycle)
     write_file(tmp_path / "Задачи.Объект.xbsl", "метод X();")
     write_file(tmp_path / "Задачи.xbsl", "метод Y();")
     xbsl_file, exists = rls_state.find_xbsl_file(str(tmp_path), "Задачи")
-    assert xbsl_file == "Задачи.Объект.xbsl"
+    assert xbsl_file == "Задачи.xbsl"
     assert exists is True
 
 

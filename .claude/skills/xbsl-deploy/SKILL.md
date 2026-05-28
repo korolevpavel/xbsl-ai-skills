@@ -352,29 +352,39 @@ python3 .claude/skills/xbsl-deploy/scripts/deploy.py --from-branch [--branch-id 
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-technology-version --app-id <app-id>
 ```
 
-Вывести пользователю: `technology-version` и `date-updated`.
+Вывести пользователю: `technology-version`. Поле `date-updated` может быть `null` — это нормально.
 
 ### K2. Определить целевую версию
 
 Если пользователь не указал версию явно — спросить.
-Формат: `9.1.11-21`. Актуальные версии видны в панели управления (раздел «Обновить версию»).
+Формат: `9.1.11-21`. Актуальные версии видны в панели управления (раздел «Версия технологии»).
 
-### K3. Остановить приложение (если Running)
-
-```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
-```
-
-Жди `Stopped` (опрос каждые 10 сек, до 3 мин).
-
-### K4. Обновить версию технологии
+### K3. Попробовать обновить через API
 
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action update-technology-version \
   --app-id <app-id> --technology-version <версия>
 ```
 
-Если ответ содержит `"error"` — сообщи пользователю текст ошибки и остановись.
+**Если API вернул успешный ответ** (нет поля `"error"`) — продолжай к K4 (stop → start).
+
+**Если API вернул ошибку** (любую, включая "service not found") — endpoint не поддерживается
+на этой версии платформы. Сообщи пользователю:
+
+> Обновление версии технологии через API недоступно на этой платформе.
+> Используйте Панель управления: откройте приложение → вкладка «Настройки» или раздел
+> «Версия технологии» → выберите нужную версию → примените изменение.
+> После этого запустите приложение снова.
+
+На этом шаге **остановись** — дальнейшие шаги (K4–K5) выполнит пользователь вручную.
+
+### K4. Остановить приложение (если Running)
+
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
+```
+
+Жди `Stopped` (опрос каждые 10 сек, до 3 мин).
 
 ### K5. Запустить и дождаться Running
 
@@ -386,7 +396,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <a
 
 ### K6. Создать приложение с конкретной версией технологии
 
-При создании нового приложения (Сценарий A, шаг A3) можно задать версию сразу:
+При создании нового приложения (Сценарий A, шаг A3) можно задать версию сразу через API:
 
 ```bash
 python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-app \

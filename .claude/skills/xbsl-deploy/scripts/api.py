@@ -412,9 +412,18 @@ def main():
         if not args.app_id:
             print(json.dumps({"error": "--app-id required"}, ensure_ascii=False))
             sys.exit(1)
-        url = f"{base}/console/api/v2/applications/{args.app_id}/technology-version"
+        # Специализированный endpoint /technology-version поддерживается не всеми версиями
+        # платформы. Читаем technology-version из стандартного GET /applications/{id}.
+        url = f"{base}/console/api/v2/applications/{args.app_id}"
         result = api_request("GET", url, token)
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if isinstance(result, dict) and "technology-version" in result:
+            print(json.dumps(
+                {"technology-version": result["technology-version"], "date-updated": result.get("date-updated")},
+                ensure_ascii=False,
+                indent=2,
+            ))
+        else:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
 
     elif action == "update-technology-version":
         if not args.app_id:

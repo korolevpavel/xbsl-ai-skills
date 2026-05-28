@@ -761,8 +761,11 @@ def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv
         ),
         (
             ["--action", "get-technology-version", "--app-id", "app-1"],
-            ("GET", "https://example.com/console/api/v2/applications/app-1/technology-version", "TOKEN", None),
-            {"technology-version": "9.1.9-17", "date-updated": "2026-01-01T00:00:00Z"},
+            ("GET", "https://example.com/console/api/v2/applications/app-1", "TOKEN", None),
+            # api_request вернёт полный объект приложения; action извлекает только technology-version
+            # Тест проверяет, что вызван правильный URL. Сравнение result == response упрощено:
+            # мок возвращает минимальный объект, из которого action извлекает нужные поля
+            {"technology-version": "9.1.9-17", "date-updated": None},
         ),
         (
             ["--action", "update-technology-version", "--app-id", "app-1", "--technology-version", "9.1.11-21"],

@@ -17,8 +17,8 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 | GET | `/console/api/v2/applications` | Список приложений (фильтр: `?name=...`) |
 | GET | `/console/api/v2/applications/{id}` | Получить приложение |
 | GET | `/console/api/v2/applications/{id}/status` | Получить только статус (легче, для polling) |
-| GET | `/console/api/v2/applications/{id}/technology-version` | Получить версию технологии и дату обновления |
-| POST | `/console/api/v2/applications/{id}/technology-version` | Обновить версию технологии |
+| GET | `/console/api/v2/applications/{id}/technology-version` | Получить версию технологии и дату обновления ⚠️ |
+| POST | `/console/api/v2/applications/{id}/technology-version` | Обновить версию технологии ⚠️ |
 | POST | `/console/api/v2/applications` | Создать приложение |
 | DELETE | `/console/api/v2/applications/{id}` | Удалить приложение |
 | PUT | `/console/api/v2/applications/{id}/status/start` | Запустить |
@@ -45,7 +45,12 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 - Только `type: "repository"` поддерживается.
 - `technology-version` — опционально; если не указан, платформа использует версию по умолчанию.
 
-### Обновление версии технологии (POST)
+### Версия технологии ⚠️ (не на всех платформах)
+
+> **Примечание:** Эндпоинты `/technology-version` задокументированы в официальном PDF, но могут
+> быть недоступны на конкретной инсталляции платформы (возвращают "service not found").
+> Для чтения `technology-version` используй `GET /applications/{id}` (поле `technology-version` в ответе).
+> Для обновления через UI: Панель управления → приложение → Версия технологии.
 
 ```
 POST /console/api/v2/applications/{id}/technology-version

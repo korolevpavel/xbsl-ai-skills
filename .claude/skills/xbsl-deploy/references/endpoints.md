@@ -17,6 +17,8 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 | GET | `/console/api/v2/applications` | Список приложений (фильтр: `?name=...`) |
 | GET | `/console/api/v2/applications/{id}` | Получить приложение |
 | GET | `/console/api/v2/applications/{id}/status` | Получить только статус (легче, для polling) |
+| GET | `/console/api/v2/applications/{id}/technology-version` | Получить версию технологии и дату обновления ⚠️ |
+| POST | `/console/api/v2/applications/{id}/technology-version` | Обновить версию технологии ⚠️ |
 | POST | `/console/api/v2/applications` | Создать приложение |
 | DELETE | `/console/api/v2/applications/{id}` | Удалить приложение |
 | PUT | `/console/api/v2/applications/{id}/status/start` | Запустить |
@@ -33,13 +35,33 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
   "display-name": "Имя приложения",
   "publication-context": "Имя приложения",
   "development-mode": false,
-  "space-id": "<space-id>"
+  "space-id": "<space-id>",
+  "technology-version": "9.1.11-21"
 }
 ```
 - `space-id` **обязателен**. Без него сервер вернёт 500.
 - `source.image-id` — ID проекта (используется сборка по умолчанию; должна быть установлена).
 - `source.project-version-id` — ID конкретной сборки (`image-id` из ответа `upload-build`). Приоритетнее чем `image-id`.
 - Только `type: "repository"` поддерживается.
+- `technology-version` — опционально; если не указан, платформа использует версию по умолчанию.
+
+### Версия технологии ⚠️ (не на всех платформах)
+
+> **Примечание:** Эндпоинты `/technology-version` задокументированы в официальном PDF, но могут
+> быть недоступны на конкретной инсталляции платформы (возвращают "service not found").
+> Для чтения `technology-version` используй `GET /applications/{id}` (поле `technology-version` в ответе).
+> Для обновления через UI: Панель управления → приложение → Версия технологии.
+
+```
+POST /console/api/v2/applications/{id}/technology-version
+```
+
+```json
+{ "technology-version": "9.1.11-21" }
+```
+
+Ответ возвращает полный объект приложения с новым `technology-version`.
+Перед вызовом рекомендуется остановить приложение (`status/stop`), после — запустить снова.
 
 ### Поля приложения (ответ)
 - `id` — идентификатор

@@ -646,6 +646,9 @@ def test_main_non_token_action_prints_error_and_exits_on_token_fetch_failure(api
         (["--action", "merge-branch"], "--branch-id required"),
         (["--action", "create-dump"], "--app-id required"),
         (["--action", "get-dump"], "--app-id and --dump-id required"),
+        (["--action", "get-technology-version"], "--app-id required"),
+        (["--action", "update-technology-version"], "--app-id required"),
+        (["--action", "update-technology-version", "--app-id", "app-1"], "--technology-version required"),
     ],
 )
 def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv: list[str], expected_error: str) -> None:
@@ -755,6 +758,38 @@ def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv
             ["--action", "stop-app", "--app-id", "app-1"],
             ("PUT", "https://example.com/console/api/v2/applications/app-1/status/stop", "TOKEN", None),
             {"status": "Stopping"},
+        ),
+        (
+            ["--action", "get-technology-version", "--app-id", "app-1"],
+            ("GET", "https://example.com/console/api/v2/applications/app-1/technology-version", "TOKEN", None),
+            {"technology-version": "9.1.9-17", "date-updated": "2026-01-01T00:00:00Z"},
+        ),
+        (
+            ["--action", "update-technology-version", "--app-id", "app-1", "--technology-version", "9.1.11-21"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/applications/app-1/technology-version",
+                "TOKEN",
+                {"technology-version": "9.1.11-21"},
+            ),
+            {"id": "app-1", "technology-version": "9.1.11-21"},
+        ),
+        (
+            ["--action", "create-app", "--name", "demo", "--space-id", "space-1", "--technology-version", "9.1.11-21"],
+            (
+                "POST",
+                "https://example.com/console/api/v2/applications",
+                "TOKEN",
+                {
+                    "source": {"type": "repository"},
+                    "display-name": "demo",
+                    "publication-context": "demo",
+                    "development-mode": True,
+                    "space-id": "space-1",
+                    "technology-version": "9.1.11-21",
+                },
+            ),
+            {"id": "app-5"},
         ),
         (
             ["--action", "list-spaces"],

@@ -30,6 +30,8 @@ HTTP-клиент для Console API v2 (1С:Предприятие.Элемен
     python3 api.py --action get-dump --app-id <id> --dump-id <id>
     python3 api.py --action merge-branch --branch-id <id>
     python3 api.py --action list-app-tasks --app-id <id>
+    python3 api.py --action get-technology-version --app-id <id>
+    python3 api.py --action update-technology-version --app-id <id> --technology-version <version>
 
 Env vars (приоритет над флагами):
     ELEMENT_BASE_URL       — базовый URL (например https://1cmycloud.com)
@@ -309,6 +311,7 @@ def main():
     parser.add_argument("--version-id", default="")
     parser.add_argument("--commit-id", default="")
     parser.add_argument("--commit-message", default="")
+    parser.add_argument("--technology-version", default="")
     args = parser.parse_args()
 
     if not args.base_url:
@@ -376,6 +379,8 @@ def main():
         }
         if args.space_id:
             body["space-id"] = args.space_id
+        if args.technology_version:
+            body["technology-version"] = args.technology_version
         result = api_request("POST", url, token, body)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
@@ -401,6 +406,25 @@ def main():
             sys.exit(1)
         url = f"{base}/console/api/v2/applications/{args.app_id}/status/stop"
         result = api_request("PUT", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "get-technology-version":
+        if not args.app_id:
+            print(json.dumps({"error": "--app-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/applications/{args.app_id}/technology-version"
+        result = api_request("GET", url, token)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "update-technology-version":
+        if not args.app_id:
+            print(json.dumps({"error": "--app-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        if not args.technology_version:
+            print(json.dumps({"error": "--technology-version required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/applications/{args.app_id}/technology-version"
+        result = api_request("POST", url, token, {"technology-version": args.technology_version})
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
     # ── Пространства ───────────────────────────────────────────────────────────

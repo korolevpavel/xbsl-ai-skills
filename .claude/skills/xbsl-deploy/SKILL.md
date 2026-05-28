@@ -63,6 +63,7 @@ set -a && source .env 2>/dev/null; set +a
 | создать проект / загрузить сборку / новый проект из файла | **H: Создать проект из сборки** |
 | задеплой из исходников / собери и задеплой / deploy from source | **I: Собрать .xasm и задеплоить** |
 | sync-branch / обнови ветку в облаке / загрузить из ветки / pull из git | **J: sync-branch с фолбэком на сборку** |
+| версия технологии / какая платформа / обнови платформу / technology version | **K: Версия технологии** |
 
 ## Шаг 2: Получи токен
 
@@ -340,6 +341,58 @@ python3 .claude/skills/xbsl-deploy/scripts/deploy.py --from-branch [--branch-id 
 ### J2. Если пользователь согласился — выполни Сценарий I (Путь 1)
 
 Перейди к **Сценарию I, Путь 1: из исходников**. Все шаги те же.
+
+---
+
+## Сценарий K: Версия технологии
+
+### K1. Показать текущую версию
+
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-technology-version --app-id <app-id>
+```
+
+Вывести пользователю: `technology-version` и `date-updated`.
+
+### K2. Определить целевую версию
+
+Если пользователь не указал версию явно — спросить.
+Формат: `9.1.11-21`. Актуальные версии видны в панели управления (раздел «Обновить версию»).
+
+### K3. Остановить приложение (если Running)
+
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
+```
+
+Жди `Stopped` (опрос каждые 10 сек, до 3 мин).
+
+### K4. Обновить версию технологии
+
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action update-technology-version \
+  --app-id <app-id> --technology-version <версия>
+```
+
+Если ответ содержит `"error"` — сообщи пользователю текст ошибки и остановись.
+
+### K5. Запустить и дождаться Running
+
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
+```
+
+Жди `Running` (опрос каждые 10 сек, до 5 мин) → сообщи новую версию и ссылку на приложение.
+
+### K6. Создать приложение с конкретной версией технологии
+
+При создании нового приложения (Сценарий A, шаг A3) можно задать версию сразу:
+
+```bash
+python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-app \
+  --name <name> --space-id <space-id> --project-id <project-id> \
+  --technology-version <версия>
+```
 
 ---
 

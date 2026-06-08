@@ -45,23 +45,12 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 - Только `type: "repository"` поддерживается.
 - `technology-version` — опционально; если не указан, платформа использует версию по умолчанию.
 
-### Версия технологии ⚠️ (не на всех платформах)
+### Версия технологии
 
-> **Примечание:** Эндпоинты `/technology-version` задокументированы в официальном PDF, но могут
-> быть недоступны на конкретной инсталляции платформы (возвращают "service not found").
-> Для чтения `technology-version` используй `GET /applications/{id}` (поле `technology-version` в ответе).
-> Для обновления через UI: Панель управления → приложение → Версия технологии.
+Для чтения `technology-version` используй `GET /applications/{id}` (поле `technology-version` в ответе).
 
-```
-POST /console/api/v2/applications/{id}/technology-version
-```
-
-```json
-{ "technology-version": "9.1.11-21" }
-```
-
-Ответ возвращает полный объект приложения с новым `technology-version`.
-Перед вызовом рекомендуется остановить приложение (`status/stop`), после — запустить снова.
+> **Примечание:** `GET/POST /applications/{id}/technology-version` (старый прямой endpoint) ❌ не работает
+> на большинстве инсталляций — возвращает "service not found". Используй групповые задачи (см. ниже).
 
 ### Поля приложения (ответ)
 - `id` — идентификатор
@@ -82,6 +71,33 @@ POST /console/api/v2/applications/{id}/technology-version
 - `Initializing` — инициализируется после создания
 - `Frozen` — заморожено
 - `Error` — ошибка (смотри поле `error`)
+
+## Групповые задачи (Tasks)
+
+| Метод | Endpoint | Описание |
+|---|---|---|
+| POST | `/console/api/v2/tasks/group-tasks/update-applications-technology` | Создать задачу обновления версии технологии |
+| GET  | `/console/api/v2/tasks/group-tasks/{taskId}` | Получить статус групповой задачи |
+
+### Запрос обновления версии технологии (POST)
+```json
+{
+  "technology-version": "9.1.11-21",
+  "applications": ["<app-id>"]
+}
+```
+
+### Ответ (GroupTaskDto)
+- `id` — идентификатор задачи (для опроса статуса)
+- `status` — статус задачи
+- `total-count` — всего задач в группе
+- `completed-count` — завершено
+- `cancelled-count` — отменено
+- `any-failure` — флаг ошибки (не `null` и не `"false"` → есть ошибка)
+- `error-message` — описание ошибки
+- `tasks[]` — список задач `{id, status, operation-type, start-date, end-date, group-id}`
+
+Завершение: `completed-count + cancelled-count == total-count`. Интервал опроса: 10 сек, таймаут 5 мин.
 
 ## Пространства (Spaces)
 

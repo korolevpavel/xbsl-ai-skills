@@ -312,6 +312,7 @@ def main():
     parser.add_argument("--commit-id", default="")
     parser.add_argument("--commit-message", default="")
     parser.add_argument("--technology-version", default="")
+    parser.add_argument("--task-id", default="")
     args = parser.parse_args()
 
     if not args.base_url:
@@ -432,8 +433,17 @@ def main():
         if not args.technology_version:
             print(json.dumps({"error": "--technology-version required"}, ensure_ascii=False))
             sys.exit(1)
-        url = f"{base}/console/api/v2/applications/{args.app_id}/technology-version"
-        result = api_request("POST", url, token, {"technology-version": args.technology_version})
+        url = f"{base}/console/api/v2/tasks/group-tasks/update-applications-technology"
+        body = {"technology-version": args.technology_version, "applications": [args.app_id]}
+        result = api_request("POST", url, token, body)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "get-group-task":
+        if not args.task_id:
+            print(json.dumps({"error": "--task-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/tasks/group-tasks/{args.task_id}"
+        result = api_request("GET", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
     # ── Пространства ───────────────────────────────────────────────────────────

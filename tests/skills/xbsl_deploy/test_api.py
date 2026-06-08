@@ -649,6 +649,7 @@ def test_main_non_token_action_prints_error_and_exits_on_token_fetch_failure(api
         (["--action", "get-technology-version"], "--app-id required"),
         (["--action", "update-technology-version"], "--app-id required"),
         (["--action", "update-technology-version", "--app-id", "app-1"], "--technology-version required"),
+        (["--action", "get-group-task"], "--task-id required"),
     ],
 )
 def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv: list[str], expected_error: str) -> None:
@@ -771,11 +772,16 @@ def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv
             ["--action", "update-technology-version", "--app-id", "app-1", "--technology-version", "9.1.11-21"],
             (
                 "POST",
-                "https://example.com/console/api/v2/applications/app-1/technology-version",
+                "https://example.com/console/api/v2/tasks/group-tasks/update-applications-technology",
                 "TOKEN",
-                {"technology-version": "9.1.11-21"},
+                {"technology-version": "9.1.11-21", "applications": ["app-1"]},
             ),
-            {"id": "app-1", "technology-version": "9.1.11-21"},
+            {"id": "task-1", "status": "Pending", "total-count": "1", "completed-count": "0"},
+        ),
+        (
+            ["--action", "get-group-task", "--task-id", "task-1"],
+            ("GET", "https://example.com/console/api/v2/tasks/group-tasks/task-1", "TOKEN", None),
+            {"id": "task-1", "status": "Completed", "total-count": "1", "completed-count": "1", "cancelled-count": "0"},
         ),
         (
             ["--action", "create-app", "--name", "demo", "--space-id", "space-1", "--technology-version", "9.1.11-21"],

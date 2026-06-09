@@ -35,7 +35,8 @@ def run_main(lc, monkeypatch, capsys, argv: list[str]) -> tuple:
 
 def make_xlib(path: Path, project_kind: str = 'Library',
               vendor: str = 'e1c', name: str = 'TestLib',
-              version: str = '1.0-5', tech_version: str = '') -> Path:
+              version: str = '1.0-5', tech_version: str = '',
+              with_release: bool = False) -> Path:
     """Создать минимальный .xlib ZIP-архив для тестов."""
     assembly_lines = [
         'ManifestVersion: 1.0',
@@ -46,6 +47,9 @@ def make_xlib(path: Path, project_kind: str = 'Library',
     ]
     if tech_version:
         assembly_lines.append(f'TechnologyVersion: {tech_version}')
+    if with_release:
+        assembly_lines.append('Release:')
+        assembly_lines.append('    Created: 2026.01.01 00:00:00')
     assembly = '\n'.join(assembly_lines) + '\n'
 
     xlib_path = path / f'{name}.xlib'
@@ -68,6 +72,16 @@ class TestInspect:
         assert result['name'] == 'TestLib'
         assert result['project_kind'] == 'Library'
         assert result['technology_version'] == '24.1'
+        assert result['has_release'] is False
+        assert result['release_version'] == ''
+
+    def test_inspect_with_release(self, lc, monkeypatch, capsys, tmp_path):
+        xlib = make_xlib(tmp_path, version='2.0.1', with_release=True)
+        captured, code = run_main(lc, monkeypatch, capsys, ['--action', 'inspect', '--file', str(xlib)])
+        assert code == 0
+        result = json.loads(captured.out)
+        assert result['has_release'] is True
+        assert result['release_version'] == '2.0.1'
 
     def test_application_returns_error(self, lc, monkeypatch, capsys, tmp_path):
         xlib = make_xlib(tmp_path, project_kind='Application')

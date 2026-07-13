@@ -35,7 +35,7 @@ jobs:
           ELEMENT_APP_ID: ${{ secrets.ELEMENT_APP_ID }}
           ELEMENT_PROJECT_ID: ${{ secrets.ELEMENT_PROJECT_ID }}
         run: |
-          python3 <путь-к-проекту>/.claude/skills/xbsl-deploy/scripts/deploy.py \
+          {python} <путь-к-проекту>/.claude/skills/xbsl-deploy/scripts/deploy.py \
             --project-dir <путь-к-проекту> \
             --branch "$GITHUB_REF_NAME" \
             --commit "$GITHUB_SHA" \
@@ -61,7 +61,7 @@ jobs:
 ```yaml
 deploy:
   script:
-    - python3 <путь-к-проекту>/.claude/skills/xbsl-deploy/scripts/deploy.py
+    - {python} <путь-к-проекту>/.claude/skills/xbsl-deploy/scripts/deploy.py
         --project-dir <путь-к-проекту>
         --branch "$CI_COMMIT_BRANCH"
         --commit "$CI_COMMIT_SHA"

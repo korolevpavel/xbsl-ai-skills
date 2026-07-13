@@ -7,10 +7,10 @@ description: >
   Вызывай когда пользователь хочет добавить аватар сотрудника, фото товара, логотип компании,
   изображение профиля или любое одиночное изображение к справочнику или документу.
   НЕ для файловых вложений (используй xbsl-file-add).
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Ключевое отличие от xbsl-file-add
 
@@ -42,7 +42,7 @@ compatibility:
 ### Шаг 2 — Анализ объекта (параллельно с шагом 1)
 
 ```bash
-python3 .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
+{python} .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
 ```
 
 Из результата взять:

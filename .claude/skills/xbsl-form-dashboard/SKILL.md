@@ -7,10 +7,10 @@ description: >
   ГлавнаяСтраница.yaml и ГлавнаяСтраница.xbsl с обработчиком ПослеСоздания.
   Вызывай когда пользователь хочет создать главную страницу, дашборд, стартовый
   экран приложения или лендинг с карточками.
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Отличие от других скиллов форм
 
@@ -45,7 +45,7 @@ compatibility:
 ### Шаг 1 — Разведка
 
 ```bash
-python3 .claude/skills/xbsl-explore/scripts/explore.py \
+{python} .claude/skills/xbsl-explore/scripts/explore.py \
     --type КомпонентИнтерфейса --name <ИмяФормы> --root <корень>
 ```
 
@@ -79,7 +79,7 @@ python3 .claude/skills/xbsl-explore/scripts/explore.py \
 ### Шаг 3 — Сгенерировать UUID
 
 ```bash
-python3 -c "import uuid; print(str(uuid.uuid4()))"
+{python} -c "import uuid; print(str(uuid.uuid4()))"
 ```
 
 ### Шаг 4 — Создать `<ИмяФормы>.yaml`

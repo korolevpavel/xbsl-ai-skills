@@ -7,7 +7,10 @@ description: >
   Документа, РегистрСведений, Отчета или другого объекта конфигурации. Также применяй
   при запросах типа "создай интерфейс", "добавь форму", "сделай список", "нужна карточка
   редактирования", "форма для отчёта".
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # Создание формы интерфейса в 1С:Элемент
 
@@ -34,7 +37,7 @@ description: >
 **Шаг 2 — Анализ объекта.** Вызови скилл `xbsl-form-info`:
 
 ```
-python3 .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
+{python} .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
 ```
 
 Из результата возьми:

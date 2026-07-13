@@ -4,8 +4,10 @@
 путь к объекту, список реквизитов, табличные части, рекомендацию layout,
 наличие уже созданных файлов форм.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование:
-    python3 .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> [--root .]
+    {python} .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> [--root .]
 
 Пример вывода:
 {

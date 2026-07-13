@@ -7,10 +7,10 @@ description: >
   пользователь упоминает деплой, запуск, остановку или управление приложением на Элементе —
   даже если он не говорит явно "задеплой", а просто спрашивает "как дела с приложением" или
   "смёрджи ветку".
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # Деплой на 1С:Предприятие.Элемент
 
@@ -68,7 +68,7 @@ set -a && source .env 2>/dev/null; set +a
 ## Шаг 2: Получи токен
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-token
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action get-token
 ```
 
 Если ошибка — сообщи пользователю что нужно задать env vars:
@@ -92,7 +92,7 @@ grep "ВидПроекта" <путь>/Проект.yaml
 ### A1. Определи проект
 Если `ELEMENT_PROJECT_ID` не задан — выведи список проектов и попроси пользователя выбрать:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-projects
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action list-projects
 ```
 Показывай только не удалённые (`"deleted": false`) проекты типа `Application`.
 
@@ -101,7 +101,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-projects
 ### A2. Определи space-id
 Если `ELEMENT_SPACE_ID` не задан:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-spaces
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action list-spaces
 ```
 - Если пространство **одно** — используй его `id` как `space-id`. Предложи пользователю сохранить в `.env`: `ELEMENT_SPACE_ID=<id>`.
 - Если пространств **несколько** — покажи список и спроси пользователя выбрать.
@@ -111,20 +111,20 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-spaces
 Спроси имя приложения если не указано.
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-app --name <name> --space-id <space-id> --project-id <project-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action create-app --name <name> --space-id <space-id> --project-id <project-id>
 ```
 
 Сохрани `id` из ответа как `app-id`.
 
 ### A4. Запусти приложение
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
 ```
 
 ### A5. Жди Running
 Опрашивай каждые 10 сек, до 5 мин:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app-id>
 ```
 Жди пока `status` == `Running`. Если `status` == `Error` — сообщи `error` пользователю и остановись.
 Если 5 мин прошло, а статус не `Running` — сообщи пользователю текущий статус и предложи проверить логи в консоли Элемента.
@@ -139,7 +139,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app
 ### B1. Найди приложение
 Используй `ELEMENT_APP_ID` или спроси имя и найди:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-apps --name <name>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action list-apps --name <name>
 ```
 Сохрани `id` как `app-id`.
 
@@ -147,41 +147,41 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-apps --name <nam
 Используй `ELEMENT_PROJECT_ID`. Если не задан — извлеки из ответа B1: поле `project.id` в объекте приложения.
 Если поле `project` отсутствует или пустое:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-projects
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action list-projects
 ```
 Спроси пользователя выбрать проект. Сохрани как `project-id`.
 
 ### B3. Создай дамп (страховка перед изменениями)
 Дамп нужен как точка отката на случай проблем после деплоя.
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-dump --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action create-dump --app-id <app-id>
 ```
 Сохрани `id` из ответа как `dump-id`. Проверь статус **сразу** (без паузы), затем опрашивай каждые 3 сек (до 60 сек):
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-dump --app-id <app-id> --dump-id <dump-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action get-dump --app-id <app-id> --dump-id <dump-id>
 ```
 Жди пока `status` станет `Done` или `Completed`.
 **Если дамп завершился ошибкой или не готов за 60 сек — остановись и сообщи пользователю. Не продолжай.**
 
 ### B4. Найди ветку
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-branches --project-id <project-id> --branch-name <branch>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action list-branches --project-id <project-id> --branch-name <branch>
 ```
 
 ### B5. Привяжи ветку к приложению (если нужно)
 Если `branch.application.id != app-id`:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action update-branch --branch-id <branch-id> --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action update-branch --branch-id <branch-id> --app-id <app-id>
 ```
 
 ### B6. Перезапусти (подхвати изменения из репозитория)
 Сначала останови (если приложение не `Stopped`):
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
 ```
 Жди `Stopped` (опрос каждые 10 сек, до 3 мин). Затем запусти:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
 ```
 
 ### B7. Жди Running → верни URL (как A5-A6)
@@ -191,7 +191,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <a
 ## Сценарий C: Статус приложения
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app-id>
 ```
 
 Выведи пользователю:
@@ -206,7 +206,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-app --app-id <app
 ## Сценарий D: Запустить приложение
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
 ```
 Жди `Running` (опрос каждые 10 сек, до 5 мин) → верни статус и ссылку.
 Если таймаут — сообщи текущий статус и предложи проверить логи в консоли Элемента.
@@ -216,7 +216,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <a
 ## Сценарий E: Остановить приложение
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
 ```
 Жди `Stopped` (опрос каждые 10 сек, до 3 мин) → сообщи что остановлено.
 Если таймаут — сообщи текущий статус.
@@ -229,16 +229,16 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <ap
 
 Если приложение не `Stopped`:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
 ```
 Жди `Stopped` (опрос каждые 10 сек, до 3 мин). Затем:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action delete-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action delete-app --app-id <app-id>
 ```
 
 Если ветка создавалась скиллом — предложи удалить и её. Удаляй ветку только после отдельного подтверждения:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action delete-branch --branch-id <branch-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action delete-branch --branch-id <branch-id>
 ```
 
 ---
@@ -247,12 +247,12 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action delete-branch --branc
 
 Если `branch-id` не известен — найди ветку. Для этого нужен `project-id` (из `ELEMENT_PROJECT_ID` или спроси пользователя через `list-projects`):
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-branches --project-id <project-id> --branch-name <branch>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action list-branches --project-id <project-id> --branch-name <branch>
 ```
 
 Затем выполни merge:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action merge-branch --branch-id <branch-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action merge-branch --branch-id <branch-id>
 ```
 Сообщи результат.
 
@@ -272,13 +272,13 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action merge-branch --branch
 ### H2. Определи space-id
 Если `ELEMENT_SPACE_ID` не задан:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action list-spaces
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action list-spaces
 ```
 Если пространство одно — используй его автоматически.
 
 ### H3. Загрузи сборку и создай проект
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action upload-build \
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action upload-build \
   --file <path> \
   --space-id <space-id> \
   [--branch-name <branch>] \
@@ -306,7 +306,7 @@ grep "ВидПроекта" <путь>/Проект.yaml
 
 **Путь 1** (из исходников): нужны `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`.
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/deploy.py [--project-dir PATH] [--branch B] [--commit C]
+{python} .claude/skills/xbsl-deploy/scripts/deploy.py [--project-dir PATH] [--branch B] [--commit C]
 ```
 
 Если команда завершилась ошибкой (exit code != 0):
@@ -318,7 +318,7 @@ python3 .claude/skills/xbsl-deploy/scripts/deploy.py [--project-dir PATH] [--bra
 **Путь 2** (из git-ветки): нужны `ELEMENT_APP_ID`, `ELEMENT_BRANCH_ID`.
 ⚠️ `sync-branch` требует браузерную сессию — через API **невозможен** (Bearer возвращает 403).
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/deploy.py --from-branch [--branch-id ID]
+{python} .claude/skills/xbsl-deploy/scripts/deploy.py --from-branch [--branch-id ID]
 ```
 
 ---
@@ -349,7 +349,7 @@ python3 .claude/skills/xbsl-deploy/scripts/deploy.py --from-branch [--branch-id 
 ### K1. Показать текущую версию
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-technology-version --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action get-technology-version --app-id <app-id>
 ```
 
 Вывести пользователю: `technology-version`. Поле `date-updated` может быть `null` — это нормально.
@@ -362,7 +362,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-technology-versio
 ### K3. Обновить версию через групповую задачу
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action update-technology-version \
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action update-technology-version \
   --app-id <app-id> --technology-version <версия>
 ```
 
@@ -379,7 +379,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action update-technology-ver
 ### K3.1. Дождаться завершения задачи
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-group-task --task-id <task-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action get-group-task --task-id <task-id>
 ```
 
 Опрашивать каждые 10 сек, до 5 мин. Завершение: `completed-count + cancelled-count == total-count`.
@@ -388,7 +388,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action get-group-task --task
 ### K4. Остановить приложение (если Running)
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <app-id>
 ```
 
 Жди `Stopped` (опрос каждые 10 сек, до 3 мин).
@@ -396,7 +396,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action stop-app --app-id <ap
 ### K5. Запустить и дождаться Running
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <app-id>
 ```
 
 Жди `Running` (опрос каждые 10 сек, до 5 мин) → сообщи новую версию и ссылку на приложение.
@@ -406,7 +406,7 @@ python3 .claude/skills/xbsl-deploy/scripts/api.py --action start-app --app-id <a
 При создании нового приложения (Сценарий A, шаг A3) можно задать версию сразу через API:
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py --action create-app \
+{python} .claude/skills/xbsl-deploy/scripts/api.py --action create-app \
   --name <name> --space-id <space-id> --project-id <project-id> \
   --technology-version <версия>
 ```

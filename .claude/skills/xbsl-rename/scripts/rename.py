@@ -3,11 +3,13 @@
 Безопасное переименование объекта конфигурации 1С:Элемент.
 Обновляет все ссылки в YAML и XBSL файлах проекта, переименовывает файлы.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование (dry-run — только показывает изменения):
-    python3 .claude/skills/xbsl-rename/scripts/rename.py --old-name Номенклатура --new-name Товары [--root .]
+    {python} .claude/skills/xbsl-rename/scripts/rename.py --old-name Номенклатура --new-name Товары [--root .]
 
 Применить изменения:
-    python3 .claude/skills/xbsl-rename/scripts/rename.py --old-name Номенклатура --new-name Товары [--root .] --apply
+    {python} .claude/skills/xbsl-rename/scripts/rename.py --old-name Номенклатура --new-name Товары [--root .] --apply
 """
 
 from __future__ import annotations

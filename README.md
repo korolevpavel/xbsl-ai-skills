@@ -60,7 +60,9 @@
 ## Требования
 
 - [Claude Code](https://claude.ai/code) или другой AI-агент, поддерживающий скиллы
-- `python3` — для работы скиллов `xbsl-explore`, `xbsl-uuid`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-form-cards`, `xbsl-form-dashboard`, `xbsl-file-add`, `xbsl-image-add`, `xbsl-deploy`, `xbsl-pattern-register`, `xbsl-lib-connect`, `xbsl-rename`, `xbsl-access-set` и `xbsl-pattern-rls`
+- `Python 3` — для работы скиллов `xbsl-uuid`, `xbsl-subsystem-add`, `xbsl-explore`, `xbsl-meta-add`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-file-add`, `xbsl-image-add`, `xbsl-deploy`, `xbsl-pattern-register`, `xbsl-form-cards`, `xbsl-rename`, `xbsl-form-dashboard`, `xbsl-lib-connect`, `xbsl-access-set` и `xbsl-pattern-rls`
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Установка
 
@@ -157,7 +159,7 @@ coverage run -m pytest && coverage report
 
 ```bash
 pip install -r requirements-site.txt
-python scripts/build_site.py
+{python} scripts/build_site.py
 ```
 
 ## Добавление новых скиллов

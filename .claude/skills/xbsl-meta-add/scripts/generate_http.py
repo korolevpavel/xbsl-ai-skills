@@ -2,15 +2,17 @@
 """
 Генерирует HttpСервис (.yaml + .xbsl) для проекта 1С:Элемент.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Режим 1 — создать новый сервис:
-    python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \\
+    {python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \\
       --name КонтрагентыHttpСервис \\
       --url /counterparties \\
       --routes "GET /, POST /, GET /{id}, PUT /{id}, DELETE /{id}" \\
       --root tools/test-app-1cmycloud [--apply]
 
 Режим 2 — добавить маршруты в существующий сервис:
-    python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \\
+    {python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \\
       --service КонтрагентыHttpСервис \\
       --add-routes "DELETE /{id}, PATCH /{id}/photo" \\
       --root tools/test-app-1cmycloud [--apply]

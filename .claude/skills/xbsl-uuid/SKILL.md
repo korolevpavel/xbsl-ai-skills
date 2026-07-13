@@ -1,7 +1,10 @@
 ---
 name: xbsl-uuid
 description: Генерация UUID v4 для объектов конфигурации 1С:Элемент. Вызывай этот скилл всякий раз, когда нужно сгенерировать один или несколько UUID для Ид объектов, реквизитов, элементов перечислений, табличных частей и т.д.
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # Генерация UUID v4
 
@@ -11,8 +14,8 @@ description: Генерация UUID v4 для объектов конфигур
 
 | Контекст | Формат | Команда |
 |---|---|---|
-| Ид объекта, реквизита, ТЧ, измерения, ресурса | со дефисами: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx` | `python3 -c "import uuid; [print(uuid.uuid4()) for _ in range({N})]"` |
-| Ид поля `Макет.Поля` в Отчете | hex без дефисов: `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` | `python3 -c "import uuid; [print(uuid.uuid4().hex) for _ in range({N})]"` |
+| Ид объекта, реквизита, ТЧ, измерения, ресурса | со дефисами: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx` | `{python} -c "import uuid; [print(uuid.uuid4()) for _ in range({N})]"` |
+| Ид поля `Макет.Поля` в Отчете | hex без дефисов: `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` | `{python} -c "import uuid; [print(uuid.uuid4().hex) for _ in range({N})]"` |
 
 Вызывающий скилл должен явно указать нужный формат. По умолчанию — со дефисами.
 

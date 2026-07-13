@@ -10,17 +10,19 @@
   - Assembly.yaml          (манифест, ProjectKind: Library)
   - {vendor}/{name}/...    (файлы проекта)
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование:
-    python3 build.py [--project-dir PATH] [--output DIR]
+    {python} build.py [--project-dir PATH] [--output DIR]
                      [--version VER] [--last-build VER]
                      [--commit HASH] [--branch NAME]
                      [--kind application|library]
 
 Примеры:
-    python3 build.py
-    python3 build.py --last-build 1.0-20 --output /tmp
-    python3 build.py --version 1.0-21 --output /tmp
-    python3 build.py --kind library --output /tmp
+    {python} build.py
+    {python} build.py --last-build 1.0-20 --output /tmp
+    {python} build.py --version 1.0-21 --output /tmp
+    {python} build.py --kind library --output /tmp
 
 Env vars:
     LAST_BUILD_VERSION  — последняя версия сборки (для автоинкремента)

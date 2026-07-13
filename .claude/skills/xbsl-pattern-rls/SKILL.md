@@ -19,7 +19,10 @@ description: >
   записи (предопределённый ключ, файлы не создаются); P2 — группа по параметру
   (собственный КлючДоступа + обработчик ПроверитьНаличиеКлючейДоступа); P2-б —
   ролевой ключ без параметров; P3 — два участника с разными правами на один объект.
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # RLS-паттерн для объектов 1С:Элемент
 
@@ -35,7 +38,7 @@ description: >
 Запусти `rls_state`:
 
 ```bash
-python3 .claude/skills/xbsl-pattern-rls/scripts/rls_state.py --name <ИмяОбъекта> --root .
+{python} .claude/skills/xbsl-pattern-rls/scripts/rls_state.py --name <ИмяОбъекта> --root .
 ```
 
 Из результата возьми:

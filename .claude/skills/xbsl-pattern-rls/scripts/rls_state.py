@@ -3,8 +3,10 @@
 Анализирует RLS-состояние объекта конфигурации 1С:Элемент:
 КонтрольДоступа, наличие обработчиков уровня 1/2, подсказки по паттерну.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование:
-    python3 .claude/skills/xbsl-pattern-rls/scripts/rls_state.py --name <ИмяОбъекта> [--root .]
+    {python} .claude/skills/xbsl-pattern-rls/scripts/rls_state.py --name <ИмяОбъекта> [--root .]
 
 Пример вывода:
 {

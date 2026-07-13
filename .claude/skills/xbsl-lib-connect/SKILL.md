@@ -8,10 +8,10 @@ description: >
   библиотеки. Вызывай когда нужно подключить внешнюю библиотеку, использовать типы
   другого поставщика, или добавить зависимость к проекту. НЕ для: создания объектов
   конфигурации — используй xbsl-meta-add.
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # xbsl-lib-connect
 
@@ -53,7 +53,7 @@ git clone --depth 1 <URL> "$TMP_DIR"
 
 Найти `.xlib` в клоне:
 ```bash
-python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+{python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action find-xlib --dir "$TMP_DIR"
 ```
 
@@ -69,7 +69,7 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 ### C. Локальная папка с исходниками
 Сначала поискать `.xlib` в папке:
 ```bash
-python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+{python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action find-xlib --dir <папка>
 ```
 Если найдены → выбрать (как в п. A). Иначе — проверить `Проект.yaml` и собрать (Шаг 2А).
@@ -79,7 +79,7 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 ## Шаг 2А — Сборка .xlib из исходников (если нужна)
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/build.py \
+{python} .claude/skills/xbsl-deploy/scripts/build.py \
     --project-dir <путь_к_папке_с_Проект.yaml> \
     --output /tmp \
     --kind library
@@ -96,7 +96,7 @@ python3 .claude/skills/xbsl-deploy/scripts/build.py \
 ## Шаг 2 — Прочитать метаданные .xlib
 
 ```bash
-python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+{python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action inspect --file "$LIB_PATH"
 ```
 
@@ -125,7 +125,7 @@ grep "ВерсияТехнологии" <путь>/*/Проект.yaml
 
 Использовать dry-run режим patch-yaml для проверки:
 ```bash
-python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+{python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action patch-yaml \
     --project-yaml <путь>/Проект.yaml \
     --name "$LIB_NAME" --vendor "$LIB_VENDOR" --version "0.0.0" \
@@ -172,7 +172,7 @@ Skill("xbsl-deploy", args="Создать проект из файла сбор�
 
 Проверить формат:
 ```bash
-python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+{python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action validate-version --version "$RELEASE_VERSION"
 ```
 При `valid: false` — сообщить ошибку и попросить ввести снова.
@@ -183,7 +183,7 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 
 Сначала показать план изменений (dry-run):
 ```bash
-python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+{python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action patch-yaml \
     --project-yaml <путь>/Проект.yaml \
     --name "$LIB_NAME" --vendor "$LIB_VENDOR" --version "$RELEASE_VERSION" \
@@ -194,7 +194,7 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 
 Применить:
 ```bash
-python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+{python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action patch-yaml \
     --project-yaml <путь>/Проект.yaml \
     --name "$LIB_NAME" --vendor "$LIB_VENDOR" --version "$RELEASE_VERSION"
@@ -205,7 +205,7 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 ## Шаг 8 — Анализ библиотеки и рекомендации
 
 ```bash
-python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+{python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action analyze --file "$LIB_PATH"
 ```
 
@@ -244,7 +244,7 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 
 Удалить временные папки:
 ```bash
-[ -n "$TMP_DIR" ] && python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
+[ -n "$TMP_DIR" ] && {python} .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
     --action cleanup --dir "$TMP_DIR"
 ```
 

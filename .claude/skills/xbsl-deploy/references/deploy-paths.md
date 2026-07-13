@@ -17,7 +17,7 @@
 Обязательно: `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`.
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/deploy.py \
+{python} .claude/skills/xbsl-deploy/scripts/deploy.py \
   [--project-dir PATH] \
   [--app-id APP_ID] \
   [--project-id PROJECT_ID] \
@@ -37,7 +37,7 @@ python3 .claude/skills/xbsl-deploy/scripts/deploy.py \
 
 **Dry-run** (только сборка, без деплоя):
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/deploy.py --dry-run
+{python} .claude/skills/xbsl-deploy/scripts/deploy.py --dry-run
 ```
 
 ---
@@ -55,7 +55,7 @@ python3 .claude/skills/xbsl-deploy/scripts/deploy.py --dry-run
 `ELEMENT_BRANCH_ID` — внутренний ID ветки на платформе. Узнать его можно из HAR-файла браузера при нажатии кнопки «Загрузить из ветки» в IDE (поле `"type": "e1c::console::Team::Branches.Reference"`, значение рядом).
 
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/deploy.py \
+{python} .claude/skills/xbsl-deploy/scripts/deploy.py \
   --from-branch \
   [--app-id APP_ID] \
   [--branch-id BRANCH_ID]
@@ -63,7 +63,7 @@ python3 .claude/skills/xbsl-deploy/scripts/deploy.py \
 
 Или через API напрямую:
 ```bash
-python3 .claude/skills/xbsl-deploy/scripts/api.py \
+{python} .claude/skills/xbsl-deploy/scripts/api.py \
   --action sync-branch \
   --app-id APP_ID \
   --branch-id BRANCH_ID

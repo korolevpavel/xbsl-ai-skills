@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Набор скиллов для AI-агентов, работающих с проектами на платформе **1С:Элемент (XBSL/SBSL)** — язык со статической типизацией для разработки бизнес-приложений.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 ## Структура репозитория
 
 ```
@@ -52,7 +54,7 @@ scripts/build_site.py    # сборка GitHub Pages из README и SKILL.md ф�
 ## Скиллы
 
 ### xbsl-uuid
-Генерирует N UUID v4 через `python3 -c`. Вызывается другими скиллами — не напрямую пользователем.
+Генерирует N UUID v4 через `{python} -c`. Вызывается другими скиллами — не напрямую пользователем.
 
 ### xbsl-init
 Создаёт новый проект 1С:Элемент с нуля: `{Поставщик}/{ИмяПроекта}/Проект.yaml`, `Проект.xbsl` и `{ИмяПодсистемы}/Подсистема.yaml`. Оркестрирует `xbsl-uuid`. **Вызывается перед `xbsl-meta-add`**, если проекта ещё нет.
@@ -67,7 +69,7 @@ scripts/build_site.py    # сборка GitHub Pages из README и SKILL.md ф�
 Создаёт объект конфигурации (`.yaml` + опционально `.xbsl`). Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/{ТипОбъекта}.md`. Поддерживаемые типы: Перечисление, Справочник, Документ, РегистрСведений, РегистрНакопления, ОбщийМодуль, Структура, ЛокализованныеСтроки, HttpСервис, ГлобальноеКлиентскоеСобытие, КлючДоступа, Отчет.
 
 ### xbsl-deploy
-Управляет приложениями на платформе 1С:Предприятие.Элемент через Console API v2. `scripts/api.py` — самодостаточный HTTP-клиент (только stdlib Python). Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
+Управляет приложениями на платформе 1С:Предприятие.Элемент через Console API v2. `scripts/api.py` — самодостаточный HTTP-клиент (только stdlib Python 3). Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
 
 ### xbsl-form-info
 Анализирует существующий объект конфигурации и возвращает JSON: `object_path`, `fields`, `tc`, `namespace`, `suggested_layout`, `existing_forms`. **Вызывается перед `xbsl-form-add` и `xbsl-file-add`** для получения структуры объекта.
@@ -140,7 +142,7 @@ coverage run -m pytest && coverage report
 
 # Сборка GitHub Pages локально
 pip install -r requirements-site.txt
-python scripts/build_site.py
+{python} scripts/build_site.py
 
 # Установить dev-зависимости (pytest, coverage)
 pip install -r requirements-dev.txt
@@ -158,9 +160,7 @@ pip install -r requirements-dev.txt
 name: имя-скилла        # совпадает с именем папки, a-z0-9-
 description: >          # что делает + когда вызывать (до 1024 символов)
   ...
-compatibility:          # опционально
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
 ```
 
@@ -170,7 +170,7 @@ compatibility:          # опционально
 
 ### Соглашения по скриптам (`scripts/`)
 
-- **Только stdlib Python** — никаких pip-пакетов; скрипты должны работать без виртуального окружения.
+- **Только stdlib Python 3** — никаких pip-пакетов; скрипты должны работать без виртуального окружения.
 - **JSON в stdout** — скрипты выводят результат как JSON; Claude разбирает вывод и продолжает алгоритм.
 - **Лёгкий YAML-парсер** — каждый скрипт содержит функцию `get_yaml_field()` для чтения `.yaml`; внешних библиотек (PyYAML и т.п.) нет.
 - **Exit-коды как сигналы** — `sys.exit(N)` передаёт скиллу специальные состояния (например, `exit(3)` в `access_state.py` = объект с RLS, перенаправить в `xbsl-pattern-rls`).

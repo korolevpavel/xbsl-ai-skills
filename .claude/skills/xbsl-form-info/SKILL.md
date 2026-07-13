@@ -6,10 +6,10 @@ description: >
   перед созданием или изменением форм и реквизитов. Вызывай этот скилл всякий раз,
   когда нужно узнать структуру объекта (реквизиты, ТЧ, пространство имён, существующие формы)
   перед добавлением компонентов интерфейса или реквизитов-вложений.
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Назначение
 
@@ -18,7 +18,7 @@ compatibility:
 ## Команда
 
 ```bash
-python3 .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
+{python} .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
 ```
 
 ## Возвращает JSON

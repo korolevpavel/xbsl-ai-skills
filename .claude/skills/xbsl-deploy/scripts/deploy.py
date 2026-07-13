@@ -10,12 +10,14 @@
   Путь 2 — из git-ветки (--from-branch):
     sync-branch (платформа сама делает git pull) → ожидание Running
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование:
-    python3 deploy.py
-    python3 deploy.py --project-dir PATH --app-id ID --project-id ID
-    python3 deploy.py --version 1.0-42
-    python3 deploy.py --from-branch --branch-id ID
-    python3 deploy.py --dry-run
+    {python} deploy.py
+    {python} deploy.py --project-dir PATH --app-id ID --project-id ID
+    {python} deploy.py --version 1.0-42
+    {python} deploy.py --from-branch --branch-id ID
+    {python} deploy.py --dry-run
 
 Env vars (обязательные):
     ELEMENT_BASE_URL        — базовый URL (например https://1cmycloud.com)

@@ -1,8 +1,10 @@
 ---
 name: xbsl-explore
 description: Разведка структуры проекта 1С:Элемент. Используй этот скилл перед созданием любого объекта конфигурации — находит проекты, подсистемы, существующие объекты, проверяет конфликты имён. Принимает тип объекта и опциональное имя.
-compatibility: Requires python3.
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # Разведка проекта 1С:Элемент
 
@@ -18,10 +20,10 @@ find . -name "Проект.yaml" -not -path "*/.claude/*" | head -5
 
 ```bash
 # Если имя объекта известно — проверяет конфликт:
-python3 .claude/skills/xbsl-explore/scripts/explore.py --type {Тип} --name {Имя} --root {root}
+{python} .claude/skills/xbsl-explore/scripts/explore.py --type {Тип} --name {Имя} --root {root}
 
 # Если имя ещё не известно:
-python3 .claude/skills/xbsl-explore/scripts/explore.py --type {Тип} --root {root}
+{python} .claude/skills/xbsl-explore/scripts/explore.py --type {Тип} --root {root}
 ```
 
 Где `{Тип}` — `Перечисление`, `Справочник`, `Документ` и т.д.

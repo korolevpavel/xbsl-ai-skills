@@ -3,13 +3,15 @@
 Разведка структуры 1С:Элемент проекта.
 Находит проекты, подсистемы и существующие объекты. Проверяет конфликты имён.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование:
-    python3 .claude/skills/xbsl-explore/scripts/explore.py [--type ВидЭлемента] [--name ИмяОбъекта] [--root /path]
+    {python} .claude/skills/xbsl-explore/scripts/explore.py [--type ВидЭлемента] [--name ИмяОбъекта] [--root /path]
 
 Примеры:
-    python3 .claude/skills/xbsl-explore/scripts/explore.py --root cc
-    python3 .claude/skills/xbsl-explore/scripts/explore.py --type Справочник --root cc
-    python3 .claude/skills/xbsl-explore/scripts/explore.py --type Документ --name Заказы --root cc
+    {python} .claude/skills/xbsl-explore/scripts/explore.py --root cc
+    {python} .claude/skills/xbsl-explore/scripts/explore.py --type Справочник --root cc
+    {python} .claude/skills/xbsl-explore/scripts/explore.py --type Документ --name Заказы --root cc
 """
 
 from __future__ import annotations

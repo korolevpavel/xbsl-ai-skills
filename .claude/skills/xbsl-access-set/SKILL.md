@@ -7,10 +7,10 @@ description: >
   РегистрСведений, РегистрНакопления, HttpСервис. Вызывай при запросах «настрой права
   доступа», «сделай доступным аутентифицированным», «покажи КонтрольДоступа», «установи
   РазрешеноАутентифицированным». НЕ для RLS (построчного доступа) — используй xbsl-pattern-rls.
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Назначение
 
@@ -22,7 +22,7 @@ compatibility:
 ### Шаг 1 — Показать текущее состояние
 
 ```bash
-python3 .claude/skills/xbsl-access-set/scripts/access_state.py \
+{python} .claude/skills/xbsl-access-set/scripts/access_state.py \
   --root <корень-проекта> [--object <ИмяОбъекта>]
 ```
 
@@ -50,7 +50,7 @@ python3 .claude/skills/xbsl-access-set/scripts/access_state.py \
 ### Шаг 3 — Проверить exit-код при работе с одним объектом
 
 ```bash
-python3 .claude/skills/xbsl-access-set/scripts/access_state.py \
+{python} .claude/skills/xbsl-access-set/scripts/access_state.py \
   --root <корень> --set <значение> --object <Имя>
 ```
 
@@ -65,7 +65,7 @@ python3 .claude/skills/xbsl-access-set/scripts/access_state.py \
 ### Шаг 4 — Dry-run
 
 ```bash
-python3 .claude/skills/xbsl-access-set/scripts/access_state.py \
+{python} .claude/skills/xbsl-access-set/scripts/access_state.py \
   --root <корень> --set <значение> [--object <Имя>]
 ```
 
@@ -83,7 +83,7 @@ python3 .claude/skills/xbsl-access-set/scripts/access_state.py \
 ### Шаг 6 — Apply (только после подтверждения пользователя)
 
 ```bash
-python3 .claude/skills/xbsl-access-set/scripts/access_state.py \
+{python} .claude/skills/xbsl-access-set/scripts/access_state.py \
   --root <корень> --set <значение> [--object <Имя>] --apply
 ```
 

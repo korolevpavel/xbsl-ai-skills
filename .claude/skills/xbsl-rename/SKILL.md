@@ -8,10 +8,10 @@ description: >
   Поддерживает два сценария: A — переименование базового объекта (Справочник, Документ,
   Регистр и т.д.); B — переименование формы (КомпонентИнтерфейса), при этом обновляет
   ссылку Форма: в YAML владельца.
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Назначение
 
@@ -27,7 +27,7 @@ compatibility:
 Запусти dry-run без `--object-file` и проверь stderr на код выхода 2 (несколько объектов):
 
 ```bash
-python3 .claude/skills/xbsl-rename/scripts/rename.py \
+{python} .claude/skills/xbsl-rename/scripts/rename.py \
   --old-name <СтароеИмя> --new-name <НовоеИмя> --root <корень-проекта> 2>&1; echo "EXIT:$?"
 ```
 
@@ -52,7 +52,7 @@ python3 .claude/skills/xbsl-rename/scripts/rename.py \
 ### Шаг 1 — Dry-run (показать план)
 
 ```bash
-python3 .claude/skills/xbsl-rename/scripts/rename.py \
+{python} .claude/skills/xbsl-rename/scripts/rename.py \
   --old-name <СтароеИмя> --new-name <НовоеИмя> \
   --new-presentation "<НовоеПредставление>" \
   [--old-presentation "<СтароеПредставление>"] \
@@ -84,7 +84,7 @@ python3 .claude/skills/xbsl-rename/scripts/rename.py \
 ### Шаг 3 — Применить (только после подтверждения пользователя)
 
 ```bash
-python3 .claude/skills/xbsl-rename/scripts/rename.py \
+{python} .claude/skills/xbsl-rename/scripts/rename.py \
   --old-name <СтароеИмя> --new-name <НовоеИмя> \
   --new-presentation "<НовоеПредставление>" \
   [--old-presentation "<СтароеПредставление>"] \

@@ -3,35 +3,37 @@
 HTTP-клиент для Console API v2 (1С:Предприятие.Элемент / 1cmycloud.com).
 Все зависимости — только стандартная библиотека Python.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование:
-    python3 api.py --action get-token
-    python3 api.py --action list-apps
-    python3 api.py --action get-app --app-id <id>
-    python3 api.py --action create-app --name <name> [--project-id <id>] [--version-id <build-id>]
-    python3 api.py --action start-app --app-id <id>
-    python3 api.py --action stop-app --app-id <id>
-    python3 api.py --action delete-app --app-id <id>
-    python3 api.py --action list-spaces
-    python3 api.py --action list-projects
-    python3 api.py --action get-project --project-id <id>
-    python3 api.py --action delete-project --project-id <id>
-    python3 api.py --action upload-build --file <path> [--project-id <id>] [--space-id <id>] [--branch-name <name>] [--commit-id <hash>] [--commit-message <msg>]
-    python3 api.py --action list-builds --project-id <id>
-    python3 api.py --action get-build --project-id <id> --version <ver>
-    python3 api.py --action delete-build --project-id <id> --version <ver>
-    python3 api.py --action project-update --app-id <id> --version-id <assembly-id>
-    python3 api.py --action sync-branch --app-id <id> --branch-id <id>
-    python3 api.py --action list-branches --project-id <id> [--branch-name <name>]
-    python3 api.py --action get-branch --branch-id <id>
-    python3 api.py --action create-branch --project-id <id> --branch-name <name> [--app-id <id>]
-    python3 api.py --action update-branch --branch-id <id> [--app-id <id>]
-    python3 api.py --action delete-branch --branch-id <id>
-    python3 api.py --action create-dump --app-id <id>
-    python3 api.py --action get-dump --app-id <id> --dump-id <id>
-    python3 api.py --action merge-branch --branch-id <id>
-    python3 api.py --action list-app-tasks --app-id <id>
-    python3 api.py --action get-technology-version --app-id <id>
-    python3 api.py --action update-technology-version --app-id <id> --technology-version <version>
+    {python} api.py --action get-token
+    {python} api.py --action list-apps
+    {python} api.py --action get-app --app-id <id>
+    {python} api.py --action create-app --name <name> [--project-id <id>] [--version-id <build-id>]
+    {python} api.py --action start-app --app-id <id>
+    {python} api.py --action stop-app --app-id <id>
+    {python} api.py --action delete-app --app-id <id>
+    {python} api.py --action list-spaces
+    {python} api.py --action list-projects
+    {python} api.py --action get-project --project-id <id>
+    {python} api.py --action delete-project --project-id <id>
+    {python} api.py --action upload-build --file <path> [--project-id <id>] [--space-id <id>] [--branch-name <name>] [--commit-id <hash>] [--commit-message <msg>]
+    {python} api.py --action list-builds --project-id <id>
+    {python} api.py --action get-build --project-id <id> --version <ver>
+    {python} api.py --action delete-build --project-id <id> --version <ver>
+    {python} api.py --action project-update --app-id <id> --version-id <assembly-id>
+    {python} api.py --action sync-branch --app-id <id> --branch-id <id>
+    {python} api.py --action list-branches --project-id <id> [--branch-name <name>]
+    {python} api.py --action get-branch --branch-id <id>
+    {python} api.py --action create-branch --project-id <id> --branch-name <name> [--app-id <id>]
+    {python} api.py --action update-branch --branch-id <id> [--app-id <id>]
+    {python} api.py --action delete-branch --branch-id <id>
+    {python} api.py --action create-dump --app-id <id>
+    {python} api.py --action get-dump --app-id <id> --dump-id <id>
+    {python} api.py --action merge-branch --branch-id <id>
+    {python} api.py --action list-app-tasks --app-id <id>
+    {python} api.py --action get-technology-version --app-id <id>
+    {python} api.py --action update-technology-version --app-id <id> --technology-version <version>
 
 Env vars (приоритет над флагами):
     ELEMENT_BASE_URL       — базовый URL (например https://1cmycloud.com)

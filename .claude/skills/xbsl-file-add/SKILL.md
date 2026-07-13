@@ -8,10 +8,10 @@ description: >
   Вызывай когда пользователь хочет добавить вложения, загрузку файлов, скан договора, логотип,
   прикреплённые документы к справочнику или документу.
   НЕ для работы с изображениями (используй xbsl-image-add).
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Алгоритм
 
@@ -31,7 +31,7 @@ compatibility:
 Вызови скилл **xbsl-form-info**:
 
 ```bash
-python3 .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
+{python} .claude/skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
 ```
 
 Используй результат:

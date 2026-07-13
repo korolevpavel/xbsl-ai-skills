@@ -3,8 +3,10 @@
 Извлекает метаданные из YAML-файла объекта конфигурации 1С:Элемент.
 Поддерживает: РегистрНакопления, РегистрСведений, Документ.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование:
-    python3 .claude/skills/xbsl-pattern-register/scripts/extract_meta.py <путь-к-файлу.yaml>
+    {python} .claude/skills/xbsl-pattern-register/scripts/extract_meta.py <путь-к-файлу.yaml>
 
 Вывод: JSON
     Для РегистрНакопления — element_type, name, register_kind, dimensions, resources, needs_record_type.
@@ -230,7 +232,7 @@ def read_file(path: str) -> str:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        print("Использование: python3 extract_meta.py <путь-к-файлу.yaml>", file=sys.stderr)
+        print("Использование: extract_meta.py <путь-к-файлу.yaml>", file=sys.stderr)
         sys.exit(1)
 
     text = read_file(sys.argv[1])

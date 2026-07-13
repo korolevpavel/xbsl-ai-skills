@@ -6,7 +6,10 @@ description: >
   Подсистема.yaml. Вызывай при запросах «добавь подсистему», «создай подсистему»,
   «новый раздел», «новая подсистема». НЕ для: создания нового проекта с нуля (xbsl-init),
   создания объектов метаданных (xbsl-meta-add), добавления форм (xbsl-form-add).
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # Добавление подсистемы в проект 1С:Элемент
 
@@ -32,7 +35,7 @@ find . -name "Проект.yaml" -not -path "*/.claude/*" | head -5
 Используй родительскую папку найденных `Проект.yaml` как `{root}`, запусти разведку:
 
 ```bash
-python3 .claude/skills/xbsl-explore/scripts/explore.py --root {root}
+{python} .claude/skills/xbsl-explore/scripts/explore.py --root {root}
 ```
 
 Из результата возьми путь к проекту (`projects[0].path`). Если проектов нет — предложи создать проект через `xbsl-init`.

@@ -10,14 +10,16 @@
   validate-version — проверить формат версии релиза (X.Y.Z или X.Y.Z-N)
   cleanup         — удалить временную папку
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Использование:
-  python3 lib_connect.py --action inspect --file lib.xlib
-  python3 lib_connect.py --action find-xlib --dir /tmp/repo
-  python3 lib_connect.py --action patch-yaml --project-yaml Проект.yaml \\
+  {python} lib_connect.py --action inspect --file lib.xlib
+  {python} lib_connect.py --action find-xlib --dir /tmp/repo
+  {python} lib_connect.py --action patch-yaml --project-yaml Проект.yaml \\
       --name TelegramBot --vendor e1c --version 1.0.0 [--dry-run]
-  python3 lib_connect.py --action analyze --file lib.xlib
-  python3 lib_connect.py --action validate-version --version 1.0.0
-  python3 lib_connect.py --action cleanup --dir /tmp/xlib_src_abc
+  {python} lib_connect.py --action analyze --file lib.xlib
+  {python} lib_connect.py --action validate-version --version 1.0.0
+  {python} lib_connect.py --action cleanup --dir /tmp/xlib_src_abc
 """
 
 import argparse

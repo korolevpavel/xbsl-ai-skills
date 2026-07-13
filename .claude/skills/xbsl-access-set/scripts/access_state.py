@@ -2,14 +2,16 @@
 """
 Управление секцией КонтрольДоступа в объектах конфигурации 1С:Элемент.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Режим сводки (без --set):
-    python3 .claude/skills/xbsl-access-set/scripts/access_state.py --root .
+    {python} .claude/skills/xbsl-access-set/scripts/access_state.py --root .
 
 Dry-run:
-    python3 .claude/skills/xbsl-access-set/scripts/access_state.py --root . --set РазрешеноАутентифицированным
+    {python} .claude/skills/xbsl-access-set/scripts/access_state.py --root . --set РазрешеноАутентифицированным
 
 Применить:
-    python3 .claude/skills/xbsl-access-set/scripts/access_state.py --root . --set РазрешеноАутентифицированным --apply
+    {python} .claude/skills/xbsl-access-set/scripts/access_state.py --root . --set РазрешеноАутентифицированным --apply
 
 Коды выхода: 0 = успех, 1 = ошибка, 3 = объект использует РазрешенияВычисляютсяДляКаждогоОбъекта.
 """

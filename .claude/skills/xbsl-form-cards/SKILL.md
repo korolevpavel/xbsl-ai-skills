@@ -6,10 +6,10 @@ description: >
   Вызывай когда пользователь хочет отображать список в виде карточек, плиток, kanban-вида,
   новостной ленты или grid-сетки (не таблицей).
   Работает для Справочников и Документов.
-compatibility:
-  runtime:
-    - python3
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Отличие от стандартной ФормаСписка
 
@@ -26,7 +26,7 @@ compatibility:
 ### Шаг 1 — Dry-run
 
 ```bash
-python3 .claude/skills/xbsl-form-cards/scripts/generate.py --object <ИмяОбъекта> --root <корень>
+{python} .claude/skills/xbsl-form-cards/scripts/generate.py --object <ИмяОбъекта> --root <корень>
 ```
 
 Скрипт выводит:
@@ -45,7 +45,7 @@ python3 .claude/skills/xbsl-form-cards/scripts/generate.py --object <ИмяОб�
 ### Шаг 2 — Применить (только после подтверждения)
 
 ```bash
-python3 .claude/skills/xbsl-form-cards/scripts/generate.py --object <ИмяОбъекта> --root <корень> --apply
+{python} .claude/skills/xbsl-form-cards/scripts/generate.py --object <ИмяОбъекта> --root <корень> --apply
 ```
 
 Опциональный флаг `--min-width 250` (для портретов людей) или `--min-width 400` (по умолчанию).

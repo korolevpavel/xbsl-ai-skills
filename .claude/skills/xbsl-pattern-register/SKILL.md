@@ -18,7 +18,10 @@ description: >
   записей по фильтру; срез последних для периодических регистров (СрезПоследних).
 
   НЕ для: отчётов по регистрам, создания объектов РН/РС, форм, справочников.
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # Движения по регистру накопления (XBSL)
 
@@ -27,8 +30,8 @@ description: >
 Запусти скрипт для регистра **и** для документа — это даст все нужные имена полей:
 
 ```bash
-python3 .claude/skills/xbsl-pattern-register/scripts/extract_meta.py <путь-к-регистру.yaml>
-python3 .claude/skills/xbsl-pattern-register/scripts/extract_meta.py <путь-к-документу.yaml>
+{python} .claude/skills/xbsl-pattern-register/scripts/extract_meta.py <путь-к-регистру.yaml>
+{python} .claude/skills/xbsl-pattern-register/scripts/extract_meta.py <путь-к-документу.yaml>
 ```
 
 Скрипт выводит JSON. Для регистра:

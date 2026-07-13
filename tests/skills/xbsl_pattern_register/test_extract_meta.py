@@ -330,7 +330,7 @@ def test_script_entrypoint_prints_usage_to_stderr_when_path_is_missing(monkeypat
 
     assert exc_info.value.code == 1
     assert captured.out == ""
-    assert "Использование: python3 extract_meta.py <путь-к-файлу.yaml>" in captured.err
+    assert "Использование: extract_meta.py <путь-к-файлу.yaml>" in captured.err
 
 
 def test_script_entrypoint_prints_json_error_to_stderr_for_missing_file(monkeypatch, capsys, tmp_path: Path) -> None:

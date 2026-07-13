@@ -1149,6 +1149,17 @@ def split_frontmatter(text: str) -> tuple[str | None, str]:
     return frontmatter, remainder
 
 
+def normalize_runtime_labels(labels: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for label in labels:
+        clean_label = label.strip()
+        if re.search(r"\bpython\s*3\b", clean_label, flags=re.IGNORECASE):
+            normalized.append("Python 3")
+        else:
+            normalized.append(clean_label)
+    return normalized
+
+
 def parse_frontmatter(frontmatter: str | None) -> dict[str, object]:
     if not frontmatter:
         return {}
@@ -1183,10 +1194,7 @@ def parse_frontmatter(frontmatter: str | None) -> dict[str, object]:
             continue
 
         if key == "compatibility" and value:
-            if "python3" in value.lower():
-                result["runtime"] = ["python3"]
-            else:
-                result["runtime"] = [value]
+            result["runtime"] = normalize_runtime_labels([value])
             index += 1
             continue
 
@@ -1202,7 +1210,7 @@ def parse_frontmatter(frontmatter: str | None) -> dict[str, object]:
                     runtime.append(runtime_match.group(1).strip())
                 index += 1
             if runtime:
-                result["runtime"] = runtime
+                result["runtime"] = normalize_runtime_labels(runtime)
             continue
 
         result[key] = value.strip('"').strip("'")
@@ -1343,8 +1351,8 @@ def collect_skills(readme_text: str, page_map: dict[Path, str]) -> list[SkillPag
         description = str(meta.get("description") or "").strip() or extract_summary(html_content, slug)
         title = str(meta.get("name") or slug).strip()
         runtime = list(meta.get("runtime") or [])
-        if not runtime and ((path.parent / "scripts").exists() or "python3" in body):
-            runtime = ["python3"]
+        if not runtime and (path.parent / "scripts").exists():
+            runtime = ["Python 3"]
         skills.append(
             SkillPage(
                 slug=slug,

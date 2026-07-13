@@ -3,7 +3,10 @@ name: xbsl-meta-add
 description: >
   Создание объекта конфигурации в 1С:Элемент (XBSL). Используй этот скилл когда
   пользователь хочет создать новый объект метаданных в проекте
+compatibility: Requires Python 3.
 ---
+
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 # Создание объекта конфигурации в 1С:Элемент
 
@@ -14,7 +17,7 @@ description: >
 ### Шаг 1 — Dry-run
 
 ```bash
-python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+{python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \
   --name <ИмяСервиса> \
   --url /api/<ресурс> \
   --routes "GET /, POST /, GET /{id}" \
@@ -31,7 +34,7 @@ python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
 ### Шаг 2 — Применить (только после подтверждения)
 
 ```bash
-python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+{python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \
   --name <ИмяСервиса> --url /api/<ресурс> --routes "..." --root <корень> --apply
 ```
 
@@ -50,7 +53,7 @@ python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
 ### Шаг 1 — Dry-run
 
 ```bash
-python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+{python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \
   --service <ИмяСервиса> \
   --add-routes "DELETE /{id}, GET /{id}/items" \
   --root <корень>
@@ -61,7 +64,7 @@ python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
 ### Шаг 2 — Применить
 
 ```bash
-python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+{python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \
   --service <ИмяСервиса> --add-routes "..." --root <корень> --apply
 ```
 

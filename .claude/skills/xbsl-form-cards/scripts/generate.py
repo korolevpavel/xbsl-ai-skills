@@ -3,11 +3,13 @@
 Генерирует форму карточек (ПроизвольныйСписок с матричной компоновкой) для объекта 1С:Элемент.
 Создаёт два файла: <Объект>ФормаСписка.yaml и СтрокаСписка<Объект>.yaml.
 
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+
 Dry-run (только показывает что будет создано):
-    python3 .claude/skills/xbsl-form-cards/scripts/generate.py --object Задачи [--root .]
+    {python} .claude/skills/xbsl-form-cards/scripts/generate.py --object Задачи [--root .]
 
 Применить:
-    python3 .claude/skills/xbsl-form-cards/scripts/generate.py --object Задачи [--root .] --apply
+    {python} .claude/skills/xbsl-form-cards/scripts/generate.py --object Задачи [--root .] --apply
 """
 
 from __future__ import annotations

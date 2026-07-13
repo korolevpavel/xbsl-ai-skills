@@ -110,3 +110,29 @@ def test_actionable_python_invocations_use_cross_platform_placeholder() -> None:
             violations.append(f"{relative_path}:{line_number}: {line.strip()}")
 
     assert not violations, "Bare python invocations must use {python}:\n" + "\n".join(violations)
+
+
+def test_claude_md_documents_cross_platform_skill_development() -> None:
+    text = (ROOT_DIR / "CLAUDE.md").read_text(encoding="utf-8")
+    marker = "### Кроссплатформенность\n"
+
+    assert marker in text
+    section = text.split(marker, maxsplit=1)[1].split("\n### ", maxsplit=1)[0]
+    assert LAUNCHER_INSTRUCTION in section
+    required_fragments = (
+        "`{python}`",
+        "`sys.executable`",
+        "`pathlib`",
+        "`tempfile`",
+        "`/tmp`",
+        "Bash",
+        "PowerShell",
+        '`encoding="utf-8"`',
+        f"`{COMPATIBILITY_LINE}`",
+        "`LAUNCHER_INSTRUCTION`",
+        "`DIRECT_PYTHON_SKILLS`",
+        "контрактные тесты",
+    )
+
+    for fragment in required_fragments:
+        assert fragment in section

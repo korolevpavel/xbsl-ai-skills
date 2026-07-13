@@ -74,12 +74,16 @@ def action_inspect(file: str) -> None:
 
     meta = parse_simple_yaml(raw)
     project_kind = meta.get('ProjectKind', '')
+    has_release = 'Release' in meta
+    version = meta.get('Version', '')
     result = {
         "vendor": meta.get('Vendor', ''),
         "name": meta.get('Name', ''),
-        "version": meta.get('Version', ''),
+        "version": version,
         "project_kind": project_kind,
         "technology_version": meta.get('TechnologyVersion', ''),
+        "has_release": has_release,
+        "release_version": version if has_release else "",
     }
 
     if project_kind != 'Library':

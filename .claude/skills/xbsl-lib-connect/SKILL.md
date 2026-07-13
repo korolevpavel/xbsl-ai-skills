@@ -106,6 +106,8 @@ python3 .claude/skills/xbsl-lib-connect/scripts/lib_connect.py \
 - `version` → `LIB_VERSION`
 - `technology_version` → для Шага 3
 - `project_kind` → если не `Library` — скрипт завершится с ошибкой
+- `has_release` → `HAS_RELEASE` (признак наличия готового релиза)
+- `release_version` → `RELEASE_VERSION` (версия релиза, если `has_release: true`)
 
 ---
 
@@ -153,9 +155,12 @@ Skill("xbsl-deploy", args="Создать проект из файла сбор�
 
 ---
 
-## Шаг 6 — Попросить пользователя выпустить релиз
+## Шаг 6 — Выпустить релиз (только если `HAS_RELEASE: false`)
 
-Вывести инструкцию:
+Если `HAS_RELEASE` из Шага 2 равно `true` — **пропустить этот шаг**.
+`RELEASE_VERSION` уже установлен из Шага 2 (`release_version`). Перейти к Шагу 7.
+
+Если `HAS_RELEASE: false` — вывести инструкцию:
 
 > **Необходимо выпустить релиз библиотеки вручную в панели управления.**
 >

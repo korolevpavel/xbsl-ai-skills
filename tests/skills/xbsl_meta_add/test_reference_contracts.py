@@ -1,10 +1,14 @@
 from pathlib import Path
 import re
+import sys
 
 import pytest
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPOSITORY_ROOT / "tests"))
+from test_xbsl_spec_contract import xbsl_code_blocks
+
 EXAMPLES = REPOSITORY_ROOT / ".claude/skills/xbsl-meta-add/examples"
 REFERENCES = REPOSITORY_ROOT / ".claude/skills/xbsl-meta-add/references"
 FORM_SKILL = REPOSITORY_ROOT / ".claude/skills/xbsl-form-add/SKILL.md"
@@ -213,3 +217,24 @@ def test_empty_value_policy_rejects_standalone_non_string_mapping():
 ```"""
 
     assert not empty_value_policy_is_valid(text)
+
+
+def test_global_event_uses_documented_instance_methods():
+    text = read_reference("ГлобальноеКлиентскоеСобытие.md")
+    assert ".Оповестить(" in text
+    assert ".ПодключитьОбработчик(" in text
+
+
+def test_localized_strings_use_direct_xbsl_access():
+    text = read_reference("ЛокализованныеСтроки.md")
+    xbsl = "\n".join(xbsl_code_blocks(text))
+    assert "$ЛокализованныеСтроки" not in xbsl
+    assert "ЛокализованныеСтроки.ЗаказСохранён" in xbsl
+
+
+def test_access_key_owner_and_developer_parameters_have_distinct_shapes():
+    text = read_reference("КлючДоступа.md")
+    assert "Имя: Владелец" in text
+    assert "системный параметр `Владелец` не содержит `Ид`" in text
+    assert "пользовательский параметр содержит `Ид`, `Имя` и `Тип`" in text
+    assert "Доступ.ПроверитьКлюч" not in text

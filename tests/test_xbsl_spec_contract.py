@@ -17,6 +17,11 @@ LEGACY_XBSL_SYNTAX = re.compile(
     r"\b(?:КонецЕсли|КонецЦикла|КонецПопытки|ИначеЕсли|Тогда|Процедура|Функция)\b",
     re.IGNORECASE,
 )
+OBSOLETE_META_ADD_APIS = (
+    "Приложение.ВызватьГлобальноеКлиентскоеСобытие",
+    "ФоматСтроки",
+    "Доступ.ПроверитьКлюч",
+)
 
 
 def xbsl_code_blocks(text: str) -> list[str]:
@@ -87,3 +92,11 @@ def test_xbsl_generating_skills_do_not_contain_legacy_code_examples() -> None:
         for path in skill_dir.rglob("*.md"):
             for block in xbsl_code_blocks(path.read_text(encoding="utf-8")):
                 assert LEGACY_XBSL_SYNTAX.search(block) is None, path
+
+
+def test_xbsl_meta_add_examples_do_not_contain_obsolete_apis() -> None:
+    skill_dir = ROOT_DIR / ".claude" / "skills" / "xbsl-meta-add"
+    for path in skill_dir.rglob("*.md"):
+        for block in xbsl_code_blocks(path.read_text(encoding="utf-8")):
+            for api in OBSOLETE_META_ADD_APIS:
+                assert api not in block, path

@@ -1153,8 +1153,8 @@ def normalize_runtime_labels(labels: list[str]) -> list[str]:
     normalized: list[str] = []
     for label in labels:
         clean_label = label.strip()
-        if re.search(r"\bpython\s*3\b", clean_label, flags=re.IGNORECASE):
-            normalized.append("Python 3")
+        if re.search(r"\bpython\s*3(?:\.10\+)?\b", clean_label, flags=re.IGNORECASE):
+            normalized.append("Python 3.10+")
         else:
             normalized.append(clean_label)
     return normalized
@@ -1352,7 +1352,7 @@ def collect_skills(readme_text: str, page_map: dict[Path, str]) -> list[SkillPag
         title = str(meta.get("name") or slug).strip()
         runtime = list(meta.get("runtime") or [])
         if not runtime and (path.parent / "scripts").exists():
-            runtime = ["Python 3"]
+            runtime = ["Python 3.10+"]
         skills.append(
             SkillPage(
                 slug=slug,

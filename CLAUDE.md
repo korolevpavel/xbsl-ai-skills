@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Набор скиллов для AI-агентов, работающих с проектами на платформе **1С:Элемент (XBSL/SBSL)** — язык со статической типизацией для разработки бизнес-приложений.
 
-Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбранный интерпретатор должен быть Python 3.10+; если сомневаешься, проверь через `{python} --version`. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Структура репозитория
 
@@ -69,7 +69,7 @@ scripts/build_site.py    # сборка GitHub Pages из README и SKILL.md ф�
 Создаёт объект конфигурации (`.yaml` + опционально `.xbsl`). Оркестрирует xbsl-explore и xbsl-uuid. Читает спецификацию из `references/{ТипОбъекта}.md`. Поддерживаемые типы: Перечисление, Справочник, Документ, РегистрСведений, РегистрНакопления, ОбщийМодуль, Структура, ЛокализованныеСтроки, HttpСервис, ГлобальноеКлиентскоеСобытие, КлючДоступа, Отчет.
 
 ### xbsl-deploy
-Управляет приложениями на платформе 1С:Предприятие.Элемент через Console API v2. `scripts/api.py` — самодостаточный HTTP-клиент (только stdlib Python 3). Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
+Управляет приложениями на платформе 1С:Предприятие.Элемент через Console API v2. `scripts/api.py` — самодостаточный HTTP-клиент (только stdlib Python 3.10+). Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
 
 ### xbsl-form-info
 Анализирует существующий объект конфигурации и возвращает JSON: `object_path`, `fields`, `tc`, `namespace`, `suggested_layout`, `existing_forms`. **Вызывается перед `xbsl-form-add` и `xbsl-file-add`** для получения структуры объекта.
@@ -170,20 +170,20 @@ compatibility: Requires Python 3.
 
 ### Соглашения по скриптам (`scripts/`)
 
-- **Только stdlib Python 3** — никаких pip-пакетов; скрипты должны работать без виртуального окружения.
+- **Только stdlib Python 3.10+** — никаких pip-пакетов; скрипты должны работать без виртуального окружения.
 - **JSON в stdout** — скрипты выводят результат как JSON; Claude разбирает вывод и продолжает алгоритм.
 - **Лёгкий YAML-парсер** — каждый скрипт содержит функцию `get_yaml_field()` для чтения `.yaml`; внешних библиотек (PyYAML и т.п.) нет.
 - **Exit-коды как сигналы** — `sys.exit(N)` передаёт скиллу специальные состояния (например, `exit(3)` в `access_state.py` = объект с RLS, перенаправить в `xbsl-pattern-rls`).
 
 ### Кроссплатформенность
 
-Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбранный интерпретатор должен быть Python 3.10+; если сомневаешься, проверь через `{python} --version`. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 - **Запуск Python** — в инструкциях и примерах используй `{python}`, а дочерние Python-процессы запускай через `sys.executable`.
 - **Пути и временные файлы** — в Python-коде используй `pathlib` и `tempfile`; не хардкодь `/tmp`, обратный слеш или прямой слеш как разделитель пути.
 - **Командная оболочка** — не предполагай наличие Bash. Если shell-команда неизбежна, приводи варианты для PowerShell и POSIX либо заменяй её Python-реализацией.
 - **Кодировка** — текстовые файлы открывай с явным `encoding="utf-8"`.
-- **Новый Python-скилл** — добавляй scalar `compatibility: Requires Python 3.`, точную строку из `LAUNCHER_INSTRUCTION` и slug скилла в `DIRECT_PYTHON_SKILLS` файла `tests/python_runtime_contract.py`, затем обновляй контрактные тесты.
+- **Новый Python-скилл** — добавляй точную строку из `LAUNCHER_INSTRUCTION` и slug скилла в `DIRECT_PYTHON_SKILLS` файла `tests/python_runtime_contract.py`; минимальную версию Python меняй централизованно в этом разделе, `README.md` и контрактных тестах.
 
 ### Трёхфазный workflow для изменяющих операций
 

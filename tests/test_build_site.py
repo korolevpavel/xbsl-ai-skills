@@ -4,7 +4,7 @@ import importlib.util
 import sys
 from pathlib import Path
 
-from python_runtime_contract import DIRECT_PYTHON_SKILLS
+from python_runtime_contract import DIRECT_PYTHON_SKILLS, PYTHON_RUNTIME_LABEL
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -34,7 +34,7 @@ def collect_actual_skills():
 def test_parse_frontmatter_normalizes_scalar_python_requirement() -> None:
     frontmatter = "compatibility: Requires Python 3."
 
-    assert build_site.parse_frontmatter(frontmatter)["runtime"] == ["Python 3"]
+    assert build_site.parse_frontmatter(frontmatter)["runtime"] == [PYTHON_RUNTIME_LABEL]
 
 
 def test_parse_frontmatter_normalizes_legacy_nested_python3_requirement() -> None:
@@ -44,7 +44,7 @@ compatibility:
     - python3
 """
 
-    assert build_site.parse_frontmatter(frontmatter)["runtime"] == ["Python 3"]
+    assert build_site.parse_frontmatter(frontmatter)["runtime"] == [PYTHON_RUNTIME_LABEL]
 
 
 def test_collect_skills_normalizes_runtime_for_all_direct_python_skills() -> None:
@@ -57,7 +57,7 @@ def test_collect_skills_normalizes_runtime_for_all_direct_python_skills() -> Non
 
     assert set(runtime_by_slug) == DIRECT_PYTHON_SKILLS
     assert runtime_by_slug == {
-        slug: ["Python 3"] for slug in DIRECT_PYTHON_SKILLS
+        slug: [PYTHON_RUNTIME_LABEL] for slug in DIRECT_PYTHON_SKILLS
     }
 
 

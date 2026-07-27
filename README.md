@@ -2,7 +2,7 @@
 
 [![Docs](https://img.shields.io/badge/docs-github_pages-108679?style=flat-square)](https://korolevpavel.github.io/xbsl-ai-skills/)
 [![License](https://img.shields.io/badge/license-MIT-d68048?style=flat-square)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.x-2f6b94?style=flat-square)](#требования)
+[![Python](https://img.shields.io/badge/python-3.10%2B-2f6b94?style=flat-square)](#требования)
 
 
 
@@ -60,9 +60,9 @@
 ## Требования
 
 - [Claude Code](https://claude.ai/code) или другой AI-агент, поддерживающий скиллы
-- `Python 3` — для работы скиллов `xbsl-uuid`, `xbsl-subsystem-add`, `xbsl-explore`, `xbsl-meta-add`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-file-add`, `xbsl-image-add`, `xbsl-deploy`, `xbsl-pattern-register`, `xbsl-form-cards`, `xbsl-rename`, `xbsl-form-dashboard`, `xbsl-lib-connect`, `xbsl-access-set` и `xbsl-pattern-rls`
+- `Python 3.10+` — для работы скиллов `xbsl-uuid`, `xbsl-subsystem-add`, `xbsl-explore`, `xbsl-meta-add`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-file-add`, `xbsl-image-add`, `xbsl-deploy`, `xbsl-pattern-register`, `xbsl-form-cards`, `xbsl-rename`, `xbsl-form-dashboard`, `xbsl-lib-connect`, `xbsl-access-set` и `xbsl-pattern-rls`
 
-Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
+Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбранный интерпретатор должен быть Python 3.10+; если сомневаешься, проверь через `{python} --version`. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
 ## Установка
 

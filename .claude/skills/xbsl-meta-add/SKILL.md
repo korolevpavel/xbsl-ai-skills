@@ -40,7 +40,7 @@ HttpСервиса и других объектов сверяй через `xbs
 ### Шаг 2 — Применить (только после подтверждения)
 
 ```bash
-python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+{python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \
   --name <ИмяСервиса> \
   --url /<ресурс> \
   --routes "GET /, POST /, GET /{id}, PUT /{id}, DELETE /{id}" \

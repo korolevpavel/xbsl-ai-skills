@@ -106,7 +106,7 @@ Call it once in the create flow before printing the dry-run or writing files. Co
 In `SKILL.md`, use:
 
 ```bash
-python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+{python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \
   --name <ИмяСервиса> \
   --url /<ресурс> \
   --routes "GET /, POST /, GET /{id}, PUT /{id}, DELETE /{id}" \

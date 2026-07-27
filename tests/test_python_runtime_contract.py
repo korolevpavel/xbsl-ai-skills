@@ -6,9 +6,10 @@ from pathlib import Path
 import pytest
 
 from python_runtime_contract import (
-    COMPATIBILITY_LINE,
     DIRECT_PYTHON_SKILLS,
     LAUNCHER_INSTRUCTION,
+    PYTHON_RUNTIME_LABEL,
+    VERSIONED_LAUNCHER_INSTRUCTION,
 )
 
 
@@ -18,27 +19,14 @@ SKILLS_DIR = ROOT_DIR / ".claude" / "skills"
 BARE_PYTHON_INVOCATION_RE = re.compile(
     r"(?<![\w{])python(?![\w}])\s+(?:-c\b|[^\s`]*\.py\b)"
 )
+SCRIPT_DOCSTRING_LAUNCHER_INSTRUCTION = (
+    "Во всех командах ниже `{python}` означает `python` в Windows и `python3` в "
+    "macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта."
+)
 
 
 def skill_path(slug: str) -> Path:
     return SKILLS_DIR / slug / "SKILL.md"
-
-
-@pytest.mark.parametrize("slug", sorted(DIRECT_PYTHON_SKILLS))
-def test_direct_python_skill_declares_scalar_runtime_compatibility(slug: str) -> None:
-    text = skill_path(slug).read_text(encoding="utf-8")
-    opening, separator, remainder = text.partition("\n---\n")
-
-    assert separator, f"{slug}: frontmatter is missing or unterminated"
-    assert opening.startswith("---\n"), f"{slug}: frontmatter must be the first block"
-    compatibility_lines = [
-        line
-        for line in opening[4:].splitlines()
-        if re.match(r"^compatibility\s*:", line)
-    ]
-    assert compatibility_lines == [COMPATIBILITY_LINE]
-    assert remainder
-
 
 @pytest.mark.parametrize("slug", sorted(DIRECT_PYTHON_SKILLS))
 def test_direct_python_skill_explains_cross_platform_launcher(slug: str) -> None:
@@ -76,6 +64,7 @@ def test_bare_python_invocation_pattern_detects_actionable_commands(line: str) -
         '`{python} -c "print(1)"`',
         "#!/usr/bin/env python3",
         LAUNCHER_INSTRUCTION,
+        VERSIONED_LAUNCHER_INSTRUCTION,
     ],
 )
 def test_bare_python_invocation_pattern_ignores_portable_and_shebang_lines(line: str) -> None:
@@ -92,6 +81,10 @@ def test_python3_occurs_only_in_shebangs_or_exact_launcher_instructions() -> Non
             if line == "#!/usr/bin/env python3":
                 continue
             if line.strip() == LAUNCHER_INSTRUCTION:
+                continue
+            if line.strip() == VERSIONED_LAUNCHER_INSTRUCTION:
+                continue
+            if path.suffix == ".py" and line.strip() == SCRIPT_DOCSTRING_LAUNCHER_INSTRUCTION:
                 continue
             relative_path = path.relative_to(ROOT_DIR)
             violations.append(f"{relative_path}:{line_number}: {line.strip()}")
@@ -118,9 +111,10 @@ def test_claude_md_documents_cross_platform_skill_development() -> None:
 
     assert marker in text
     section = text.split(marker, maxsplit=1)[1].split("\n### ", maxsplit=1)[0]
-    assert LAUNCHER_INSTRUCTION in section
+    assert VERSIONED_LAUNCHER_INSTRUCTION in section
     required_fragments = (
         "`{python}`",
+        PYTHON_RUNTIME_LABEL,
         "`sys.executable`",
         "`pathlib`",
         "`tempfile`",
@@ -128,10 +122,9 @@ def test_claude_md_documents_cross_platform_skill_development() -> None:
         "Bash",
         "PowerShell",
         '`encoding="utf-8"`',
-        f"`{COMPATIBILITY_LINE}`",
         "`LAUNCHER_INSTRUCTION`",
         "`DIRECT_PYTHON_SKILLS`",
-        "контрактные тесты",
+        "контрактных тестах",
     )
 
     for fragment in required_fragments:

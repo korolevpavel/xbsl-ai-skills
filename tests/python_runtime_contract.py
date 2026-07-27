@@ -19,8 +19,14 @@ DIRECT_PYTHON_SKILLS = frozenset(
     }
 )
 
-COMPATIBILITY_LINE = "compatibility: Requires Python 3."
+PYTHON_RUNTIME_LABEL = "Python 3.10+"
 LAUNCHER_INSTRUCTION = (
     "Во всех командах ниже `{python}` означает `python` в Windows и `python3` в "
     "macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта."
+)
+VERSIONED_LAUNCHER_INSTRUCTION = (
+    "Во всех командах ниже `{python}` означает `python` в Windows и `python3` в "
+    "macOS/Linux/WSL. Выбранный интерпретатор должен быть Python 3.10+; если "
+    "сомневаешься, проверь через `{python} --version`. Выбирай команду сразу "
+    "по текущей ОС, не запускай оба варианта."
 )

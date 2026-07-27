@@ -1,6 +1,8 @@
 from pathlib import Path
 import re
 
+import pytest
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 EXAMPLES = REPOSITORY_ROOT / ".claude/skills/xbsl-meta-add/examples"
@@ -53,15 +55,30 @@ def yaml_example(text: str, fragment: str) -> str:
     return next(block for block in blocks if fragment in block)
 
 
+def has_root_interface_wrapper(text: str) -> bool:
+    return re.search(r"(?m)^Интерфейс[ \t]*:", text) is not None
+
+
+@pytest.mark.parametrize(
+    "wrapper",
+    [
+        "Интерфейс: { Форма: ФормаОтчета }",
+        "Интерфейс: # запрещенный root-wrapper",
+    ],
+)
+def test_report_root_interface_wrapper_check_detects_inline_forms(wrapper: str):
+    assert has_root_interface_wrapper(wrapper)
+
+
 def test_report_root_properties_are_not_nested_under_interface():
     assert {"ВключатьВАвтоИнтерфейс", "Форма"} <= top_level_keys(REPORT_YAML)
-    assert re.search(r"(?m)^Интерфейс:\s*$", REPORT_YAML) is None
+    assert not has_root_interface_wrapper(REPORT_YAML)
 
 
 def test_report_reference_keeps_properties_at_report_root():
     example = yaml_example(read_reference("Отчет.md"), "Форма: ФормаОтчета")
     assert {"ВключатьВАвтоИнтерфейс", "Форма"} <= top_level_keys(example)
-    assert re.search(r"(?m)^Интерфейс:\s*$", example) is None
+    assert not has_root_interface_wrapper(example)
 
 
 def test_report_and_xbql_parameter_sets_are_equal():
@@ -81,4 +98,4 @@ def test_report_form_consumers_keep_properties_at_report_root():
     for consumer in (FORM_SKILL.read_text(), FORM_REPORT_REFERENCE.read_text()):
         example = report_object_example(consumer)
         assert {"ВключатьВАвтоИнтерфейс", "Форма"} <= top_level_keys(example)
-        assert re.search(r"(?m)^Интерфейс:\s*$", example) is None
+        assert not has_root_interface_wrapper(example)

@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..",
 
 from generate_http import (
     parse_routes,
+    validate_root_url,
     group_by_template,
     template_name,
     handler_name,
@@ -167,33 +168,33 @@ class TestBuildYaml:
         return [("/", ["GET", "POST"]), ("/{id}", ["GET", "PUT", "DELETE"])]
 
     def test_contains_required_fields(self):
-        yaml = build_yaml("TestСервис", "/api/test", "РазрешеноВсем", self._make_templates())
+        yaml = build_yaml("TestСервис", "/test", "РазрешеноВсем", self._make_templates())
         assert "ВидЭлемента: HttpСервис" in yaml
         assert "Имя: TestСервис" in yaml
-        assert "КорневойUrl: /api/test" in yaml
+        assert "КорневойUrl: /test" in yaml
         assert "РазрешеноВсем" in yaml
 
     def test_contains_uuid(self):
-        yaml = build_yaml("TestСервис", "/api/test", "РазрешеноВсем", self._make_templates())
+        yaml = build_yaml("TestСервис", "/test", "РазрешеноВсем", self._make_templates())
         # UUID формат: 8-4-4-4-12
         import re
         assert re.search(r"Ид: [0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", yaml)
 
     def test_handlers_in_yaml(self):
-        yaml = build_yaml("TestСервис", "/api/test", "РазрешеноВсем", self._make_templates())
+        yaml = build_yaml("TestСервис", "/test", "РазрешеноВсем", self._make_templates())
         assert "ПолучитьСписок" in yaml
         assert "Создать" in yaml
         assert "ПолучитьПоИд" in yaml
 
     def test_templates_in_yaml(self):
-        yaml = build_yaml("TestСервис", "/api/test", "РазрешеноВсем", self._make_templates())
+        yaml = build_yaml("TestСервис", "/test", "РазрешеноВсем", self._make_templates())
         assert "Шаблон: /" in yaml
         assert "Шаблон: /{id}" in yaml
 
     def test_each_call_unique_uuid(self):
         templates = [("/", ["GET"])]
-        yaml1 = build_yaml("Сервис", "/api/x", "РазрешеноВсем", templates)
-        yaml2 = build_yaml("Сервис", "/api/x", "РазрешеноВсем", templates)
+        yaml1 = build_yaml("Сервис", "/x", "РазрешеноВсем", templates)
+        yaml2 = build_yaml("Сервис", "/x", "РазрешеноВсем", templates)
         # UUID должны быть разными
         import re
         uuid_pat = r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
@@ -202,7 +203,7 @@ class TestBuildYaml:
         assert uuid1 != uuid2
 
     def test_access_level(self):
-        yaml = build_yaml("Сервис", "/api/x", "РазрешеноАутентифицированным", [("/", ["GET"])])
+        yaml = build_yaml("Сервис", "/x", "РазрешеноАутентифицированным", [("/", ["GET"])])
         assert "РазрешеноАутентифицированным" in yaml
 
     def test_no_access_block_when_none(self):
@@ -210,6 +211,27 @@ class TestBuildYaml:
         yaml = build_yaml("Сервис", "/x", None, [("/", ["GET"])])
         assert "КонтрольДоступа" not in yaml
         assert "Разрешения" not in yaml
+
+
+@pytest.mark.parametrize("url", ["api", "/api", "/api/orders"])
+def test_validate_root_url_rejects_platform_api_prefix(url):
+    with pytest.raises(ValueError, match="Платформа автоматически добавляет /api/"):
+        validate_root_url(url)
+
+
+def test_validate_root_url_accepts_resource_root():
+    assert validate_root_url("/orders") == "/orders"
+
+
+def test_main_rejects_legacy_root_even_in_dry_run(tmp_path, capsys):
+    with pytest.raises(SystemExit):
+        main([
+            "--name", "Orders",
+            "--url", "/api/orders",
+            "--routes", "GET /",
+            "--root", str(tmp_path),
+        ])
+    assert "Платформа автоматически добавляет /api/" in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------
@@ -291,7 +313,7 @@ class TestApply:
         root = self._make_project(tmp_path)
         main([
             "--name", "ТестовыйСервис",
-            "--url", "/api/test",
+            "--url", "/test",
             "--routes", "GET /, POST /, GET /{id}",
             "--root", root,
             "--apply",
@@ -304,7 +326,7 @@ class TestApply:
         root = self._make_project(tmp_path)
         main([
             "--name", "МойСервис",
-            "--url", "/api/mine",
+            "--url", "/mine",
             "--routes", "GET /",
             "--root", root,
             "--apply",
@@ -313,13 +335,13 @@ class TestApply:
         content = yaml_path.read_text(encoding="utf-8")
         assert "ВидЭлемента: HttpСервис" in content
         assert "Имя: МойСервис" in content
-        assert "КорневойUrl: /api/mine" in content
+        assert "КорневойUrl: /mine" in content
 
     def test_xbsl_content_valid(self, tmp_path):
         root = self._make_project(tmp_path)
         main([
             "--name", "МойСервис",
-            "--url", "/api/mine",
+            "--url", "/mine",
             "--routes", "GET /, POST /, GET /{id}",
             "--root", root,
             "--apply",
@@ -344,7 +366,7 @@ class TestApply:
         with redirect_stdout(f):
             main([
                 "--name", "МойСервис",
-                "--url", "/api/mine",
+                "--url", "/mine",
                 "--routes", "GET /",
                 "--root", root,
             ])
@@ -362,7 +384,7 @@ class TestApply:
 
         main([
             "--name", "СервисПродаж",
-            "--url", "/api/sales",
+            "--url", "/sales",
             "--routes", "GET /",
             "--root", str(tmp_path),
             "--subsystem", "Продажи",
@@ -375,7 +397,7 @@ class TestApply:
         root = self._make_project(tmp_path)
         main([
             "--name", "МойСервис",
-            "--url", "/api/mine",
+            "--url", "/mine",
             "--routes", "GET /",
             "--root", root,
             # нет --apply
@@ -522,7 +544,7 @@ class TestAddRoutes:
         # Создаём сервис через main
         main([
             "--name", "МойСервис",
-            "--url", "/api/test",
+            "--url", "/test",
             "--routes", "GET /, POST /",
             "--root", str(tmp_path),
             "--apply",

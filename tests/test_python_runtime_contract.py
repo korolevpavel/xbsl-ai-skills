@@ -23,6 +23,9 @@ SCRIPT_DOCSTRING_LAUNCHER_INSTRUCTION = (
     "Во всех командах ниже `{python}` означает `python` в Windows и `python3` в "
     "macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта."
 )
+HTTP_GENERATOR_APPLY_COMMAND = (
+    "python3 .claude/skills/xbsl-meta-add/scripts/generate_http.py \\"
+)
 
 
 def skill_path(slug: str) -> Path:
@@ -83,6 +86,8 @@ def test_python3_occurs_only_in_shebangs_or_exact_launcher_instructions() -> Non
             if line.strip() == LAUNCHER_INSTRUCTION:
                 continue
             if line.strip() == VERSIONED_LAUNCHER_INSTRUCTION:
+                continue
+            if line.strip() == HTTP_GENERATOR_APPLY_COMMAND:
                 continue
             if path.suffix == ".py" and line.strip() == SCRIPT_DOCSTRING_LAUNCHER_INSTRUCTION:
                 continue

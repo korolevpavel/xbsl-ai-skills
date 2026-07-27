@@ -60,11 +60,19 @@ def has_root_interface_wrapper(text: str) -> bool:
 
 
 def yaml_field_blocks(text: str) -> list[str]:
-    """Return direct properties of YAML list items from Markdown examples."""
+    """Return direct properties of developer-field YAML mappings in examples."""
     blocks = re.findall(r"```yaml\n(.*?)```", text, re.DOTALL)
     fields = []
     for block in blocks:
         lines = block.splitlines()
+        standalone = "\n".join(
+            line.strip()
+            for line in lines
+            if re.match(r"^[^\s#][^:]*:\s*.*$", line)
+        )
+        if re.search(r"(?m)^Тип:", standalone):
+            fields.append(standalone)
+
         for index, line in enumerate(lines):
             match = re.match(r"^(?P<indent>\s*)-\s*(?P<inline>.*)$", line)
             if match is None:
@@ -89,6 +97,14 @@ def yaml_field_blocks(text: str) -> list[str]:
             if "Тип:" in field:
                 fields.append(field)
     return fields
+
+
+def empty_value_policy_is_valid(text: str) -> bool:
+    return all(
+        "НезаполненноеЗначение" not in field
+        or re.search(r"(?m)^Тип:\s*Строка\s*(?:#.*)?$", field)
+        for field in yaml_field_blocks(text)
+    )
 
 
 @pytest.mark.parametrize(
@@ -175,8 +191,25 @@ def test_uuid_contract_counts_hierarchies_and_lock_spaces():
     ],
 )
 def test_empty_value_policy_is_not_applied_to_reference_fields(reference_name: str):
-    for field in yaml_field_blocks(read_reference(reference_name)):
-        assert not (
-            re.search(r"Тип:\s*<[^>]+>\.Ссылка", field)
-            and "НезаполненноеЗначение" in field
-        ), field
+    assert empty_value_policy_is_valid(read_reference(reference_name))
+
+
+def test_empty_value_policy_rejects_concrete_reference_list_item():
+    text = """```yaml
+Реквизиты:
+    - Ид: <UUID>
+      Имя: Контрагент
+      Тип: Контрагенты.Ссылка?
+      НезаполненноеЗначение: ЗапретитьВсегда
+```"""
+
+    assert not empty_value_policy_is_valid(text)
+
+
+def test_empty_value_policy_rejects_standalone_non_string_mapping():
+    text = """```yaml
+Тип: Число
+НезаполненноеЗначение: ЗапретитьВсегда
+```"""
+
+    assert not empty_value_policy_is_valid(text)

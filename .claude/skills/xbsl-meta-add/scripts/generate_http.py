@@ -128,6 +128,19 @@ def get_suggested_path(name: str, root: str, subsystem_hint: str | None = None) 
 # Парсинг маршрутов
 # ---------------------------------------------------------------------------
 
+def validate_root_url(url: str) -> str:
+    normalized = url.strip()
+    first_segment = normalized.lstrip("/").split("/", 1)[0].lower()
+    if first_segment == "api":
+        raise ValueError(
+            "КорневойUrl не должен начинаться с /api: "
+            "Платформа автоматически добавляет /api/"
+        )
+    if not normalized.startswith("/"):
+        raise ValueError("КорневойUrl должен начинаться с /")
+    return normalized
+
+
 def parse_routes(routes_str: str) -> list[tuple[str, str]]:
     """Парсит строку маршрутов в список (метод, путь).
     Формат: "GET /, POST /, GET /{id}" или "GET /\nPOST /"."""
@@ -548,6 +561,12 @@ def print_plan(
 # ---------------------------------------------------------------------------
 
 def run_create(args: argparse.Namespace) -> None:
+    try:
+        root_url = validate_root_url(args.url)
+    except ValueError as error:
+        print(f"Ошибка: {error}", file=sys.stderr)
+        sys.exit(1)
+
     root = os.path.abspath(args.root)
     routes = parse_routes(args.routes)
     templates = group_by_template(routes)
@@ -569,7 +588,7 @@ def run_create(args: argparse.Namespace) -> None:
     if not args.apply:
         return
 
-    write_text(yaml_path, build_yaml(args.name, args.url, args.access, templates))
+    write_text(yaml_path, build_yaml(args.name, root_url, args.access, templates))
     write_text(xbsl_path, build_xbsl(templates))
     print()
     print("Готово.")

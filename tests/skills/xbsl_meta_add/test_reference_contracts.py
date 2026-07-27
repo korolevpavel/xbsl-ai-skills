@@ -234,6 +234,12 @@ def test_localized_strings_use_direct_xbsl_access():
 
 def test_access_key_owner_and_developer_parameters_have_distinct_shapes():
     text = read_reference("КлючДоступа.md")
+    assert (
+        "Нужен: 1 (объект) + по 1 на каждый параметр, определённый разработчиком."
+        in text
+    )
+    assert "Системный параметр `Владелец` UUID не требует." in text
+    assert "1 (объект) + по 1 на каждый параметр (если есть)" not in text
     assert "Имя: Владелец" in text
     assert "системный параметр `Владелец` не содержит `Ид`" in text
     assert "пользовательский параметр содержит `Ид`, `Имя` и `Тип`" in text

@@ -19,6 +19,7 @@ LEGACY_XBSL_SYNTAX = re.compile(
 )
 OBSOLETE_META_ADD_APIS = (
     "Приложение.ВызватьГлобальноеКлиентскоеСобытие",
+    "Приложение.ПодписатьсяНаГлобальноеКлиентскоеСобытие",
     "ФоматСтроки",
     "Доступ.ПроверитьКлюч",
 )
@@ -100,3 +101,10 @@ def test_xbsl_meta_add_examples_do_not_contain_obsolete_apis() -> None:
         for block in xbsl_code_blocks(path.read_text(encoding="utf-8")):
             for api in OBSOLETE_META_ADD_APIS:
                 assert api not in block, path
+
+
+def test_obsolete_global_event_apis_are_scanned() -> None:
+    assert {
+        "Приложение.ВызватьГлобальноеКлиентскоеСобытие",
+        "Приложение.ПодписатьсяНаГлобальноеКлиентскоеСобытие",
+    } <= set(OBSOLETE_META_ADD_APIS)

@@ -6,7 +6,7 @@
 
 ## Баланс
 
-`12 supported + 19 partial + 1 routed = 32`
+`19 supported + 12 partial + 1 routed = 32`
 
 ## Объекты
 
@@ -24,12 +24,12 @@
 | `ГлобальноеКлиентскоеСобытие` | `supported` | `xbsl-meta-add` | #88 | `9.1` | `references/ГлобальноеКлиентскоеСобытие.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта |
 | `КлючДоступа` | `supported` | `xbsl-meta-add` | #88 | `9.1` | `references/КлючДоступа.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта |
 | `Отчет` | `supported` | `xbsl-meta-add` | #88 | `9.1` | `references/Отчет.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта |
-| `ВиртуальнаяТаблица` | `partial` | `xbsl-meta-add` | #90 | `9.1` | `references/reference-contract.md` | — |
-| `НаборКонстант` | `partial` | `xbsl-meta-add` | #90 | `9.1` | `references/reference-contract.md` | — |
-| `Обработка` | `partial` | `xbsl-meta-add` | #90 | `9.1` | `references/reference-contract.md` | — |
-| `ПланОбмена` | `partial` | `xbsl-meta-add` | #90 | `9.1` | `references/reference-contract.md` | — |
-| `ХранилищеНастроек` | `partial` | `xbsl-meta-add` | #90 | `9.1` | `references/reference-contract.md` | — |
-| `ХранимаяСтруктура` | `partial` | `xbsl-meta-add` | #90 | `9.1` | `references/reference-contract.md` | — |
+| `ВиртуальнаяТаблица` | `supported` | `xbsl-meta-add` | #90 | `9.1` | `references/ВиртуальнаяТаблица.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта<br>`*.xbql` — запрос виртуальной таблицы |
+| `НаборКонстант` | `supported` | `xbsl-meta-add` | #90 | `9.1` | `references/НаборКонстант.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта |
+| `Обработка` | `supported` | `xbsl-meta-add` | #90 | `9.1` | `references/Обработка.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта<br>`*.Объект.xbsl` — модуль объекта с обработчиками операций |
+| `ПланОбмена` | `supported` | `xbsl-meta-add` | #90 | `9.1` | `references/ПланОбмена.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта |
+| `ХранилищеНастроек` | `supported` | `xbsl-meta-add` | #90 | `9.1` | `references/ХранилищеНастроек.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта |
+| `ХранимаяСтруктура` | `supported` | `xbsl-meta-add` | #90 | `9.1` | `references/ХранимаяСтруктура.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта |
 | `КонтрактСервиса` | `partial` | `xbsl-meta-add` | #91 | `9.1` | `references/reference-contract.md` | — |
 | `КонтрактСущности` | `partial` | `xbsl-meta-add` | #91 | `9.1` | `references/reference-contract.md` | — |
 | `КонтрактТипа` | `partial` | `xbsl-meta-add` | #91 | `9.1` | `references/reference-contract.md` | — |
@@ -41,7 +41,7 @@
 | `SoapСервис` | `partial` | `xbsl-meta-add` | #93 | `9.1` | `references/reference-contract.md` | — |
 | `КлиентSoapСервиса` | `partial` | `xbsl-meta-add` | #93 | `9.1` | `references/reference-contract.md` | — |
 | `ПроцессИнтеграции` | `partial` | `xbsl-meta-add` | #93 | `9.1` | `references/reference-contract.md` | — |
-| `ПараметрыРаботыКлиента` | `partial` | `xbsl-meta-add` | #90 | `9.2` | `references/reference-contract.md` | — |
+| `ПараметрыРаботыКлиента` | `supported` | `xbsl-meta-add` | #90 | `9.2` | `references/ПараметрыРаботыКлиента.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта<br>`*.xbsl` — модуль вычисления параметров |
 | `ПараметрСамостоятельнойРегистрацииПользователя` | `partial` | `xbsl-meta-add` | #92 | `null` | `references/reference-contract.md` | — |
 | `ЗапланированноеЗадание` | `routed` | `xbsl-scheduled-task` | #3 | `9.1` | `references/ЗапланированноеЗадание.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта<br>`*.xbsl` — модуль обработчика |
 

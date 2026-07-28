@@ -39,23 +39,18 @@
 | [`xbsl-access-set`](.claude/skills/xbsl-access-set/SKILL.md) | Управление правами доступа объектов конфигурации: сводка текущего состояния и пакетная установка КонтрольДоступа |
 | [`xbsl-pattern-rls`](.claude/skills/xbsl-pattern-rls/SKILL.md) | Реализация RLS (построчный доступ): ключи доступа, обработчики разрешений, паттерны P0–P3 |
 
-Спецификации по каждому типу объекта метаданных и справочник типов реквизитов хранятся в [`.claude/skills/xbsl-meta-add/references/`](.claude/skills/xbsl-meta-add/references/):
+Покрытие типов `xbsl-meta-add` для 1С:Предприятие.Элемент 9.2 хранится в
+каноническом registry
+[`object-coverage.json`](.claude/skills/xbsl-meta-add/object-coverage.json).
+Человекочитаемая матрица
+[`object-coverage.md`](.claude/skills/xbsl-meta-add/object-coverage.md)
+генерируется из JSON и не редактируется вручную.
 
-| Файл | Тип объекта |
-|------|-------------|
-| [`Перечисление.md`](.claude/skills/xbsl-meta-add/references/Перечисление.md) | Фиксированный набор значений (статусы, виды, приоритеты) |
-| [`Справочник.md`](.claude/skills/xbsl-meta-add/references/Справочник.md) | Хранилище записей (сотрудники, контрагенты, товары) |
-| [`Документ.md`](.claude/skills/xbsl-meta-add/references/Документ.md) | Бизнес-событие с историей (заказы, накладные, акты) |
-| [`РегистрСведений.md`](.claude/skills/xbsl-meta-add/references/РегистрСведений.md) | Срезы данных по измерениям (курсы валют, цены) |
-| [`РегистрНакопления.md`](.claude/skills/xbsl-meta-add/references/РегистрНакопления.md) | Обороты или остатки (продажи, складские остатки) |
-| [`ОбщийМодуль.md`](.claude/skills/xbsl-meta-add/references/ОбщийМодуль.md) | Переиспользуемый код (утилиты, сервисы) |
-| [`Структура.md`](.claude/skills/xbsl-meta-add/references/Структура.md) | DTO / value object |
-| [`HttpСервис.md`](.claude/skills/xbsl-meta-add/references/HttpСервис.md) | REST API (эндпоинты для внешних систем) |
-| [`ГлобальноеКлиентскоеСобытие.md`](.claude/skills/xbsl-meta-add/references/ГлобальноеКлиентскоеСобытие.md) | Событие между подсистемами |
-| [`КлючДоступа.md`](.claude/skills/xbsl-meta-add/references/КлючДоступа.md) | Маркер прав доступа |
-| [`ЛокализованныеСтроки.md`](.claude/skills/xbsl-meta-add/references/ЛокализованныеСтроки.md) | Тексты интерфейса |
-| [`ТабличныеЧасти.md`](.claude/skills/xbsl-meta-add/references/ТабличныеЧасти.md) | Вложенные строки в Справочнике и Документе |
-| [`types.md`](.claude/skills/xbsl-meta-add/references/types.md) | Справочник типов реквизитов |
+Общие reference-контракты находятся в
+[`references/`](.claude/skills/xbsl-meta-add/references/):
+[`reference-contract.md`](.claude/skills/xbsl-meta-add/references/reference-contract.md),
+[`types.md`](.claude/skills/xbsl-meta-add/references/types.md) и
+[`ТабличныеЧасти.md`](.claude/skills/xbsl-meta-add/references/ТабличныеЧасти.md).
 
 ## Требования
 

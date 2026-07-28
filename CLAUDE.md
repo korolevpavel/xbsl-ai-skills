@@ -8,6 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбранный интерпретатор должен быть Python 3.10+; если сомневаешься, проверь через `{python} --version`. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
+## GitHub и Pull Requests
+
+Заголовки, описания и комментарии Pull Request для этого репозитория пиши на
+русском языке.
+
 ## Структура репозитория
 
 ```

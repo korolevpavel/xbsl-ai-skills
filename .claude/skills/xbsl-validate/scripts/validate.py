@@ -14,10 +14,15 @@ except ImportError:  # pragma: no cover - exercised only without dependency inst
     yaml = None
 
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
-COVERAGE_PATH = (
-    REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add" / "object-coverage.json"
-)
+def find_skills_root(path: Path) -> Path:
+    for parent in path.resolve().parents:
+        if parent.name == "skills":
+            return parent
+    raise RuntimeError("Cannot locate skills root")
+
+
+SKILLS_ROOT = find_skills_root(Path(__file__))
+COVERAGE_PATH = SKILLS_ROOT / "xbsl-meta-add" / "object-coverage.json"
 
 UUID_RE = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"

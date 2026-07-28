@@ -21,13 +21,17 @@ VALIDATOR_PATH = (
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
-def load_validator():
-    assert VALIDATOR_PATH.exists(), "missing xbsl-validate CLI"
-    spec = importlib.util.spec_from_file_location("xbsl_validate", VALIDATOR_PATH)
+def load_validator_from(path: Path):
+    assert path.exists(), "missing xbsl-validate CLI"
+    spec = importlib.util.spec_from_file_location("xbsl_validate", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_validator():
+    return load_validator_from(VALIDATOR_PATH)
 
 
 def run_cli(args: list[str], capsys):
@@ -124,6 +128,30 @@ def test_valid_supported_fixture_and_empty_directory_are_clean(tmp_path, capsys)
         "diagnostics": [],
         "summary": {"files": 0, "errors": 0, "warnings": 0},
     }
+
+
+def test_installed_skill_layout_uses_sibling_coverage_registry(tmp_path, capsys):
+    skills_root = tmp_path / "skills"
+    installed_validator_dir = skills_root / "xbsl-validate" / "scripts"
+    installed_registry_dir = skills_root / "xbsl-meta-add"
+    installed_validator_dir.mkdir(parents=True)
+    installed_registry_dir.mkdir()
+    installed_validator = installed_validator_dir / "validate.py"
+    installed_registry = installed_registry_dir / "object-coverage.json"
+    shutil.copy2(VALIDATOR_PATH, installed_validator)
+    shutil.copy2(
+        REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add" / "object-coverage.json",
+        installed_registry,
+    )
+
+    validator = load_validator_from(installed_validator)
+    code = validator.main([str(FIXTURES / "valid_supported")])
+    captured = capsys.readouterr()
+
+    assert validator.COVERAGE_PATH == installed_registry
+    assert code == 0
+    assert captured.out == ""
+    assert captured.err == ""
 
 
 def test_common_yaml_type_and_duplicate_key_errors(capsys):

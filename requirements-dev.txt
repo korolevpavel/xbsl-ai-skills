@@ -1,3 +1,4 @@
 -r requirements-site.txt
 pytest>=8,<9
 coverage>=7.6,<8
+PyYAML>=6.0,<7

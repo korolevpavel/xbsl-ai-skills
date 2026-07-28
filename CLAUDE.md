@@ -52,6 +52,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     xbsl-pattern-rls/       # паттерн RLS: ключи доступа + обработчики разрешений
         scripts/rls_state.py       # анализ текущего RLS-состояния объекта
         references/rls-паттерны.md # шаблоны P0–P3 паттернов доступа
+    xbsl-validate/          # read-only валидация YAML: syntax, duplicate keys, coverage dispatch
 tools/                   # материалы и инструменты (в .gitignore)
 scripts/build_site.py    # сборка GitHub Pages из README и SKILL.md файлов
 ```
@@ -108,6 +109,14 @@ scripts/build_site.py    # сборка GitHub Pages из README и SKILL.md ф�
 
 ### xbsl-pattern-rls
 Реализует полный паттерн RLS (Row-Level Security) — разграничение доступа к строкам данных — для объектов конфигурации (Справочник, Документ и др.). Создаёт все артефакты за один вызов: `КлючДоступа<Имя>.yaml` + `.xbsl` с обработчиком `ПроверитьНаличиеКлючейДоступа`, обновляет `КонтрольДоступа` в YAML объекта, дописывает два обработчика в `.Объект.xbsl` (уровень 1 — доступ к таблице, уровень 2 — доступ к строкам). Паттерны: P0 — без построчной фильтрации; P1 — пользователь видит только свои записи; P2 — группа по параметру (собственный ключ + запрос); P2-б — ролевой ключ без параметров; P3 — два участника с разными правами. Запускает `scripts/rls_state.py` для компактной сводки состояния объекта (вместо ручного чтения YAML + .xbsl). Оркестрирует xbsl-uuid.
+
+### xbsl-validate
+Read-only CLI для проверки YAML-файлов и каталогов проекта. Проверяет YAML,
+duplicate keys, обязательные общие поля, UUID, grammar типов из
+`xbsl-meta-add/references/types.md` и coverage/status dispatch через
+`xbsl-meta-add/object-coverage.json`. Единственный скрипт с runtime-зависимостью
+`PyYAML>=6.0,<7`; зависимость объявлена в `requirements-dev.txt` и нужна для CI
+и локального запуска валидатора.
 
 ## Структура проекта 1С:Элемент
 
@@ -182,9 +191,9 @@ compatibility: Requires Python 3.
 
 ### Соглашения по скриптам (`scripts/`)
 
-- **Только stdlib Python 3.10+** — никаких pip-пакетов; скрипты должны работать без виртуального окружения.
+- **Только stdlib Python 3.10+ по умолчанию** — никаких pip-пакетов; скрипты должны работать без виртуального окружения. Исключение: `xbsl-validate/scripts/validate.py`, которому по контракту #8 нужен `PyYAML>=6.0,<7`.
 - **JSON в stdout** — скрипты выводят результат как JSON; Claude разбирает вывод и продолжает алгоритм.
-- **Лёгкий YAML-парсер** — каждый скрипт содержит функцию `get_yaml_field()` для чтения `.yaml`; внешних библиотек (PyYAML и т.п.) нет.
+- **Лёгкий YAML-парсер** — обычные скрипты содержат функцию `get_yaml_field()` для чтения `.yaml`; внешних библиотек (PyYAML и т.п.) нет. Для `xbsl-validate` используй PyYAML SafeLoader с запретом duplicate keys.
 - **Exit-коды как сигналы** — `sys.exit(N)` передаёт скиллу специальные состояния (например, `exit(3)` в `access_state.py` = объект с RLS, перенаправить в `xbsl-pattern-rls`).
 
 ### Кроссплатформенность

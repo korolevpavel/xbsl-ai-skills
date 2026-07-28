@@ -16,6 +16,7 @@ DIRECT_PYTHON_SKILLS = frozenset(
         "xbsl-rename",
         "xbsl-subsystem-add",
         "xbsl-uuid",
+        "xbsl-validate",
     }
 )
 

@@ -11,21 +11,25 @@ description: >
 
 Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 
-Используй CLI:
+Используй CLI из текущего корня `skills`:
 
 ```bash
-{python} .claude/skills/xbsl-validate/scripts/validate.py PATH... [--format text|json]
+{python} <skills-root>/xbsl-validate/scripts/validate.py PATH... [--format text|json]
 ```
+
+В исходниках репозитория это обычно
+`.claude/skills/xbsl-validate/scripts/validate.py`, в установленном Codex
+layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
 
 Гарантии:
 
 - только читает входные файлы и каталоги;
 - рекурсивно обходит каталоги и проверяет только `*.yaml`;
 - выдаёт детерминированные diagnostics в `text` или едином JSON envelope;
-- использует `.claude/skills/xbsl-meta-add/object-coverage.json` как
-  единственный registry типов, статусов и владельцев;
-- использует `.claude/skills/xbsl-meta-add/references/types.md` как источник
-  grammar для `Тип`.
+- использует sibling skill `xbsl-meta-add/object-coverage.json` из того же
+  корня `skills` как единственный registry типов, статусов и владельцев;
+- использует `xbsl-meta-add/references/types.md` как источник grammar для
+  `Тип`.
 
 Коды завершения:
 

@@ -38,6 +38,7 @@
 | [`xbsl-lib-connect`](.claude/skills/xbsl-lib-connect/SKILL.md) | Подключение внешней библиотеки (.xlib) к проекту: из файла, папки с исходниками или GitHub/GitLab URL |
 | [`xbsl-access-set`](.claude/skills/xbsl-access-set/SKILL.md) | Управление правами доступа объектов конфигурации: сводка текущего состояния и пакетная установка КонтрольДоступа |
 | [`xbsl-pattern-rls`](.claude/skills/xbsl-pattern-rls/SKILL.md) | Реализация RLS (построчный доступ): ключи доступа, обработчики разрешений, паттерны P0–P3 |
+| [`xbsl-validate`](.claude/skills/xbsl-validate/SKILL.md) | Read-only проверка YAML-файлов проекта: синтаксис, duplicate keys, общие invariants, grammar типов и coverage dispatch |
 
 Покрытие типов `xbsl-meta-add` для 1С:Предприятие.Элемент 9.2 хранится в
 каноническом registry
@@ -55,7 +56,8 @@
 ## Требования
 
 - [Claude Code](https://claude.ai/code) или другой AI-агент, поддерживающий скиллы
-- `Python 3.10+` — для работы скиллов `xbsl-uuid`, `xbsl-subsystem-add`, `xbsl-explore`, `xbsl-meta-add`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-file-add`, `xbsl-image-add`, `xbsl-deploy`, `xbsl-pattern-register`, `xbsl-form-cards`, `xbsl-rename`, `xbsl-form-dashboard`, `xbsl-lib-connect`, `xbsl-access-set` и `xbsl-pattern-rls`
+- `Python 3.10+` — для работы скиллов `xbsl-uuid`, `xbsl-subsystem-add`, `xbsl-explore`, `xbsl-meta-add`, `xbsl-form-info`, `xbsl-form-add`, `xbsl-file-add`, `xbsl-image-add`, `xbsl-deploy`, `xbsl-pattern-register`, `xbsl-form-cards`, `xbsl-rename`, `xbsl-form-dashboard`, `xbsl-lib-connect`, `xbsl-access-set`, `xbsl-pattern-rls` и `xbsl-validate`
+- `PyYAML 6.x` — runtime-зависимость CLI `xbsl-validate`
 
 Во всех командах ниже `{python}` означает `python` в Windows и `python3` в macOS/Linux/WSL. Выбранный интерпретатор должен быть Python 3.10+; если сомневаешься, проверь через `{python} --version`. Выбирай команду сразу по текущей ОС, не запускай оба варианта.
 

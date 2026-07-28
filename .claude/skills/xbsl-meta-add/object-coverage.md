@@ -49,6 +49,6 @@
 
 | Category | Status | Route to | Examples | Reason |
 | --- | --- | --- | --- | --- |
-| `ui_commands_forms_components` | `out_of_scope` | `xbsl-form-add` | Команда, Форма, КомпонентИнтерфейса | UI commands and components are owned by form/interface skills. |
+| `ui_commands_forms_components` | `out_of_scope` | `xbsl-form-add` | Команда, Форма, КомпонентИнтерфейса, ФрагментКомандногоИнтерфейса | UI commands and components are owned by form/interface skills. |
 | `project_subsystem_structural_containers` | `out_of_scope` | `xbsl-subsystem-add` | Проект, Подсистема | Project and subsystem containers have dedicated workflows. |
 | `platform_generated_elements` | `automatic` | `platform` | СистемныеПоля, АвтоматическиеЭлементы | The platform creates these entries automatically. |

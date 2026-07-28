@@ -150,7 +150,7 @@ def test_json_envelope_uses_stable_summary_sorting_and_paths(capsys):
     assert code == 1
     assert stderr == ""
     data = parse_json(stdout)
-    assert data["summary"] == {"files": 6, "errors": 3, "warnings": 2}
+    assert data["summary"] == {"files": 7, "errors": 3, "warnings": 3}
     assert data["diagnostics"] == sorted(
         data["diagnostics"],
         key=lambda item: (
@@ -170,6 +170,11 @@ def test_json_envelope_uses_stable_summary_sorting_and_paths(capsys):
         ("error", "coverage.unknown_type", None),
         ("error", "owner.scheduled_task.missing_companion", None),
     }
+    assert sum(
+        1
+        for diagnostic in data["diagnostics"]
+        if diagnostic["rule_id"] == "coverage.out_of_scope"
+    ) == 2
     assert all(Path(diagnostic["path"]).is_relative_to(target) for diagnostic in data["diagnostics"])
 
 

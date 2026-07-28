@@ -1139,7 +1139,8 @@
       "examples": [
         "Команда",
         "Форма",
-        "КомпонентИнтерфейса"
+        "КомпонентИнтерфейса",
+        "ФрагментКомандногоИнтерфейса"
       ],
       "reason": "UI commands and components are owned by form/interface skills."
     },

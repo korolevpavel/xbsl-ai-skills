@@ -476,19 +476,24 @@
           "claims": [
             "YAML-схема"
           ]
+        },
+        {
+          "source_catalog": "official_element_9_2",
+          "url": "https://1cmycloud.com/console/help/element/9.2/docs/stdlib/element/xbsl/Std/Reports/Report_ru/#%D1%8D%D0%BA%D1%81%D0%BF%D0%BE%D1%80%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D1%82%D1%8C%D0%B2%D0%B8%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
+          "claims": [
+            "9.2+ сигнатура, доступность, параметры, возвращаемый тип и исключения ЭкспортироватьВИзображение()"
+          ]
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
+      "documentation_verified_on": "2026-07-29",
       "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
+        "status": "passed",
+        "technology_build": "9.2.9-12",
+        "verified_on": "2026-07-29",
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-217.xasm with ЭкспортОтчетаSmoke.xbsl calling ЭкспортироватьВИзображение(); image 019fae4e-535b-757a-938c-f0df7c4c53d5; UpdateApplicationConfiguration 019fae4e-563a-7437-83a7-5d091c1db5b0 Completed"
       },
-      "known_gaps": [
-        "9.2 API ЭкспортироватьВИзображение() уточняется в #91"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "ВиртуальнаяТаблица",
@@ -767,158 +772,256 @@
     },
     {
       "element_kind": "КонтрактСервиса",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 91,
-      "reference_path": null,
+      "reference_path": "references/КонтрактСервиса.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание контракта сервиса",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.xbsl",
+          "role": "модуль контракта сервиса",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.yaml",
+          "role": "test-only описание общего модуля реализации",
+          "required": false,
+          "basis": "skill"
+        },
+        {
+          "pattern": "*.xbsl",
+          "role": "test-only модуль реализации required-контракта",
+          "required": false,
+          "basis": "skill"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/service-contract-properties",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Обязательный",
+            "Множественный",
+            "Окружение"
+          ]
+        },
+        {
+          "source_catalog": "xbsl_docs_9_1",
+          "doc_key": "topics/latest/service-contract-example",
+          "claims": [
+            "модуль контракта",
+            "отдельная реализация",
+            "ПолучитьСервис()"
           ]
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
+      "documentation_verified_on": "2026-07-29",
       "runtime_verification": {
         "status": "not_run",
         "technology_build": null,
         "verified_on": null,
         "method": null
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #91"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "КонтрактСущности",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 91,
-      "reference_path": null,
+      "reference_path": "references/КонтрактСущности.md",
       "shared_reference_paths": [
+        "references/types.md",
+        "references/ТабличныеЧасти.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание контракта сущности",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.yaml",
+          "role": "test-only реализующий объект",
+          "required": false,
+          "basis": "skill"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/entity-contract-properties",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Свойства",
+            "ТаблицыКонтракта",
+            "НастройкиТипов"
+          ]
+        },
+        {
+          "source_catalog": "xbsl_docs_9_1",
+          "doc_key": "topics/latest/tabular-section",
+          "claims": [
+            "табличные части через shared reference"
           ]
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
+      "documentation_verified_on": "2026-07-29",
       "runtime_verification": {
         "status": "not_run",
         "technology_build": null,
         "verified_on": null,
         "method": null
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #91"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "КонтрактТипа",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 91,
-      "reference_path": null,
+      "reference_path": "references/КонтрактТипа.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание контракта типа",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.yaml",
+          "role": "test-only реализующий тип",
+          "required": false,
+          "basis": "skill"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/type-contract-properties",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Свойства",
+            "НастройкиТипа"
+          ]
+        },
+        {
+          "source_catalog": "xbsl_docs_9_1",
+          "doc_key": "topics/latest/type-contract-name-type",
+          "claims": [
+            "порождаемый тип",
+            "optional модуль контракта"
           ]
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
+      "documentation_verified_on": "2026-07-29",
       "runtime_verification": {
         "status": "not_run",
         "technology_build": null,
         "verified_on": null,
         "method": null
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #91"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "ПанельОтчетов",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 91,
-      "reference_path": null,
+      "reference_path": "references/ПанельОтчетов.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание панели отчетов",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/report-panel-properties",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Представление",
+            "designer-owned Макет",
+            "optional Форма"
           ]
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
+      "documentation_verified_on": "2026-07-29",
       "runtime_verification": {
         "status": "not_run",
         "technology_build": null,
         "verified_on": null,
         "method": null
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #91"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "ЦветоваяСхемаОтчета",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 91,
-      "reference_path": null,
+      "reference_path": "references/ЦветоваяСхемаОтчета.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание цветовой схемы отчета",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/report-color-scheme",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Цвета",
+            "ЦветаТемнойТемы fallback"
           ]
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
+      "documentation_verified_on": "2026-07-29",
       "runtime_verification": {
         "status": "not_run",
         "technology_build": null,
         "verified_on": null,
         "method": null
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #91"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "ПравоНаДействие",

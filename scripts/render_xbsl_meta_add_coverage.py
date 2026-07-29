@@ -269,8 +269,9 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
         seen_objects.add(record["element_kind"])
 
     counts = Counter(record["status"] for record in objects)
-    if counts != {"supported": 28, "partial": 3, "routed": 1}:
-        _fail("objects: expected balance 28 supported + 3 partial + 1 routed")
+    expected_counts = {"supported": 31, "partial": 0, "routed": 1}
+    if {status: counts[status] for status in expected_counts} != expected_counts:
+        _fail("objects: expected balance 31 supported + 0 partial + 1 routed")
     routed = [record for record in objects if record["status"] == "routed"]
     if routed[0]["element_kind"] != "ЗапланированноеЗадание":
         _fail("objects: routed type must be ЗапланированноеЗадание")

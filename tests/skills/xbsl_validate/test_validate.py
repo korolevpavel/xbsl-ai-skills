@@ -178,7 +178,7 @@ def test_json_envelope_uses_stable_summary_sorting_and_paths(capsys):
     assert code == 1
     assert stderr == ""
     data = parse_json(stdout)
-    assert data["summary"] == {"files": 7, "errors": 3, "warnings": 3}
+    assert data["summary"] == {"files": 6, "errors": 2, "warnings": 3}
     assert data["diagnostics"] == sorted(
         data["diagnostics"],
         key=lambda item: (
@@ -194,7 +194,6 @@ def test_json_envelope_uses_stable_summary_sorting_and_paths(capsys):
     } == {
         ("warning", "coverage.automatic", None),
         ("warning", "coverage.out_of_scope", None),
-        ("error", "coverage.partial", None),
         ("error", "coverage.unknown_type", None),
         ("error", "owner.scheduled_task.missing_companion", None),
     }
@@ -204,6 +203,31 @@ def test_json_envelope_uses_stable_summary_sorting_and_paths(capsys):
         if diagnostic["rule_id"] == "coverage.out_of_scope"
     ) == 2
     assert all(Path(diagnostic["path"]).is_relative_to(target) for diagnostic in data["diagnostics"])
+
+
+def test_partial_status_diagnostic_can_be_reported_from_custom_registry():
+    validator = load_validator()
+    input_file = validator.InputFile(
+        actual_path=FIXTURES / "status" / "valid_supported.yaml",
+        display_path="partial.yaml",
+    )
+
+    diagnostics = validator.validate_coverage_status(
+        input_file,
+        {"ВидЭлемента": "ЭкспериментальныйОбъект"},
+        {"ЭкспериментальныйОбъект": {"status": "partial"}},
+        {},
+    )
+
+    assert [diagnostic.as_dict() for diagnostic in diagnostics] == [
+        {
+            "path": "partial.yaml",
+            "line": None,
+            "severity": "error",
+            "rule_id": "coverage.partial",
+            "message": "Object type has partial coverage and cannot be fully validated",
+        }
+    ]
 
 
 def test_routed_owner_adapter_can_pass_and_can_be_reported_unavailable(monkeypatch, capsys):
@@ -253,7 +277,7 @@ def test_display_paths_follow_user_inputs(capsys):
     assert code == 1
     assert stderr == ""
     assert str(absolute_file) in stdout
-    assert "tests/skills/xbsl_validate/fixtures/status/partial.yaml" in stdout
+    assert "tests/skills/xbsl_validate/fixtures/status/scheduled_missing_companion.yaml" in stdout
     assert "/private/var/" not in stdout
 
 

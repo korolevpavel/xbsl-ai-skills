@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:orders:types"
+    elementFormDefault="qualified">
+    <xsd:element name="GetOrderRequest">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="OrderId" type="xsd:string"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="GetOrderResponse">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="Number" type="xsd:string"/>
+                <xsd:element name="Amount" type="xsd:decimal"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

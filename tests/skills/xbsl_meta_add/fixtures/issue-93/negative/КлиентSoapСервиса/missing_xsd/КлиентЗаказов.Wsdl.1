@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+    xmlns:tns="urn:orders"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    name="OrdersService"
+    targetNamespace="urn:orders">
+    <wsdl:types>
+        <xsd:schema targetNamespace="urn:orders">
+            <xsd:import namespace="urn:orders:types" schemaLocation="КлиентЗаказов.Xsd.1"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:portType name="OrdersPort">
+        <wsdl:operation name="GetOrder"/>
+    </wsdl:portType>
+</wsdl:definitions>

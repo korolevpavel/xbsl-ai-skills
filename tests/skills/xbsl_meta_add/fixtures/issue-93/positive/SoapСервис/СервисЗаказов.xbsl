@@ -1,0 +1,15 @@
+@ВПроекте
+исключение ServiceFault
+    обз пер Code: Строка
+    обз пер Message: Строка
+;
+
+структура Order
+    обз пер Id: Строка
+    обз пер Number: Строка
+    обз пер Amount: Число
+;
+
+метод GetOrder(OrderId: Строка): Order
+    возврат новый Order(OrderId, "SO-1", 100)
+;

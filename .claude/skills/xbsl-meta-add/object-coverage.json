@@ -924,75 +924,211 @@
     },
     {
       "element_kind": "SoapСервис",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "reference_path": null,
+      "reference_path": "references/SoapСервис.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание SOAP-сервиса",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.xbsl",
+          "role": "модуль SOAP-сервиса",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "official_element_9_1",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "операции",
+            "WSDL-поля"
           ],
           "path": "topics/latest/soap-service-properties"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "порождаемый тип",
+            "модуль сервиса",
+            "типы сообщений"
+          ],
+          "path": "topics/latest/soap-service-types"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "stdlib тип сервиса"
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/SoapServices/SoapService_ru"
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
-      "known_gaps": [
-        "полная поддержка SOAP-сервиса пока не описана в registry"
-      ]
+      "documentation_verified_on": "2026-07-29",
+      "known_gaps": []
     },
     {
       "element_kind": "КлиентSoapСервиса",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "reference_path": null,
+      "reference_path": "references/КлиентSoapСервиса.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание клиента SOAP-сервиса",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.Wsdl.1",
+          "role": "основное WSDL-описание сервиса",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.Xsd.*",
+          "role": "XSD-схемы, на которые ссылается WSDL",
+          "required": false,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.xbsl",
+          "role": "модуль настройки SOAP-заголовков и HTTP-запроса",
+          "required": false,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "official_element_9_1",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "UrlПоУмолчанию",
+            "ВерсияSoap"
           ],
           "path": "topics/latest/soap-service-client-properties"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "WSDL/XSD загрузка",
+            "порождаемые методы",
+            "вызов операций"
+          ],
+          "path": "topics/latest/soap-web-service-client"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "ответ процедуры SOAP"
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/SoapServices/SoapResponse_ru"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "ответ функции SOAP"
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/SoapServices/SoapFunctionResponse_ru"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "конструктор с КлиентHttp"
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/Http/HttpClient_ru"
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
-      "known_gaps": [
-        "полная поддержка SOAP-клиента пока не описана в registry"
-      ]
+      "documentation_verified_on": "2026-07-29",
+      "known_gaps": []
     },
     {
       "element_kind": "ПроцессИнтеграции",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "reference_path": null,
+      "reference_path": "references/ПроцессИнтеграции.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание объекта и схема процесса",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.xbsl",
+          "role": "модуль обработчиков процесса",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "official_element_9_1",
           "claims": [
-            "существование вида"
+            "создание схемы",
+            "узлы",
+            "маршруты",
+            "обработчики"
           ],
           "path": "topics/latest/integration-process"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "назначение элемента",
+            "порождаемый процесс",
+            "запуск"
+          ],
+          "path": "topics/latest/integration-process-project-element"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "пример YAML-схемы",
+            "СправочникУчастников",
+            "Схема"
+          ],
+          "path": "topics/latest/esb-demo-example-1"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "узел Транслятор",
+            "обработчик Преобразование"
+          ],
+          "path": "topics/latest/translator-integration-scheme-node"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "stdlib тип процесса",
+            "Запустить()",
+            "ОтправитьСообщениеВУзлы()"
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/IntegrationBus/IntegrationProcess_ru"
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
-      "known_gaps": [
-        "полная поддержка процесса интеграции пока не описана в registry"
-      ]
+      "documentation_verified_on": "2026-07-29",
+      "known_gaps": []
     },
     {
       "element_kind": "ПараметрыРаботыКлиента",

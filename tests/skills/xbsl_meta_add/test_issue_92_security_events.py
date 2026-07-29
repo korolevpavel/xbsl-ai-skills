@@ -151,16 +151,12 @@ def test_issue_92_registry_records_are_supported_and_portable(kind: str):
 
 def test_issue_92_status_balance_finishes_security_events_without_new_public_issue_links():
     registry = load_registry()
-    statuses = {record["status"]: 0 for record in registry["objects"]}
+    statuses = {status: 0 for status in ("supported", "partial", "routed")}
     for record in registry["objects"]:
         statuses[record["status"]] += 1
 
-    assert statuses == {"supported": 28, "partial": 3, "routed": 1}
-    assert {
-        record["element_kind"]
-        for record in registry["objects"]
-        if record["status"] == "partial"
-    } == {"SoapСервис", "КлиентSoapСервиса", "ПроцессИнтеграции"}
+    assert statuses == {"supported": 31, "partial": 0, "routed": 1}
+    assert not [record for record in registry["objects"] if record["status"] == "partial"]
 
 
 @pytest.mark.parametrize("kind", ISSUE_92_OBJECTS)

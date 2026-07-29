@@ -49,12 +49,11 @@ def test_registry_has_exact_schema_initial_balance_and_safe_paths():
     assert list(data) == [
         "schema_version",
         "target_platform",
-        "source_catalog",
         "shared_references",
         "objects",
         "routing",
     ]
-    assert data["schema_version"] == 1
+    assert data["schema_version"] == 2
     assert data["target_platform"] == {
         "name": "1С:Предприятие.Элемент",
         "version": "9.2",
@@ -94,25 +93,7 @@ def test_registry_has_exact_schema_initial_balance_and_safe_paths():
                     "basis": "platform",
                 },
             ],
-            "sources": [
-                {
-                    "source_catalog": "official_element_9_1",
-                    "path": "topics/latest/scheduled-job-properties",
-                    "claims": ["YAML-схема"],
-                },
-                {
-                    "source_catalog": "official_element_9_1",
-                    "path": "topics/latest/scheduled-job-project-element",
-                    "claims": ["семантика модуля"],
-                },
-                {
-                    "source_catalog": "official_element_9_1",
-                    "path": "stdlib/latest/element/xbsl/Std/Schedules/DailySchedule_ru",
-                    "claims": ["свойства ежедневного расписания"],
-                },
-            ],
             "min_version": "9.1",
-            "documentation_verified_on": "2026-07-29",
             "known_gaps": [],
         }
     ]
@@ -135,59 +116,27 @@ def test_registry_is_canonical_json_and_round_trips_byte_identically():
     assert renderer.dump_canonical_json(json.loads(expected)) == expected
 
 
+def test_repository_does_not_carry_private_audit_manifest():
+    private_manifest_name = "object_coverage_" + "provenance.json"
+    assert not (Path(__file__).resolve().parent / private_manifest_name).exists()
+
+
 @pytest.mark.parametrize(
     ("mutation", "message"),
     [
         (lambda data: data.update({"extra": True}), "top-level"),
-        (lambda data: data.update({"schema_version": 2}), "schema_version"),
+        (lambda data: data.update({"schema_version": 1}), "schema_version"),
         (
-            lambda data: data["objects"][0].update(
-                {
-                    "sources": [
-                        {
-                            "source_catalog": "missing",
-                            "path": "topics/latest/example",
-                            "claims": ["YAML-схема"],
-                        }
-                    ]
-                }
-            ),
-            "source_catalog",
+            lambda data: data["objects"][0].update({"legacy_audit": True}),
+            "expected exact fields",
         ),
         (
             lambda data: data["objects"][0].update({"reference_path": "../escape.md"}),
             "path",
         ),
         (
-            lambda data: data["objects"][0].update(
-                {
-                    "sources": [
-                        {
-                            "source_catalog": "official_element_9_1",
-                            "doc_key": "topics/latest/example",
-                            "claims": ["YAML-схема"],
-                        }
-                    ]
-                }
-            ),
-            "path/url",
-        ),
-        (
-            lambda data: data["objects"][0].update(
-                {
-                    "sources": [
-                        {
-                            "source_catalog": "official_element_9_2",
-                            "url": (
-                                "https://1cmycloud.com/console/help/element/"
-                                "latest/docs/topics/http-service-properties/"
-                            ),
-                            "claims": ["YAML-схема"],
-                        }
-                    ]
-                }
-            ),
-            "versioned",
+            lambda data: data["objects"][0].update({"maintainer_note": "local"}),
+            "expected exact fields",
         ),
     ],
 )
@@ -208,6 +157,16 @@ def test_public_skill_artifacts_do_not_reference_local_only_materials():
         "xbsl_docs",
         "doc_key",
         "indexed",
+        "source" + "_catalog",
+        "official" + "_element_",
+        "documentation" + "_verified_on",
+        "## Версия и источники",
+        "| Claim | Источник |",
+        "Проверено",
+        "captured PDF",
+        "source" + "-backed",
+        "source" + " contract",
+        "dev " + "provenance",
         "runtime_verification",
         "Runtime evidence",
         "test-only",

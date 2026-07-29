@@ -1,18 +1,8 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "target_platform": {
     "name": "1С:Предприятие.Элемент",
     "version": "9.2"
-  },
-  "source_catalog": {
-    "official_element_9_1": {
-      "documented_platform_version": "9.1",
-      "base_url": "https://1cmycloud.com/console/help/element/9.1/docs/"
-    },
-    "official_element_9_2": {
-      "documented_platform_version": "9.2",
-      "base_url": "https://1cmycloud.com/console/help/element/9.2/docs/"
-    }
   },
   "shared_references": [
     "references/types.md",
@@ -36,17 +26,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/enumeration-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -67,17 +47,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/catalog-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -104,17 +74,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/document-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -134,17 +94,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/information-register-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -164,17 +114,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/accumulation-register-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -199,18 +139,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "модуль"
-          ],
-          "path": "topics/latest/common-module-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -230,17 +159,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/structure-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -259,17 +178,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/app-localization"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -294,17 +203,7 @@
           "basis": "skill"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/http-service-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -323,17 +222,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/global-client-event-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -353,17 +242,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/access-key-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -389,24 +268,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/report-properties"
-        },
-        {
-          "source_catalog": "official_element_9_2",
-          "url": "https://1cmycloud.com/console/help/element/9.2/docs/stdlib/element/xbsl/Std/Reports/Report_ru/#%D1%8D%D0%BA%D1%81%D0%BF%D0%BE%D1%80%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D1%82%D1%8C%D0%B2%D0%B8%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
-          "claims": [
-            "9.2+ сигнатура, доступность, параметры, возвращаемый тип и исключения ЭкспортироватьВИзображение()"
-          ]
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -432,19 +294,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "обязательный XBQL",
-            "согласование параметров"
-          ],
-          "path": "topics/latest/virtual-table"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -464,33 +314,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Периодичность",
-            "Константы"
-          ],
-          "path": "topics/latest/constants-set-properties"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "семантика непериодических и периодических наборов"
-          ],
-          "path": "topics/latest/constants-set-element"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "stdlib API"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/ConstantsSets/ConstantsSet_ru"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -516,19 +340,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Операции",
-            "обязательный обработчик"
-          ],
-          "path": "topics/latest/processing-project-element"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -548,18 +360,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Состав"
-          ],
-          "path": "topics/latest/exchange-plan-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -579,24 +380,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/settings-repository"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "stdlib API"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/SettingsStorages/SettingsStorage_ru"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -616,18 +400,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Поля"
-          ],
-          "path": "topics/latest/storable-structure-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -653,29 +426,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Обязательный",
-            "Множественный",
-            "Окружение"
-          ],
-          "path": "topics/latest/service-contract-properties"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "модуль контракта",
-            "отдельная реализация",
-            "ПолучитьСервис()"
-          ],
-          "path": "topics/latest/service-contract-example"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -696,27 +447,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Свойства",
-            "ТаблицыКонтракта",
-            "НастройкиТипов"
-          ],
-          "path": "topics/latest/entity-contract-properties"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "табличные части через shared reference"
-          ],
-          "path": "topics/latest/tabular-section"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -736,27 +467,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Свойства",
-            "НастройкиТипа"
-          ],
-          "path": "topics/latest/type-contract-properties"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "порождаемый тип",
-            "optional модуль контракта"
-          ],
-          "path": "topics/latest/type-contract-name-type"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -776,20 +487,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Представление",
-            "designer-owned Макет",
-            "optional Форма"
-          ],
-          "path": "topics/latest/report-panel-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -809,19 +507,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Цвета",
-            "ЦветаТемнойТемы fallback"
-          ],
-          "path": "topics/latest/report-color-scheme"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -841,19 +527,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Параметры",
-            "imports и visibility"
-          ],
-          "path": "topics/latest/privilege-on-action-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -873,19 +547,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Элементы",
-            "imports и visibility"
-          ],
-          "path": "topics/latest/privilege-on-element-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -905,21 +567,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "ВидСобытия",
-            "Свойства",
-            "шаблоны представления",
-            "imports и visibility"
-          ],
-          "path": "topics/latest/event-properties"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -945,35 +593,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "операции",
-            "WSDL-поля"
-          ],
-          "path": "topics/latest/soap-service-properties"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "порождаемый тип",
-            "модуль сервиса",
-            "типы сообщений"
-          ],
-          "path": "topics/latest/soap-service-types"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "stdlib тип сервиса"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/SoapServices/SoapService_ru"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -1011,49 +631,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "UrlПоУмолчанию",
-            "ВерсияSoap"
-          ],
-          "path": "topics/latest/soap-service-client-properties"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "WSDL/XSD загрузка",
-            "порождаемые методы",
-            "вызов операций"
-          ],
-          "path": "topics/latest/soap-web-service-client"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "ответ процедуры SOAP"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/SoapServices/SoapResponse_ru"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "ответ функции SOAP"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/SoapServices/SoapFunctionResponse_ru"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "конструктор с КлиентHttp"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/Http/HttpClient_ru"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -1079,55 +657,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "создание схемы",
-            "узлы",
-            "маршруты",
-            "обработчики"
-          ],
-          "path": "topics/latest/integration-process"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "назначение элемента",
-            "порождаемый процесс",
-            "запуск"
-          ],
-          "path": "topics/latest/integration-process-project-element"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "пример YAML-схемы",
-            "СправочникУчастников",
-            "Схема"
-          ],
-          "path": "topics/latest/esb-demo-example-1"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "узел Транслятор",
-            "обработчик Преобразование"
-          ],
-          "path": "topics/latest/translator-integration-scheme-node"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "stdlib тип процесса",
-            "Запустить()",
-            "ОтправитьСообщениеВУзлы()"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/IntegrationBus/IntegrationProcess_ru"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -1153,18 +683,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_2",
-          "url": "https://1cmycloud.com/console/help/element/9.2/docs/topics/client-work-parameters/",
-          "claims": [
-            "YAML-схема 9.2",
-            "обработчик вычисления параметров"
-          ]
-        }
-      ],
       "min_version": "9.2",
-      "documentation_verified_on": "2026-07-28",
       "known_gaps": []
     },
     {
@@ -1190,33 +709,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема",
-            "Поля",
-            "обработчики ПослеПодключения и ПриПроверкеПараметра"
-          ],
-          "path": "topics/latest/self-registration-form"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "stdlib API тип"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/Users/SelfService/UserSelfRegistrationParameter_ru"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "появление элемента до baseline 9.1"
-          ],
-          "path": "topics/latest/whats-new-in-6-0"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     },
     {
@@ -1241,31 +734,7 @@
           "basis": "platform"
         }
       ],
-      "sources": [
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "YAML-схема"
-          ],
-          "path": "topics/latest/scheduled-job-properties"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "семантика модуля"
-          ],
-          "path": "topics/latest/scheduled-job-project-element"
-        },
-        {
-          "source_catalog": "official_element_9_1",
-          "claims": [
-            "свойства ежедневного расписания"
-          ],
-          "path": "stdlib/latest/element/xbsl/Std/Schedules/DailySchedule_ru"
-        }
-      ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-29",
       "known_gaps": []
     }
   ],

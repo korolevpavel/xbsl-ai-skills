@@ -81,6 +81,30 @@ def test_sync_installs_exact_mirror_and_removes_extra_entries_by_replacement(tmp
     assert not (destination / "old.txt").exists()
 
 
+def test_sync_excludes_generated_and_local_only_skill_artifacts(tmp_path):
+    sync = load_sync()
+    source = make_source(tmp_path)
+    destination = tmp_path / "installed" / "xbsl-meta-add"
+
+    write_file(source / ".DS_Store", "mac metadata\n")
+    write_file(source / "scripts" / "__pycache__" / "tool.cpython-312.pyc", "bytecode\n")
+    write_file(source / "scripts" / "tool.pyc", "bytecode\n")
+    write_file(source / "runtime-evidence" / "run.txt", "local evidence\n")
+    write_file(source / "references" / "evidence" / "capture.md", "local capture\n")
+    write_file(destination / "scripts" / "__pycache__" / "stale.pyc", "stale\n")
+
+    assert sync.main(["--source", str(source), "--destination", str(destination), "--sync"]) == 0
+
+    installed_entries = snapshot(destination)
+    assert "SKILL.md" in installed_entries
+    assert "scripts/tool.py" in installed_entries
+    assert all("__pycache__" not in entry for entry in installed_entries)
+    assert all(not entry.endswith(".pyc") for entry in installed_entries)
+    assert ".DS_Store" not in installed_entries
+    assert "runtime-evidence/run.txt" not in installed_entries
+    assert "references/evidence/capture.md" not in installed_entries
+
+
 def test_path_safety_rejects_equal_nested_and_symlink_paths_before_mutation(tmp_path):
     sync = load_sync()
     source = make_source(tmp_path)

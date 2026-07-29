@@ -91,14 +91,45 @@ def _entry_map(root: Path) -> dict[str, tuple[str, str | None, bool]]:
     return entries
 
 
+def _is_public_entry(path: Path) -> bool:
+    parts = path.parts
+    if "__pycache__" in parts:
+        return False
+    if path.name == ".DS_Store":
+        return False
+    if path.suffix in {".pyc", ".pyo"}:
+        return False
+    if "runtime-evidence" in parts:
+        return False
+    if len(parts) >= 2 and parts[0] == "references" and parts[1] == "evidence":
+        return False
+    return True
+
+
+def _public_entry_map(root: Path) -> dict[str, tuple[str, str | None, bool]]:
+    return {
+        relative: entry
+        for relative, entry in _entry_map(root).items()
+        if _is_public_entry(Path(relative))
+    }
+
+
 def compare_trees(source: Path, destination: Path) -> bool:
     if not destination.exists() or not destination.is_dir():
         return False
-    return _entry_map(source) == _entry_map(destination)
+    return _public_entry_map(source) == _entry_map(destination)
 
 
 def _copy_tree(source: Path, staging: Path) -> None:
-    shutil.copytree(source, staging, symlinks=False)
+    def ignore(directory: str, names: list[str]) -> set[str]:
+        base = Path(directory).relative_to(source)
+        return {
+            name
+            for name in names
+            if not _is_public_entry(base / name)
+        }
+
+    shutil.copytree(source, staging, symlinks=False, ignore=ignore)
     if not compare_trees(source, staging):
         raise SyncError("staging validation failed")
 

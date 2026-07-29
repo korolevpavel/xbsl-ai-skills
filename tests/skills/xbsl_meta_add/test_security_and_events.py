@@ -1,114 +1,43 @@
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 
 import pytest
-import yaml
+
+from .helpers import (
+    REFERENCE_SECTIONS,
+    SKILL_ROOT,
+    load_registry,
+    load_yaml,
+    record_for,
+    required_artifact_patterns,
+    section_names,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
-COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
-REFERENCES = SKILL_ROOT / "references"
-FIXTURES = Path(__file__).resolve().parent / "fixtures" / "issue-92"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "security-and-events"
 
-REFERENCE_SECTIONS = [
-    "Назначение",
-    "Версия и источники",
-    "YAML",
-    "UUID",
-    "Imports и visibility",
-    "Companion artifacts",
-    "Генерация",
-    "Валидация",
-]
 
-ISSUE_92_OBJECTS = {
+SECURITY_AND_EVENTS_OBJECTS = {
     "ПравоНаДействие": {
         "reference": "references/ПравоНаДействие.md",
-        "sources": {"topics/latest/privilege-on-action-properties"},
         "required_artifacts": {"*.yaml"},
     },
     "ПравоНаЭлемент": {
         "reference": "references/ПравоНаЭлемент.md",
-        "sources": {"topics/latest/privilege-on-element-properties"},
         "required_artifacts": {"*.yaml"},
     },
     "СобытиеЖурналаСобытий": {
         "reference": "references/СобытиеЖурналаСобытий.md",
-        "sources": {"topics/latest/event-properties"},
         "required_artifacts": {"*.yaml"},
     },
     "ПараметрСамостоятельнойРегистрацииПользователя": {
         "reference": "references/ПараметрСамостоятельнойРегистрацииПользователя.md",
-        "sources": {
-            "topics/latest/self-registration-form",
-            "topics/latest/whats-new-in-6-0",
-            (
-                "stdlib/latest/element/xbsl/Std/Users/SelfService/"
-                "UserSelfRegistrationParameter_ru"
-            ),
-        },
         "required_artifacts": {"*.yaml", "*.xbsl"},
     },
 }
-
-
-class UniqueKeyLoader(yaml.SafeLoader):
-    pass
-
-
-def construct_mapping_without_duplicates(loader, node, deep=False):
-    mapping = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in mapping:
-            raise yaml.constructor.ConstructorError(
-                "while constructing a mapping",
-                node.start_mark,
-                f"found duplicate key {key!r}",
-                key_node.start_mark,
-            )
-        mapping[key] = loader.construct_object(value_node, deep=deep)
-    return mapping
-
-
-UniqueKeyLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    construct_mapping_without_duplicates,
-)
-
-
-def load_registry() -> dict:
-    return json.loads(COVERAGE_PATH.read_text(encoding="utf-8"))
-
-
-def record_for(kind: str) -> dict:
-    return next(
-        record for record in load_registry()["objects"] if record["element_kind"] == kind
-    )
-
-
-def load_yaml(path: Path) -> dict:
-    return yaml.load(path.read_text(encoding="utf-8"), Loader=UniqueKeyLoader)
-
-
-def section_names(text: str) -> list[str]:
-    return re.findall(r"(?m)^## (.+?)\s*$", text)
-
-
-def source_ids(record: dict) -> set[str]:
-    return {source.get("path", source.get("url")) for source in record["sources"]}
-
-
-def required_artifact_patterns(record: dict) -> set[str]:
-    return {
-        artifact["pattern"]
-        for artifact in record["artifacts"]
-        if artifact["required"]
-    }
 
 
 def collect_uuid_values(value) -> set[str]:
@@ -130,9 +59,9 @@ def collect_uuid_values(value) -> set[str]:
     return set()
 
 
-@pytest.mark.parametrize("kind", ISSUE_92_OBJECTS)
-def test_issue_92_registry_records_are_supported_and_portable(kind: str):
-    expected = ISSUE_92_OBJECTS[kind]
+@pytest.mark.parametrize("kind", SECURITY_AND_EVENTS_OBJECTS)
+def test_security_and_events_registry_records_are_supported_and_portable(kind: str):
+    expected = SECURITY_AND_EVENTS_OBJECTS[kind]
     record = record_for(kind)
 
     assert record["status"] == "supported"
@@ -143,13 +72,11 @@ def test_issue_92_registry_records_are_supported_and_portable(kind: str):
         "references/types.md",
         "references/reference-contract.md",
     ]
-    assert expected["sources"] <= source_ids(record)
     assert required_artifact_patterns(record) == expected["required_artifacts"]
     assert record["known_gaps"] == []
-    assert all("doc_key" not in source for source in record["sources"])
 
 
-def test_issue_92_status_balance_finishes_security_events_without_new_public_issue_links():
+def test_security_and_events_status_balance_finishes_security_events_without_new_public_issue_links():
     registry = load_registry()
     statuses = {status: 0 for status in ("supported", "partial", "routed")}
     for record in registry["objects"]:
@@ -159,9 +86,9 @@ def test_issue_92_status_balance_finishes_security_events_without_new_public_iss
     assert not [record for record in registry["objects"] if record["status"] == "partial"]
 
 
-@pytest.mark.parametrize("kind", ISSUE_92_OBJECTS)
-def test_issue_92_references_follow_shared_contract_and_source_boundaries(kind: str):
-    reference_path = SKILL_ROOT / ISSUE_92_OBJECTS[kind]["reference"]
+@pytest.mark.parametrize("kind", SECURITY_AND_EVENTS_OBJECTS)
+def test_security_and_events_references_follow_shared_contract_without_local_history(kind: str):
+    reference_path = SKILL_ROOT / SECURITY_AND_EVENTS_OBJECTS[kind]["reference"]
     text = reference_path.read_text(encoding="utf-8")
 
     assert section_names(text) == REFERENCE_SECTIONS
@@ -171,9 +98,7 @@ def test_issue_92_references_follow_shared_contract_and_source_boundaries(kind: 
     assert "Local conventions:" in text
     assert "Runtime evidence" not in text
     assert "tracking_issue" not in text
-    assert "#92" not in text
-    for source in ISSUE_92_OBJECTS[kind]["sources"]:
-        assert source in text
+    assert "security-and-events task history" not in text
 
 
 def test_privilege_on_action_fixture_uses_parameters_not_element_actions():
@@ -233,7 +158,6 @@ def test_privilege_on_element_fixture_uses_elements_not_action_parameters():
 def test_event_log_event_fixture_covers_yaml_without_claiming_xbsl_api():
     root = FIXTURES / "positive" / "СобытиеЖурналаСобытий"
     data = load_yaml(root / "ОперацияИмпортаДанных.yaml")
-    record = record_for("СобытиеЖурналаСобытий")
 
     assert data["ВидЭлемента"] == "СобытиеЖурналаСобытий"
     assert data["ВидСобытия"] == "Операция"
@@ -242,7 +166,6 @@ def test_event_log_event_fixture_covers_yaml_without_claiming_xbsl_api():
     assert {"Добавлено", "Пропущено", "Задание"} <= {
         property_["Имя"] for property_ in data["Свойства"]
     }
-    assert all("XBSL API" not in source["claims"] for source in record["sources"])
     assert not (root / "ОперацияИмпортаДанных.xbsl").exists()
     assert collect_uuid_values(data) == {
         "33333333-3333-4333-8333-333333333331",

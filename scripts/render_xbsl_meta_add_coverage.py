@@ -7,10 +7,8 @@ import argparse
 import json
 import re
 from collections import Counter
-from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
-from urllib.parse import urlparse
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -21,14 +19,9 @@ OUTPUT_PATH = SKILL_ROOT / "object-coverage.md"
 TOP_LEVEL_FIELDS = [
     "schema_version",
     "target_platform",
-    "source_catalog",
     "shared_references",
     "objects",
     "routing",
-]
-SOURCE_CATALOG_FIELDS = [
-    "documented_platform_version",
-    "base_url",
 ]
 OBJECT_FIELDS = [
     "element_kind",
@@ -37,13 +30,10 @@ OBJECT_FIELDS = [
     "reference_path",
     "shared_reference_paths",
     "artifacts",
-    "sources",
     "min_version",
-    "documentation_verified_on",
     "known_gaps",
 ]
 ARTIFACT_FIELDS = ["pattern", "role", "required", "basis"]
-SOURCE_FIELDS = ["source_catalog", "claims"]
 ROUTING_FIELDS = ["category", "status", "route_to", "examples", "reason"]
 SHARED_REFERENCES = [
     "references/types.md",
@@ -52,7 +42,7 @@ SHARED_REFERENCES = [
 ]
 REFERENCE_CONTRACT_SECTIONS = [
     "Назначение",
-    "Версия и источники",
+    "Версия",
     "YAML",
     "UUID",
     "Imports и visibility",
@@ -98,15 +88,6 @@ def _require_string_list(value: Any, path: str, *, non_empty: bool) -> None:
         seen.add(item)
 
 
-def _require_iso_date(value: Any, path: str) -> None:
-    if not isinstance(value, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) is None:
-        _fail(f"{path}: expected YYYY-MM-DD date")
-    try:
-        date.fromisoformat(value)
-    except ValueError as error:
-        _fail(f"{path}: invalid date {error}")
-
-
 def _is_safe_relative_path(value: str) -> bool:
     if "\x00" in value or not value:
         return False
@@ -122,53 +103,10 @@ def _require_safe_path(value: Any, path: str) -> None:
         _fail(f"{path}: unsafe path")
 
 
-def _require_https_base(value: Any, path: str) -> None:
-    _require_non_empty_string(value, path)
-    parsed = urlparse(value)
-    if parsed.scheme != "https" or not parsed.netloc or parsed.query or parsed.fragment:
-        _fail(f"{path}: expected absolute HTTPS base URL")
-    if not value.endswith("/"):
-        _fail(f"{path}: base URL must end with /")
-
-
-def _validate_url_source(url: str, catalog: Mapping[str, Any], path: str) -> None:
-    parsed = urlparse(url)
-    if parsed.scheme != "https" or not parsed.netloc or parsed.query:
-        _fail(f"{path}: expected canonical versioned HTTPS URL")
-
-    page_url = url.split("#", maxsplit=1)[0]
-    base_url = catalog["base_url"]
-    if not page_url.startswith(base_url):
-        _fail(f"{path}: URL is outside source_catalog base")
-    version = catalog["documented_platform_version"]
-    parsed_page = urlparse(page_url)
-    if f"/{version}/docs/" not in parsed_page.path:
-        _fail(f"{path}: URL must use versioned path segment {version}")
-    if "/latest/" in parsed_page.path:
-        _fail(f"{path}: latest URL is not versioned")
-
-
 def validate_reference_contract(text: str) -> None:
     sections = re.findall(r"(?m)^## (.+?)\s*$", text)
     if sections != REFERENCE_CONTRACT_SECTIONS:
         _fail("reference contract must contain exactly eight sections in order")
-    if "Не применяется — <source-backed reason>" not in text:
-        _fail("reference contract must require a source-backed reason")
-    if re.search(r"Не применяется(?! — <source-backed reason>)", text):
-        _fail("Не применяется must include a source-backed reason")
-
-
-def _validate_source_catalog(data: Mapping[str, Any]) -> None:
-    _require_type(data, dict, "source_catalog")
-    if not data:
-        _fail("source_catalog: expected non-empty object")
-    for source_id, source in data.items():
-        _require_non_empty_string(source_id, f"source_catalog key {source_id!r}")
-        _require_type(source, dict, f"source_catalog.{source_id}")
-        _require_exact_keys(source, SOURCE_CATALOG_FIELDS, f"source_catalog.{source_id}")
-        if source["documented_platform_version"] not in {"9.1", "9.2"}:
-            _fail(f"source_catalog.{source_id}.documented_platform_version: invalid version")
-        _require_https_base(source["base_url"], f"source_catalog.{source_id}.base_url")
 
 
 def _validate_artifact(artifact: Any, path: str) -> None:
@@ -182,22 +120,7 @@ def _validate_artifact(artifact: Any, path: str) -> None:
         _fail(f"{path}.basis: invalid basis")
 
 
-def _validate_source(source: Any, catalog: Mapping[str, Any], path: str) -> None:
-    _require_type(source, dict, path)
-    if set(source) != {*SOURCE_FIELDS, "path"} and set(source) != {*SOURCE_FIELDS, "url"}:
-        _fail(f"{path}: expected source_catalog, claims and exactly one of path/url")
-    source_id = source["source_catalog"]
-    if source_id not in catalog:
-        _fail(f"{path}.source_catalog: unknown source_catalog {source_id!r}")
-    _require_string_list(source["claims"], f"{path}.claims", non_empty=True)
-    if "path" in source:
-        _require_safe_path(source["path"], f"{path}.path")
-    else:
-        _require_non_empty_string(source["url"], f"{path}.url")
-        _validate_url_source(source["url"], catalog[source_id], f"{path}.url versioned")
-
-
-def _validate_object(record: Any, catalog: Mapping[str, Any], shared: set[str], path: str) -> None:
+def _validate_object(record: Any, shared: set[str], path: str) -> None:
     _require_type(record, dict, path)
     _require_exact_keys(record, OBJECT_FIELDS, path)
     _require_non_empty_string(record["element_kind"], f"{path}.element_kind")
@@ -214,10 +137,6 @@ def _validate_object(record: Any, catalog: Mapping[str, Any], shared: set[str], 
         _fail(f"{path}.artifacts: expected array")
     for index, artifact in enumerate(record["artifacts"]):
         _validate_artifact(artifact, f"{path}.artifacts[{index}]")
-    if not isinstance(record["sources"], list) or not record["sources"]:
-        _fail(f"{path}.sources: expected non-empty array")
-    for index, source in enumerate(record["sources"]):
-        _validate_source(source, catalog, f"{path}.sources[{index}]")
     min_version = record["min_version"]
     if min_version is not None and min_version not in {"9.1", "9.2"}:
         _fail(f"{path}.min_version: invalid version")
@@ -225,7 +144,6 @@ def _validate_object(record: Any, catalog: Mapping[str, Any], shared: set[str], 
         _fail(f"{path}.min_version: supported/routed objects require min_version")
     if min_version is None and (record["status"] != "partial" or not record["known_gaps"]):
         _fail(f"{path}.min_version: null is only allowed for partial records with known gaps")
-    _require_iso_date(record["documentation_verified_on"], f"{path}.documentation_verified_on")
     _require_string_list(record["known_gaps"], f"{path}.known_gaps", non_empty=False)
 
 
@@ -243,12 +161,11 @@ def _validate_routing(record: Any, path: str) -> None:
 def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSITORY_ROOT) -> None:
     _require_type(data, dict, "top-level")
     _require_exact_keys(data, TOP_LEVEL_FIELDS, "top-level")
-    if data["schema_version"] != 1:
-        _fail("schema_version: expected 1")
+    if data["schema_version"] != 2:
+        _fail("schema_version: expected 2")
     if data["target_platform"] != {"name": "1С:Предприятие.Элемент", "version": "9.2"}:
         _fail("target_platform: expected 1С:Предприятие.Элемент 9.2")
 
-    _validate_source_catalog(data["source_catalog"])
     if data["shared_references"] != SHARED_REFERENCES:
         _fail("shared_references: unexpected shared reference list")
     for path in data["shared_references"]:
@@ -263,7 +180,7 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
     seen_objects: set[str] = set()
     shared = set(data["shared_references"])
     for index, record in enumerate(objects):
-        _validate_object(record, data["source_catalog"], shared, f"objects[{index}]")
+        _validate_object(record, shared, f"objects[{index}]")
         if record["element_kind"] in seen_objects:
             _fail(f"objects: duplicate element_kind {record['element_kind']!r}")
         seen_objects.add(record["element_kind"])

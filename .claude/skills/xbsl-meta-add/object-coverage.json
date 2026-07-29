@@ -826,75 +826,101 @@
     },
     {
       "element_kind": "ПравоНаДействие",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "reference_path": null,
+      "reference_path": "references/ПравоНаДействие.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание права на действие",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "official_element_9_1",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Параметры",
+            "imports и visibility"
           ],
           "path": "topics/latest/privilege-on-action-properties"
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
-      "known_gaps": [
-        "полная поддержка реализуется в #92"
-      ]
+      "documentation_verified_on": "2026-07-29",
+      "known_gaps": []
     },
     {
       "element_kind": "ПравоНаЭлемент",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "reference_path": null,
+      "reference_path": "references/ПравоНаЭлемент.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание права на элемент",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "official_element_9_1",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Элементы",
+            "imports и visibility"
           ],
           "path": "topics/latest/privilege-on-element-properties"
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
-      "known_gaps": [
-        "полная поддержка реализуется в #92"
-      ]
+      "documentation_verified_on": "2026-07-29",
+      "known_gaps": []
     },
     {
       "element_kind": "СобытиеЖурналаСобытий",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "reference_path": null,
+      "reference_path": "references/СобытиеЖурналаСобытий.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание события журнала событий",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "official_element_9_1",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "ВидСобытия",
+            "Свойства",
+            "шаблоны представления",
+            "imports и visibility"
           ],
           "path": "topics/latest/event-properties"
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
-      "known_gaps": [
-        "полная поддержка реализуется в #92"
-      ]
+      "documentation_verified_on": "2026-07-29",
+      "known_gaps": []
     },
     {
       "element_kind": "SoapСервис",
@@ -917,7 +943,7 @@
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "known_gaps": [
-        "полная поддержка реализуется в #93"
+        "полная поддержка SOAP-сервиса пока не описана в registry"
       ]
     },
     {
@@ -941,7 +967,7 @@
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "known_gaps": [
-        "полная поддержка реализуется в #93"
+        "полная поддержка SOAP-клиента пока не описана в registry"
       ]
     },
     {
@@ -965,7 +991,7 @@
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "known_gaps": [
-        "полная поддержка реализуется в #93"
+        "полная поддержка процесса интеграции пока не описана в registry"
       ]
     },
     {
@@ -1007,27 +1033,55 @@
     },
     {
       "element_kind": "ПараметрСамостоятельнойРегистрацииПользователя",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "reference_path": null,
+      "reference_path": "references/ПараметрСамостоятельнойРегистрацииПользователя.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание параметра самостоятельной регистрации",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.xbsl",
+          "role": "модуль обработчиков параметра самостоятельной регистрации",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "official_element_9_1",
           "claims": [
-            "XBSL API"
+            "YAML-схема",
+            "Поля",
+            "обработчики ПослеПодключения и ПриПроверкеПараметра"
+          ],
+          "path": "topics/latest/self-registration-form"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "stdlib API тип"
           ],
           "path": "stdlib/latest/element/xbsl/Std/Users/SelfService/UserSelfRegistrationParameter_ru"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "появление элемента до baseline 9.1"
+          ],
+          "path": "topics/latest/whats-new-in-6-0"
         }
       ],
-      "min_version": null,
-      "documentation_verified_on": "2026-07-28",
-      "known_gaps": [
-        "нет точного источника YAML-схемы и min_version; gate #92"
-      ]
+      "min_version": "9.1",
+      "documentation_verified_on": "2026-07-29",
+      "known_gaps": []
     },
     {
       "element_kind": "ЗапланированноеЗадание",

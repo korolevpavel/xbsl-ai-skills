@@ -1255,13 +1255,18 @@
             "семантика модуля"
           ],
           "path": "topics/latest/scheduled-job-project-element"
+        },
+        {
+          "source_catalog": "official_element_9_1",
+          "claims": [
+            "свойства ежедневного расписания"
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/Schedules/DailySchedule_ru"
         }
       ],
       "min_version": "9.1",
-      "documentation_verified_on": "2026-07-28",
-      "known_gaps": [
-        "owning skill реализуется отдельно"
-      ]
+      "documentation_verified_on": "2026-07-29",
+      "known_gaps": []
     }
   ],
   "routing": [

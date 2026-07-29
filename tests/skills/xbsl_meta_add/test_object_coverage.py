@@ -105,10 +105,15 @@ def test_registry_has_exact_schema_initial_balance_and_safe_paths():
                     "path": "topics/latest/scheduled-job-project-element",
                     "claims": ["семантика модуля"],
                 },
+                {
+                    "source_catalog": "official_element_9_1",
+                    "path": "stdlib/latest/element/xbsl/Std/Schedules/DailySchedule_ru",
+                    "claims": ["свойства ежедневного расписания"],
+                },
             ],
             "min_version": "9.1",
-            "documentation_verified_on": "2026-07-28",
-            "known_gaps": ["owning skill реализуется отдельно"],
+            "documentation_verified_on": "2026-07-29",
+            "known_gaps": [],
         }
     ]
 

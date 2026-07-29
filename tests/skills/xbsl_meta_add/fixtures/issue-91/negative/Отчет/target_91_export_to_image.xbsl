@@ -1,0 +1,5 @@
+// target-platform: 9.1
+// feature-gate negative: ЭкспортироватьВИзображение() is 9.2+ and must be rejected as available API for target 9.1.
+метод ПолучитьPng(ВыполненныйОтчет: Стд::Отчеты::Отчет): Байты
+    возврат ВыполненныйОтчет.ЭкспортироватьВИзображение()
+;

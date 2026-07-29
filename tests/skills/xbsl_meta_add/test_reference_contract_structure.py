@@ -20,7 +20,7 @@ RENDERER_PATH = REPOSITORY_ROOT / "scripts" / "render_xbsl_meta_add_coverage.py"
 
 EXPECTED_SECTIONS = [
     "Назначение",
-    "Версия и источники",
+    "Версия",
     "YAML",
     "UUID",
     "Imports и visibility",
@@ -49,7 +49,9 @@ def test_reference_contract_has_exact_sections_and_fact_boundaries():
     text = REFERENCE_CONTRACT.read_text(encoding="utf-8")
 
     assert section_names(text) == EXPECTED_SECTIONS
-    assert "Не применяется — <source-backed reason>" in text
+    assert "source" + "-backed" not in text
+    assert "source" + " contract" not in text
+    assert "dev " + "provenance" not in text
     renderer.validate_reference_contract(text)
 
 
@@ -68,11 +70,7 @@ def test_reference_contract_validation_rejects_missing_or_reordered_sections():
 def test_reference_contract_validation_rejects_unexplained_not_applicable():
     renderer = load_renderer()
     text = REFERENCE_CONTRACT.read_text(encoding="utf-8")
-    broken = text.replace(
-        "Не применяется — <source-backed reason>",
-        "Не применяется",
-        1,
-    )
+    broken = text.replace("## Версия\n", "## Версия и источники\n", 1)
 
-    with pytest.raises(renderer.CoverageValidationError, match="source-backed"):
+    with pytest.raises(renderer.CoverageValidationError, match="eight sections"):
         renderer.validate_reference_contract(broken)

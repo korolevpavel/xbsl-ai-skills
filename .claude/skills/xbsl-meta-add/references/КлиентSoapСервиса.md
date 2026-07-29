@@ -22,15 +22,9 @@ Local conventions:
 - Модуль `<Имя>.xbsl` добавляй только если нужны SOAP headers или настройка
   подготовленного HTTP-запроса.
 
-## Версия и источники
+## Версия
 
-| Claim | Источник | Проверено | Что подтверждает |
-| --- | --- | --- | --- |
-| YAML-свойства SOAP-клиента | `topics/latest/soap-service-client-properties` | 2026-07-29 | `ВидЭлемента`, `UrlПоУмолчанию`, `ВерсияSoap`, `Импорт`, `ОбластьВидимости` |
-| Загрузка WSDL/XSD и порождаемые методы | `topics/latest/soap-web-service-client` | 2026-07-29 | WSDL в проекте, относительные XSD/WSDL ресурсы, генерация методов и структур, call pattern |
-| Ответ процедуры SOAP | `stdlib/latest/element/xbsl/Std/SoapServices/SoapResponse_ru` | 2026-07-29 | тип `ОтветSoap` |
-| Ответ функции SOAP | `stdlib/latest/element/xbsl/Std/SoapServices/SoapFunctionResponse_ru` | 2026-07-29 | тип `ОтветФункцииSoap<ТипРезультата>` |
-| HTTP-клиент конструктора | `stdlib/latest/element/xbsl/Std/Http/HttpClient_ru` | 2026-07-29 | тип `КлиентHttp` |
+- Минимальная версия платформы: 9.1+.
 
 ## YAML
 

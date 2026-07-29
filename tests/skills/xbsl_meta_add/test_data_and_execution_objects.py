@@ -1,141 +1,62 @@
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 
 import pytest
-import yaml
+
+from .helpers import (
+    REFERENCES,
+    REFERENCE_SECTIONS,
+    SKILL_ROOT,
+    load_yaml,
+    record_for,
+    required_artifact_patterns,
+    section_names,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
-COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
-REFERENCES = SKILL_ROOT / "references"
-FIXTURES = Path(__file__).resolve().parent / "fixtures" / "issue-90"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "data-and-execution"
 
-REFERENCE_SECTIONS = [
-    "Назначение",
-    "Версия и источники",
-    "YAML",
-    "UUID",
-    "Imports и visibility",
-    "Companion artifacts",
-    "Генерация",
-    "Валидация",
-]
 
-ISSUE_90_OBJECTS = {
+DATA_AND_EXECUTION_OBJECTS = {
     "ВиртуальнаяТаблица": {
         "reference": "references/ВиртуальнаяТаблица.md",
         "min_version": "9.1",
-        "sources": {"topics/latest/virtual-table"},
         "required_artifacts": {"*.yaml", "*.xbql"},
     },
     "НаборКонстант": {
         "reference": "references/НаборКонстант.md",
         "min_version": "9.1",
-        "sources": {
-            "topics/latest/constants-set-properties",
-            "topics/latest/constants-set-element",
-            "stdlib/latest/element/xbsl/Std/ConstantsSets/ConstantsSet_ru",
-        },
         "required_artifacts": {"*.yaml"},
     },
     "Обработка": {
         "reference": "references/Обработка.md",
         "min_version": "9.1",
-        "sources": {"topics/latest/processing-project-element"},
         "required_artifacts": {"*.yaml", "*.Объект.xbsl"},
     },
     "ПланОбмена": {
         "reference": "references/ПланОбмена.md",
         "min_version": "9.1",
-        "sources": {"topics/latest/exchange-plan-properties"},
         "required_artifacts": {"*.yaml"},
     },
     "ХранилищеНастроек": {
         "reference": "references/ХранилищеНастроек.md",
         "min_version": "9.1",
-        "sources": {
-            "topics/latest/settings-repository",
-            "stdlib/latest/element/xbsl/Std/SettingsStorages/SettingsStorage_ru",
-        },
         "required_artifacts": {"*.yaml"},
     },
     "ХранимаяСтруктура": {
         "reference": "references/ХранимаяСтруктура.md",
         "min_version": "9.1",
-        "sources": {"topics/latest/storable-structure-properties"},
         "required_artifacts": {"*.yaml"},
     },
     "ПараметрыРаботыКлиента": {
         "reference": "references/ПараметрыРаботыКлиента.md",
         "min_version": "9.2",
-        "sources": {
-            "https://1cmycloud.com/console/help/element/9.2/docs/topics/client-work-parameters/"
-        },
         "required_artifacts": {"*.yaml", "*.xbsl"},
     },
 }
-
-
-class UniqueKeyLoader(yaml.SafeLoader):
-    pass
-
-
-def construct_mapping_without_duplicates(loader, node, deep=False):
-    mapping = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in mapping:
-            raise yaml.constructor.ConstructorError(
-                "while constructing a mapping",
-                node.start_mark,
-                f"found duplicate key {key!r}",
-                key_node.start_mark,
-            )
-        mapping[key] = loader.construct_object(value_node, deep=deep)
-    return mapping
-
-
-UniqueKeyLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    construct_mapping_without_duplicates,
-)
-
-
-def load_registry() -> dict:
-    return json.loads(COVERAGE_PATH.read_text(encoding="utf-8"))
-
-
-def record_for(kind: str) -> dict:
-    return next(
-        record for record in load_registry()["objects"] if record["element_kind"] == kind
-    )
-
-
-def load_yaml(path: Path) -> dict:
-    return yaml.load(path.read_text(encoding="utf-8"), Loader=UniqueKeyLoader)
-
-
-def section_names(text: str) -> list[str]:
-    return re.findall(r"(?m)^## (.+?)\s*$", text)
-
-
-def source_ids(record: dict) -> set[str]:
-    return {
-        source.get("path", source.get("url"))
-        for source in record["sources"]
-    }
-
-
-def required_artifact_patterns(record: dict) -> set[str]:
-    return {
-        artifact["pattern"]
-        for artifact in record["artifacts"]
-        if artifact["required"]
-    }
 
 
 def xbql_parameter_names(text: str) -> set[str]:
@@ -158,9 +79,9 @@ def operation_names(data: dict) -> set[str]:
     }
 
 
-@pytest.mark.parametrize("kind", ISSUE_90_OBJECTS)
-def test_issue_90_registry_records_are_supported_and_routed(kind: str):
-    expected = ISSUE_90_OBJECTS[kind]
+@pytest.mark.parametrize("kind", DATA_AND_EXECUTION_OBJECTS)
+def test_data_and_execution_registry_records_are_supported_and_routed(kind: str):
+    expected = DATA_AND_EXECUTION_OBJECTS[kind]
     record = record_for(kind)
 
     assert record["status"] == "supported"
@@ -171,13 +92,12 @@ def test_issue_90_registry_records_are_supported_and_routed(kind: str):
         "references/types.md",
         "references/reference-contract.md",
     ]
-    assert expected["sources"] <= source_ids(record)
     assert required_artifact_patterns(record) == expected["required_artifacts"]
 
 
-@pytest.mark.parametrize("kind", ISSUE_90_OBJECTS)
-def test_issue_90_references_follow_shared_contract(kind: str):
-    reference_path = SKILL_ROOT / ISSUE_90_OBJECTS[kind]["reference"]
+@pytest.mark.parametrize("kind", DATA_AND_EXECUTION_OBJECTS)
+def test_data_and_execution_references_follow_shared_contract(kind: str):
+    reference_path = SKILL_ROOT / DATA_AND_EXECUTION_OBJECTS[kind]["reference"]
     text = reference_path.read_text(encoding="utf-8")
 
     assert section_names(text) == REFERENCE_SECTIONS
@@ -185,8 +105,6 @@ def test_issue_90_references_follow_shared_contract(kind: str):
     assert "## Platform facts и local conventions" not in text
     assert "Required:" in text
     assert "Negative:" in text
-    for source in ISSUE_90_OBJECTS[kind]["sources"]:
-        assert source in text
 
 
 def test_virtual_table_fixture_requires_matching_nonempty_xbql_and_parameters():

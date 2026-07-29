@@ -1,118 +1,41 @@
 from __future__ import annotations
 
-import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
-import yaml
+
+from .helpers import (
+    REFERENCES,
+    REFERENCE_SECTIONS,
+    SKILL_ROOT,
+    load_registry,
+    load_yaml,
+    record_for,
+    required_artifact_patterns,
+    section_names,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
-COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
-FIXTURES = Path(__file__).resolve().parent / "fixtures" / "issue-93"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "integration"
 
-REFERENCE_SECTIONS = [
-    "Назначение",
-    "Версия и источники",
-    "YAML",
-    "UUID",
-    "Imports и visibility",
-    "Companion artifacts",
-    "Генерация",
-    "Валидация",
-]
 
-ISSUE_93_OBJECTS = {
+INTEGRATION_OBJECTS = {
     "SoapСервис": {
         "reference": "references/SoapСервис.md",
-        "sources": {
-            "topics/latest/soap-service-properties",
-            "topics/latest/soap-service-types",
-            "stdlib/latest/element/xbsl/Std/SoapServices/SoapService_ru",
-        },
         "required_artifacts": {"*.yaml", "*.xbsl"},
     },
     "КлиентSoapСервиса": {
         "reference": "references/КлиентSoapСервиса.md",
-        "sources": {
-            "topics/latest/soap-service-client-properties",
-            "topics/latest/soap-web-service-client",
-            "stdlib/latest/element/xbsl/Std/SoapServices/SoapResponse_ru",
-            "stdlib/latest/element/xbsl/Std/SoapServices/SoapFunctionResponse_ru",
-            "stdlib/latest/element/xbsl/Std/Http/HttpClient_ru",
-        },
         "required_artifacts": {"*.yaml", "*.Wsdl.1"},
     },
     "ПроцессИнтеграции": {
         "reference": "references/ПроцессИнтеграции.md",
-        "sources": {
-            "topics/latest/integration-process",
-            "topics/latest/integration-process-project-element",
-            "topics/latest/esb-demo-example-1",
-            "topics/latest/translator-integration-scheme-node",
-            "stdlib/latest/element/xbsl/Std/IntegrationBus/IntegrationProcess_ru",
-        },
         "required_artifacts": {"*.yaml", "*.xbsl"},
     },
 }
-
-
-class UniqueKeyLoader(yaml.SafeLoader):
-    pass
-
-
-def construct_mapping_without_duplicates(loader, node, deep=False):
-    mapping = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in mapping:
-            raise yaml.constructor.ConstructorError(
-                "while constructing a mapping",
-                node.start_mark,
-                f"found duplicate key {key!r}",
-                key_node.start_mark,
-            )
-        mapping[key] = loader.construct_object(value_node, deep=deep)
-    return mapping
-
-
-UniqueKeyLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    construct_mapping_without_duplicates,
-)
-
-
-def load_registry() -> dict:
-    return json.loads(COVERAGE_PATH.read_text(encoding="utf-8"))
-
-
-def record_for(kind: str) -> dict:
-    return next(
-        record for record in load_registry()["objects"] if record["element_kind"] == kind
-    )
-
-
-def load_yaml(path: Path) -> dict:
-    return yaml.load(path.read_text(encoding="utf-8"), Loader=UniqueKeyLoader)
-
-
-def section_names(text: str) -> list[str]:
-    return re.findall(r"(?m)^## (.+?)\s*$", text)
-
-
-def source_ids(record: dict) -> set[str]:
-    return {source.get("path", source.get("url")) for source in record["sources"]}
-
-
-def required_artifact_patterns(record: dict) -> set[str]:
-    return {
-        artifact["pattern"]
-        for artifact in record["artifacts"]
-        if artifact["required"]
-    }
 
 
 def method_names(module_path: Path) -> set[str]:
@@ -158,9 +81,9 @@ def wsdl_schema_locations(path: Path) -> set[str]:
     return result
 
 
-@pytest.mark.parametrize("kind", ISSUE_93_OBJECTS)
-def test_issue_93_registry_records_are_supported_and_portable(kind: str):
-    expected = ISSUE_93_OBJECTS[kind]
+@pytest.mark.parametrize("kind", INTEGRATION_OBJECTS)
+def test_integration_registry_records_are_supported_and_portable(kind: str):
+    expected = INTEGRATION_OBJECTS[kind]
     record = record_for(kind)
 
     assert record["status"] == "supported"
@@ -171,13 +94,11 @@ def test_issue_93_registry_records_are_supported_and_portable(kind: str):
         "references/types.md",
         "references/reference-contract.md",
     ]
-    assert expected["sources"] <= source_ids(record)
     assert required_artifact_patterns(record) == expected["required_artifacts"]
     assert record["known_gaps"] == []
-    assert all("doc_key" not in source for source in record["sources"])
 
 
-def test_issue_93_status_balance_finishes_all_local_partial_records():
+def test_integration_status_balance_finishes_all_local_partial_records():
     registry = load_registry()
     statuses = {status: 0 for status in ("supported", "partial", "routed")}
     for record in registry["objects"]:
@@ -187,9 +108,9 @@ def test_issue_93_status_balance_finishes_all_local_partial_records():
     assert not [record for record in registry["objects"] if record["status"] == "partial"]
 
 
-@pytest.mark.parametrize("kind", ISSUE_93_OBJECTS)
-def test_issue_93_references_follow_contract_without_local_artifacts(kind: str):
-    text = (SKILL_ROOT / ISSUE_93_OBJECTS[kind]["reference"]).read_text(
+@pytest.mark.parametrize("kind", INTEGRATION_OBJECTS)
+def test_integration_references_follow_contract_without_local_artifacts(kind: str):
+    text = (SKILL_ROOT / INTEGRATION_OBJECTS[kind]["reference"]).read_text(
         encoding="utf-8"
     )
 
@@ -200,10 +121,8 @@ def test_issue_93_references_follow_contract_without_local_artifacts(kind: str):
     assert "Local conventions:" in text
     assert "Runtime evidence" not in text
     assert "tracking_issue" not in text
-    assert "#93" not in text
+    assert "integration task history" not in text
     assert "xbsl-docs" not in text
-    for source in ISSUE_93_OBJECTS[kind]["sources"]:
-        assert source in text
 
 
 def test_soap_service_fixture_links_operations_to_server_module_without_wsdl_input():

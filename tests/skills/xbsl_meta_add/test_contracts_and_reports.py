@@ -1,49 +1,33 @@
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 
 import pytest
-import yaml
+
+from .helpers import (
+    REFERENCES,
+    REFERENCE_SECTIONS,
+    SKILL_ROOT,
+    load_yaml,
+    record_for,
+    required_artifact_patterns,
+    section_names,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
-COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
-REFERENCES = SKILL_ROOT / "references"
-FIXTURES = Path(__file__).resolve().parent / "fixtures" / "issue-91"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "contracts-and-reports"
 SKILL_TEXT = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
 
-REFERENCE_SECTIONS = [
-    "Назначение",
-    "Версия и источники",
-    "YAML",
-    "UUID",
-    "Imports и visibility",
-    "Companion artifacts",
-    "Генерация",
-    "Валидация",
-]
 
-REPORT_EXPORT_URL = (
-    "https://1cmycloud.com/console/help/element/9.2/docs/stdlib/element/"
-    "xbsl/Std/Reports/Report_ru/#%D1%8D%D0%BA%D1%81%D0%BF%D0%BE%D1%80%D1%82"
-    "%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D1%82%D1%8C%D0%B2%D0%B8%D0%B7%D0%BE"
-    "%D0%B1%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5"
-)
-
-ISSUE_91_OBJECTS = {
+CONTRACTS_AND_REPORTS_OBJECTS = {
     "КонтрактСервиса": {
         "reference": "references/КонтрактСервиса.md",
         "shared_reference_paths": [
             "references/types.md",
             "references/reference-contract.md",
         ],
-        "sources": {
-            "topics/latest/service-contract-properties",
-            "topics/latest/service-contract-example",
-        },
         "required_artifacts": {"*.yaml", "*.xbsl"},
     },
     "КонтрактСущности": {
@@ -53,10 +37,6 @@ ISSUE_91_OBJECTS = {
             "references/ТабличныеЧасти.md",
             "references/reference-contract.md",
         ],
-        "sources": {
-            "topics/latest/entity-contract-properties",
-            "topics/latest/tabular-section",
-        },
         "required_artifacts": {"*.yaml"},
     },
     "КонтрактТипа": {
@@ -65,10 +45,6 @@ ISSUE_91_OBJECTS = {
             "references/types.md",
             "references/reference-contract.md",
         ],
-        "sources": {
-            "topics/latest/type-contract-properties",
-            "topics/latest/type-contract-name-type",
-        },
         "required_artifacts": {"*.yaml"},
     },
     "ПанельОтчетов": {
@@ -77,7 +53,6 @@ ISSUE_91_OBJECTS = {
             "references/types.md",
             "references/reference-contract.md",
         ],
-        "sources": {"topics/latest/report-panel-properties"},
         "required_artifacts": {"*.yaml"},
     },
     "ЦветоваяСхемаОтчета": {
@@ -86,65 +61,9 @@ ISSUE_91_OBJECTS = {
             "references/types.md",
             "references/reference-contract.md",
         ],
-        "sources": {"topics/latest/report-color-scheme"},
         "required_artifacts": {"*.yaml"},
     },
 }
-
-
-class UniqueKeyLoader(yaml.SafeLoader):
-    pass
-
-
-def construct_mapping_without_duplicates(loader, node, deep=False):
-    mapping = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in mapping:
-            raise yaml.constructor.ConstructorError(
-                "while constructing a mapping",
-                node.start_mark,
-                f"found duplicate key {key!r}",
-                key_node.start_mark,
-            )
-        mapping[key] = loader.construct_object(value_node, deep=deep)
-    return mapping
-
-
-UniqueKeyLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    construct_mapping_without_duplicates,
-)
-
-
-def load_registry() -> dict:
-    return json.loads(COVERAGE_PATH.read_text(encoding="utf-8"))
-
-
-def record_for(kind: str) -> dict:
-    return next(
-        record for record in load_registry()["objects"] if record["element_kind"] == kind
-    )
-
-
-def load_yaml(path: Path) -> dict:
-    return yaml.load(path.read_text(encoding="utf-8"), Loader=UniqueKeyLoader)
-
-
-def section_names(text: str) -> list[str]:
-    return re.findall(r"(?m)^## (.+?)\s*$", text)
-
-
-def source_ids(record: dict) -> set[str]:
-    return {source.get("path", source.get("url")) for source in record["sources"]}
-
-
-def required_artifact_patterns(record: dict) -> set[str]:
-    return {
-        artifact["pattern"]
-        for artifact in record["artifacts"]
-        if artifact["required"]
-    }
 
 
 def abstract_method_names(text: str) -> set[str]:
@@ -155,9 +74,9 @@ def implementation_method_names(text: str) -> set[str]:
     return set(re.findall(r"(?m)^метод\s+([A-Za-zА-Яа-я_][\w]*)", text))
 
 
-@pytest.mark.parametrize("kind", ISSUE_91_OBJECTS)
-def test_issue_91_registry_records_are_supported_and_routed(kind: str):
-    expected = ISSUE_91_OBJECTS[kind]
+@pytest.mark.parametrize("kind", CONTRACTS_AND_REPORTS_OBJECTS)
+def test_contracts_and_reports_registry_records_are_supported_and_routed(kind: str):
+    expected = CONTRACTS_AND_REPORTS_OBJECTS[kind]
     record = record_for(kind)
 
     assert record["status"] == "supported"
@@ -165,14 +84,13 @@ def test_issue_91_registry_records_are_supported_and_routed(kind: str):
     assert record["reference_path"] == expected["reference"]
     assert record["min_version"] == "9.1"
     assert record["shared_reference_paths"] == expected["shared_reference_paths"]
-    assert expected["sources"] <= source_ids(record)
     assert required_artifact_patterns(record) == expected["required_artifacts"]
     assert record["known_gaps"] == []
 
 
-@pytest.mark.parametrize("kind", ISSUE_91_OBJECTS)
-def test_issue_91_references_follow_shared_contract(kind: str):
-    reference_path = SKILL_ROOT / ISSUE_91_OBJECTS[kind]["reference"]
+@pytest.mark.parametrize("kind", CONTRACTS_AND_REPORTS_OBJECTS)
+def test_contracts_and_reports_references_follow_shared_contract(kind: str):
+    reference_path = SKILL_ROOT / CONTRACTS_AND_REPORTS_OBJECTS[kind]["reference"]
     text = reference_path.read_text(encoding="utf-8")
 
     assert section_names(text) == REFERENCE_SECTIONS
@@ -180,8 +98,6 @@ def test_issue_91_references_follow_shared_contract(kind: str):
     assert "Negative:" in text
     assert "Platform facts:" in text
     assert "Local conventions:" in text
-    for source in ISSUE_91_OBJECTS[kind]["sources"]:
-        assert source in text
 
 
 def test_service_contract_required_fixture_has_contract_module_and_separate_test_implementation():
@@ -327,21 +243,11 @@ def test_report_export_to_image_delta_is_documented():
         / "Отчет"
         / "target_91_export_to_image.xbsl"
     ).read_text(encoding="utf-8")
-    report_export_sources = [
-        source
-        for source in report["sources"]
-        if source.get("url") == REPORT_EXPORT_URL
-    ]
 
     assert report["min_version"] == "9.1"
-    assert len(report_export_sources) == 1
-    assert report_export_sources[0]["source_catalog"] == "official_element_9_2"
-    assert report_export_sources[0]["claims"] == [
-            "9.2+ сигнатура, доступность, параметры, возвращаемый тип и исключения ЭкспортироватьВИзображение()"
-    ]
     assert report["known_gaps"] == []
     assert "Feature delta 9.2+: ЭкспортироватьВИзображение()" in reference
-    assert REPORT_EXPORT_URL in reference
+    assert "https://" not in reference
     assert "ЭкспортироватьВИзображение(" in reference
     assert "Ширина: Число? = Неопределено" in reference
     assert "Высота: Число? = Неопределено" in reference

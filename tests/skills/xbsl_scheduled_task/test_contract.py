@@ -25,7 +25,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 REFERENCE_SECTIONS = [
     "Назначение",
-    "Версия и источники",
+    "Версия",
     "YAML",
     "UUID",
     "Imports и visibility",
@@ -40,6 +40,15 @@ PUBLIC_FORBIDDEN_TERMS = [
     "xbsl_docs",
     "doc_key",
     "indexed",
+    "source" + "_catalog",
+    "official" + "_element_",
+    "documentation" + "_verified_on",
+    "## Версия и источники",
+    "| Claim | Источник |",
+    "Проверено",
+    "source" + "-backed",
+    "source" + " contract",
+    "dev " + "provenance",
     "runtime_verification",
     "Runtime evidence",
     "test-only",
@@ -94,10 +103,6 @@ def record_for(kind: str) -> dict:
     )
 
 
-def source_paths(record: dict) -> set[str]:
-    return {source.get("path", source.get("url")) for source in record["sources"]}
-
-
 def section_names(text: str) -> list[str]:
     return re.findall(r"(?m)^## (.+?)\s*$", text)
 
@@ -144,13 +149,11 @@ def test_registry_routes_scheduled_task_to_ready_owner_without_local_gap():
     assert record["reference_path"] == "references/ЗапланированноеЗадание.md"
     assert record["shared_reference_paths"] == ["references/reference-contract.md"]
     assert record["known_gaps"] == []
-    assert record["documentation_verified_on"] == "2026-07-29"
-    assert {
-        "topics/latest/scheduled-job-properties",
-        "topics/latest/scheduled-job-project-element",
-        "stdlib/latest/element/xbsl/Std/Schedules/DailySchedule_ru",
-    } <= source_paths(record)
-    assert all("doc_key" not in source for source in record["sources"])
+    assert record["min_version"] == "9.1"
+    assert {artifact["pattern"] for artifact in record["artifacts"]} == {
+        "*.yaml",
+        "*.xbsl",
+    }
 
     assert SCHEDULED_SKILL_ROOT.is_dir()
     assert not (META_SKILL_ROOT / "references" / "ЗапланированноеЗадание.md").exists()
@@ -175,9 +178,7 @@ def test_public_scheduled_task_skill_declares_owner_workflow_and_reference():
     assert section_names(reference_text) == REFERENCE_SECTIONS
     assert "Platform facts:" in reference_text
     assert "Local conventions:" in reference_text
-    assert "topics/latest/scheduled-job-properties" in reference_text
-    assert "topics/latest/scheduled-job-project-element" in reference_text
-    assert "stdlib/latest/element/xbsl/Std/Schedules/DailySchedule_ru" in reference_text
+    assert "Минимальная версия платформы: 9.1+" in reference_text
 
 
 def test_public_scheduled_task_artifacts_do_not_reference_local_only_materials():

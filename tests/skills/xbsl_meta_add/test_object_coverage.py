@@ -70,7 +70,7 @@ def test_registry_has_exact_schema_initial_balance_and_safe_paths():
     statuses = {status: 0 for status in ("supported", "partial", "routed")}
     for record in objects:
         statuses[record["status"]] += 1
-    assert statuses == {"supported": 24, "partial": 7, "routed": 1}
+    assert statuses == {"supported": 28, "partial": 3, "routed": 1}
 
     routed = [record for record in objects if record["status"] == "routed"]
     assert routed == [
@@ -211,6 +211,8 @@ def test_public_skill_artifacts_do_not_reference_local_only_materials():
         "tracking_issue",
         "#90",
         "#91",
+        "#92",
+        "#93",
     ]
     scanned = []
 

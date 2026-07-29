@@ -29,7 +29,7 @@ def test_rendered_markdown_is_deterministic_and_committed():
     assert rendered == renderer.render_markdown(data)
     assert rendered.startswith("# Матрица покрытия xbsl-meta-add\n")
     assert "1С:Предприятие.Элемент 9.2" in rendered
-    assert "`24 supported + 7 partial + 1 routed = 32`" in rendered
+    assert "`28 supported + 3 partial + 1 routed = 32`" in rendered
     assert "| `ЗапланированноеЗадание` | `routed` | `xbsl-scheduled-task` | `9.1` |" in rendered
     assert MARKDOWN_PATH.read_text(encoding="utf-8") == rendered
 

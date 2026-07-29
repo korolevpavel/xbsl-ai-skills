@@ -6,7 +6,7 @@
 
 ## Баланс
 
-`24 supported + 7 partial + 1 routed = 32`
+`28 supported + 3 partial + 1 routed = 32`
 
 ## Объекты
 
@@ -35,14 +35,14 @@
 | `КонтрактТипа` | `supported` | `xbsl-meta-add` | `9.1` | `references/КонтрактТипа.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание контракта типа |
 | `ПанельОтчетов` | `supported` | `xbsl-meta-add` | `9.1` | `references/ПанельОтчетов.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание панели отчетов |
 | `ЦветоваяСхемаОтчета` | `supported` | `xbsl-meta-add` | `9.1` | `references/ЦветоваяСхемаОтчета.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание цветовой схемы отчета |
-| `ПравоНаДействие` | `partial` | `xbsl-meta-add` | `9.1` | `references/reference-contract.md` | — |
-| `ПравоНаЭлемент` | `partial` | `xbsl-meta-add` | `9.1` | `references/reference-contract.md` | — |
-| `СобытиеЖурналаСобытий` | `partial` | `xbsl-meta-add` | `9.1` | `references/reference-contract.md` | — |
+| `ПравоНаДействие` | `supported` | `xbsl-meta-add` | `9.1` | `references/ПравоНаДействие.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание права на действие |
+| `ПравоНаЭлемент` | `supported` | `xbsl-meta-add` | `9.1` | `references/ПравоНаЭлемент.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание права на элемент |
+| `СобытиеЖурналаСобытий` | `supported` | `xbsl-meta-add` | `9.1` | `references/СобытиеЖурналаСобытий.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание события журнала событий |
 | `SoapСервис` | `partial` | `xbsl-meta-add` | `9.1` | `references/reference-contract.md` | — |
 | `КлиентSoapСервиса` | `partial` | `xbsl-meta-add` | `9.1` | `references/reference-contract.md` | — |
 | `ПроцессИнтеграции` | `partial` | `xbsl-meta-add` | `9.1` | `references/reference-contract.md` | — |
 | `ПараметрыРаботыКлиента` | `supported` | `xbsl-meta-add` | `9.2` | `references/ПараметрыРаботыКлиента.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта<br>`*.xbsl` — модуль вычисления параметров |
-| `ПараметрСамостоятельнойРегистрацииПользователя` | `partial` | `xbsl-meta-add` | `null` | `references/reference-contract.md` | — |
+| `ПараметрСамостоятельнойРегистрацииПользователя` | `supported` | `xbsl-meta-add` | `9.1` | `references/ПараметрСамостоятельнойРегистрацииПользователя.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание параметра самостоятельной регистрации<br>`*.xbsl` — модуль обработчиков параметра самостоятельной регистрации |
 | `ЗапланированноеЗадание` | `routed` | `xbsl-scheduled-task` | `9.1` | `references/ЗапланированноеЗадание.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта<br>`*.xbsl` — модуль обработчика |
 
 ## Routing

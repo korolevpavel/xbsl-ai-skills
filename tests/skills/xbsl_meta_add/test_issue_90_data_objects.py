@@ -125,7 +125,7 @@ def section_names(text: str) -> list[str]:
 
 def source_ids(record: dict) -> set[str]:
     return {
-        source.get("doc_key", source.get("url"))
+        source.get("path", source.get("url"))
         for source in record["sources"]
     }
 
@@ -165,7 +165,6 @@ def test_issue_90_registry_records_are_supported_and_routed(kind: str):
 
     assert record["status"] == "supported"
     assert record["owner_skill"] == "xbsl-meta-add"
-    assert record["tracking_issue"] == 90
     assert record["reference_path"] == expected["reference"]
     assert record["min_version"] == expected["min_version"]
     assert record["shared_reference_paths"] == [
@@ -225,10 +224,7 @@ def test_constants_set_has_periodic_and_nonperiodic_fixtures_without_required_co
     assert all("Ид" in item for item in nonperiodic["Константы"])
     assert all("Ид" in item for item in periodic["Константы"])
     assert required_artifact_patterns(record) == {"*.yaml"}
-    assert any(
-        not artifact["required"] and "test-only" in artifact["role"]
-        for artifact in record["artifacts"]
-    )
+    assert all(artifact["required"] for artifact in record["artifacts"])
 
     negative = (
         FIXTURES

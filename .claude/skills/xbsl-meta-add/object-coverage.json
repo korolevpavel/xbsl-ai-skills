@@ -5,13 +5,11 @@
     "version": "9.2"
   },
   "source_catalog": {
-    "xbsl_docs_9_1": {
-      "index_version": "9.1",
+    "official_element_9_1": {
       "documented_platform_version": "9.1",
       "base_url": "https://1cmycloud.com/console/help/element/9.1/docs/"
     },
     "official_element_9_2": {
-      "index_version": null,
       "documented_platform_version": "9.2",
       "base_url": "https://1cmycloud.com/console/help/element/9.2/docs/"
     }
@@ -26,7 +24,6 @@
       "element_kind": "Перечисление",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/Перечисление.md",
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -41,28 +38,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/enumeration-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/enumeration-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "Справочник",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/Справочник.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -79,28 +69,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/catalog-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/catalog-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "Документ",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/Документ.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -123,28 +106,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/document-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/document-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "РегистрСведений",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/РегистрСведений.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -160,28 +136,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/information-register-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/information-register-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "РегистрНакопления",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/РегистрНакопления.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -197,28 +166,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/accumulation-register-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/accumulation-register-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ОбщийМодуль",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/ОбщийМодуль.md",
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -239,29 +201,22 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/common-module-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "модуль"
-          ]
+          ],
+          "path": "topics/latest/common-module-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "Структура",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/Структура.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -277,28 +232,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/structure-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/structure-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ЛокализованныеСтроки",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/ЛокализованныеСтроки.md",
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -313,28 +261,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/app-localization",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/app-localization"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "HttpСервис",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/HttpСервис.md",
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -355,28 +296,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/http-service-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/http-service-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ГлобальноеКлиентскоеСобытие",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/ГлобальноеКлиентскоеСобытие.md",
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -391,28 +325,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/global-client-event-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/global-client-event-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "КлючДоступа",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/КлючДоступа.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -428,28 +355,21 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/access-key-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/access-key-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "Отчет",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 88,
       "reference_path": "references/Отчет.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -471,11 +391,11 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/report-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/report-properties"
         },
         {
           "source_catalog": "official_element_9_2",
@@ -487,19 +407,12 @@
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-29",
-      "runtime_verification": {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-29",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-217.xasm with ЭкспортОтчетаSmoke.xbsl calling ЭкспортироватьВИзображение(); image 019fae4e-535b-757a-938c-f0df7c4c53d5; UpdateApplicationConfiguration 019fae4e-563a-7437-83a7-5d091c1db5b0 Completed"
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ВиртуальнаяТаблица",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 90,
       "reference_path": "references/ВиртуальнаяТаблица.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -521,30 +434,23 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/virtual-table",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "обязательный XBQL",
             "согласование параметров"
-          ]
+          ],
+          "path": "topics/latest/virtual-table"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-28",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
-      },
       "known_gaps": []
     },
     {
       "element_kind": "НаборКонстант",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 90,
       "reference_path": "references/НаборКонстант.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -556,54 +462,41 @@
           "role": "описание объекта",
           "required": true,
           "basis": "platform"
-        },
-        {
-          "pattern": "*.api-example.xbsl",
-          "role": "test-only XBSL API пример",
-          "required": false,
-          "basis": "skill"
         }
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/constants-set-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Периодичность",
             "Константы"
-          ]
+          ],
+          "path": "topics/latest/constants-set-properties"
         },
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/constants-set-element",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "семантика непериодических и периодических наборов"
-          ]
+          ],
+          "path": "topics/latest/constants-set-element"
         },
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "stdlib/latest/element/xbsl/Std/ConstantsSets/ConstantsSet_ru",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "stdlib API"
-          ]
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/ConstantsSets/ConstantsSet_ru"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-28",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
-      },
       "known_gaps": []
     },
     {
       "element_kind": "Обработка",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 90,
       "reference_path": "references/Обработка.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -625,30 +518,23 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/processing-project-element",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Операции",
             "обязательный обработчик"
-          ]
+          ],
+          "path": "topics/latest/processing-project-element"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-28",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ПланОбмена",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 90,
       "reference_path": "references/ПланОбмена.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -664,29 +550,22 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/exchange-plan-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Состав"
-          ]
+          ],
+          "path": "topics/latest/exchange-plan-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-28",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ХранилищеНастроек",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 90,
       "reference_path": "references/ХранилищеНастроек.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -698,45 +577,32 @@
           "role": "описание объекта",
           "required": true,
           "basis": "platform"
-        },
-        {
-          "pattern": "*.api-example.xbsl",
-          "role": "test-only XBSL API пример",
-          "required": false,
-          "basis": "skill"
         }
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/settings-repository",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/settings-repository"
         },
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "stdlib/latest/element/xbsl/Std/SettingsStorages/SettingsStorage_ru",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "stdlib API"
-          ]
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/SettingsStorages/SettingsStorage_ru"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-28",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ХранимаяСтруктура",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 90,
       "reference_path": "references/ХранимаяСтруктура.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -752,29 +618,22 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/storable-structure-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Поля"
-          ]
+          ],
+          "path": "topics/latest/storable-structure-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-28",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
-      },
       "known_gaps": []
     },
     {
       "element_kind": "КонтрактСервиса",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 91,
       "reference_path": "references/КонтрактСервиса.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -792,56 +651,37 @@
           "role": "модуль контракта сервиса",
           "required": true,
           "basis": "platform"
-        },
-        {
-          "pattern": "*.yaml",
-          "role": "test-only описание общего модуля реализации",
-          "required": false,
-          "basis": "skill"
-        },
-        {
-          "pattern": "*.xbsl",
-          "role": "test-only модуль реализации required-контракта",
-          "required": false,
-          "basis": "skill"
         }
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/service-contract-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Обязательный",
             "Множественный",
             "Окружение"
-          ]
+          ],
+          "path": "topics/latest/service-contract-properties"
         },
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/service-contract-example",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "модуль контракта",
             "отдельная реализация",
             "ПолучитьСервис()"
-          ]
+          ],
+          "path": "topics/latest/service-contract-example"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-29",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "КонтрактСущности",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 91,
       "reference_path": "references/КонтрактСущности.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -854,48 +694,35 @@
           "role": "описание контракта сущности",
           "required": true,
           "basis": "platform"
-        },
-        {
-          "pattern": "*.yaml",
-          "role": "test-only реализующий объект",
-          "required": false,
-          "basis": "skill"
         }
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/entity-contract-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Свойства",
             "ТаблицыКонтракта",
             "НастройкиТипов"
-          ]
+          ],
+          "path": "topics/latest/entity-contract-properties"
         },
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/tabular-section",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "табличные части через shared reference"
-          ]
+          ],
+          "path": "topics/latest/tabular-section"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-29",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "КонтрактТипа",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 91,
       "reference_path": "references/КонтрактТипа.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -907,48 +734,35 @@
           "role": "описание контракта типа",
           "required": true,
           "basis": "platform"
-        },
-        {
-          "pattern": "*.yaml",
-          "role": "test-only реализующий тип",
-          "required": false,
-          "basis": "skill"
         }
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/type-contract-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Свойства",
             "НастройкиТипа"
-          ]
+          ],
+          "path": "topics/latest/type-contract-properties"
         },
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/type-contract-name-type",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "порождаемый тип",
             "optional модуль контракта"
-          ]
+          ],
+          "path": "topics/latest/type-contract-name-type"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-29",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ПанельОтчетов",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 91,
       "reference_path": "references/ПанельОтчетов.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -964,31 +778,24 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/report-panel-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Представление",
             "designer-owned Макет",
             "optional Форма"
-          ]
+          ],
+          "path": "topics/latest/report-panel-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-29",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ЦветоваяСхемаОтчета",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 91,
       "reference_path": "references/ЦветоваяСхемаОтчета.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -1004,30 +811,23 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/report-color-scheme",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема",
             "Цвета",
             "ЦветаТемнойТемы fallback"
-          ]
+          ],
+          "path": "topics/latest/report-color-scheme"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-29",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ПравоНаДействие",
       "status": "partial",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 92,
       "reference_path": null,
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -1035,21 +835,15 @@
       "artifacts": [],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/privilege-on-action-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "существование вида"
-          ]
+          ],
+          "path": "topics/latest/privilege-on-action-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": [
         "полная поддержка реализуется в #92"
       ]
@@ -1058,7 +852,6 @@
       "element_kind": "ПравоНаЭлемент",
       "status": "partial",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 92,
       "reference_path": null,
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -1066,21 +859,15 @@
       "artifacts": [],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/privilege-on-element-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "существование вида"
-          ]
+          ],
+          "path": "topics/latest/privilege-on-element-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": [
         "полная поддержка реализуется в #92"
       ]
@@ -1089,7 +876,6 @@
       "element_kind": "СобытиеЖурналаСобытий",
       "status": "partial",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 92,
       "reference_path": null,
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -1097,21 +883,15 @@
       "artifacts": [],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/event-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "существование вида"
-          ]
+          ],
+          "path": "topics/latest/event-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": [
         "полная поддержка реализуется в #92"
       ]
@@ -1120,7 +900,6 @@
       "element_kind": "SoapСервис",
       "status": "partial",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 93,
       "reference_path": null,
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -1128,21 +907,15 @@
       "artifacts": [],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/soap-service-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "существование вида"
-          ]
+          ],
+          "path": "topics/latest/soap-service-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": [
         "полная поддержка реализуется в #93"
       ]
@@ -1151,7 +924,6 @@
       "element_kind": "КлиентSoapСервиса",
       "status": "partial",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 93,
       "reference_path": null,
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -1159,21 +931,15 @@
       "artifacts": [],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/soap-service-client-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "существование вида"
-          ]
+          ],
+          "path": "topics/latest/soap-service-client-properties"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": [
         "полная поддержка реализуется в #93"
       ]
@@ -1182,7 +948,6 @@
       "element_kind": "ПроцессИнтеграции",
       "status": "partial",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 93,
       "reference_path": null,
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -1190,21 +955,15 @@
       "artifacts": [],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/integration-process",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "существование вида"
-          ]
+          ],
+          "path": "topics/latest/integration-process"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": [
         "полная поддержка реализуется в #93"
       ]
@@ -1213,7 +972,6 @@
       "element_kind": "ПараметрыРаботыКлиента",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 90,
       "reference_path": "references/ПараметрыРаботыКлиента.md",
       "shared_reference_paths": [
         "references/types.md",
@@ -1245,19 +1003,12 @@
       ],
       "min_version": "9.2",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-28",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
-      },
       "known_gaps": []
     },
     {
       "element_kind": "ПараметрСамостоятельнойРегистрацииПользователя",
       "status": "partial",
       "owner_skill": "xbsl-meta-add",
-      "tracking_issue": 92,
       "reference_path": null,
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -1265,21 +1016,15 @@
       "artifacts": [],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "stdlib/latest/element/xbsl/Std/Users/SelfService/UserSelfRegistrationParameter_ru",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "XBSL API"
-          ]
+          ],
+          "path": "stdlib/latest/element/xbsl/Std/Users/SelfService/UserSelfRegistrationParameter_ru"
         }
       ],
       "min_version": null,
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": [
         "нет точного источника YAML-схемы и min_version; gate #92"
       ]
@@ -1288,7 +1033,6 @@
       "element_kind": "ЗапланированноеЗадание",
       "status": "routed",
       "owner_skill": "xbsl-scheduled-task",
-      "tracking_issue": 3,
       "reference_path": "references/ЗапланированноеЗадание.md",
       "shared_reference_paths": [
         "references/reference-contract.md"
@@ -1309,30 +1053,24 @@
       ],
       "sources": [
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/scheduled-job-properties",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "YAML-схема"
-          ]
+          ],
+          "path": "topics/latest/scheduled-job-properties"
         },
         {
-          "source_catalog": "xbsl_docs_9_1",
-          "doc_key": "topics/latest/scheduled-job-project-element",
+          "source_catalog": "official_element_9_1",
           "claims": [
             "семантика модуля"
-          ]
+          ],
+          "path": "topics/latest/scheduled-job-project-element"
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
-      "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
-      },
       "known_gaps": [
-        "owning skill реализуется в #3"
+        "owning skill реализуется отдельно"
       ]
     }
   ],

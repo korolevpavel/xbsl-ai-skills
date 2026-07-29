@@ -12,7 +12,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
 COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
 REFERENCES = SKILL_ROOT / "references"
-FIXTURES = SKILL_ROOT / "fixtures" / "issue-90"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "issue-90"
 
 REFERENCE_SECTIONS = [
     "Назначение",

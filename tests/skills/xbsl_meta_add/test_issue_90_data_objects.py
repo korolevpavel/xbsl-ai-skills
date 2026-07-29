@@ -23,8 +23,6 @@ REFERENCE_SECTIONS = [
     "Companion artifacts",
     "Генерация",
     "Валидация",
-    "Runtime evidence",
-    "Platform facts и local conventions",
 ]
 
 ISSUE_90_OBJECTS = {
@@ -184,8 +182,8 @@ def test_issue_90_references_follow_shared_contract(kind: str):
     text = reference_path.read_text(encoding="utf-8")
 
     assert section_names(text) == REFERENCE_SECTIONS
-    assert "Platform facts" in text
-    assert "Local conventions" in text
+    assert "## Runtime evidence" not in text
+    assert "## Platform facts и local conventions" not in text
     assert "Required:" in text
     assert "Negative:" in text
     for source in ISSUE_90_OBJECTS[kind]["sources"]:

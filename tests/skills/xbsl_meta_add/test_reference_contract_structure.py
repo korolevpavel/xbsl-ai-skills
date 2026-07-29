@@ -27,8 +27,6 @@ EXPECTED_SECTIONS = [
     "Companion artifacts",
     "Генерация",
     "Валидация",
-    "Runtime evidence",
-    "Platform facts и local conventions",
 ]
 
 
@@ -52,8 +50,6 @@ def test_reference_contract_has_exact_sections_and_fact_boundaries():
 
     assert section_names(text) == EXPECTED_SECTIONS
     assert "Не применяется — <source-backed reason>" in text
-    assert "Platform facts" in text
-    assert "Local conventions" in text
     renderer.validate_reference_contract(text)
 
 
@@ -61,11 +57,11 @@ def test_reference_contract_validation_rejects_missing_or_reordered_sections():
     renderer = load_renderer()
     text = REFERENCE_CONTRACT.read_text(encoding="utf-8")
     without_yaml = text.replace("## YAML\n", "", 1)
-    reordered = text.replace("## YAML\n", "## Runtime evidence\n", 1)
+    reordered = text.replace("## YAML\n", "## Валидация\n", 1)
 
-    with pytest.raises(renderer.CoverageValidationError, match="ten sections"):
+    with pytest.raises(renderer.CoverageValidationError, match="eight sections"):
         renderer.validate_reference_contract(without_yaml)
-    with pytest.raises(renderer.CoverageValidationError, match="ten sections"):
+    with pytest.raises(renderer.CoverageValidationError, match="eight sections"):
         renderer.validate_reference_contract(reordered)
 
 

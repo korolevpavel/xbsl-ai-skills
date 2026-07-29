@@ -492,189 +492,278 @@
     },
     {
       "element_kind": "ВиртуальнаяТаблица",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 90,
-      "reference_path": null,
+      "reference_path": "references/ВиртуальнаяТаблица.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание объекта",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.xbql",
+          "role": "запрос виртуальной таблицы",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/virtual-table",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "обязательный XBQL",
+            "согласование параметров"
           ]
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
+        "status": "passed",
+        "technology_build": "9.2.9-12",
+        "verified_on": "2026-07-28",
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #90"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "НаборКонстант",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 90,
-      "reference_path": null,
+      "reference_path": "references/НаборКонстант.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание объекта",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.api-example.xbsl",
+          "role": "test-only XBSL API пример",
+          "required": false,
+          "basis": "skill"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/constants-set-properties",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Периодичность",
+            "Константы"
+          ]
+        },
+        {
+          "source_catalog": "xbsl_docs_9_1",
+          "doc_key": "topics/latest/constants-set-element",
+          "claims": [
+            "семантика непериодических и периодических наборов"
+          ]
+        },
+        {
+          "source_catalog": "xbsl_docs_9_1",
+          "doc_key": "stdlib/latest/element/xbsl/Std/ConstantsSets/ConstantsSet_ru",
+          "claims": [
+            "stdlib API"
           ]
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
+        "status": "passed",
+        "technology_build": "9.2.9-12",
+        "verified_on": "2026-07-28",
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #90"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "Обработка",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 90,
-      "reference_path": null,
+      "reference_path": "references/Обработка.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание объекта",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.Объект.xbsl",
+          "role": "модуль объекта с обработчиками операций",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/processing-project-element",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Операции",
+            "обязательный обработчик"
           ]
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
+        "status": "passed",
+        "technology_build": "9.2.9-12",
+        "verified_on": "2026-07-28",
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #90"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "ПланОбмена",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 90,
-      "reference_path": null,
+      "reference_path": "references/ПланОбмена.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание объекта",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/exchange-plan-properties",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Состав"
           ]
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
+        "status": "passed",
+        "technology_build": "9.2.9-12",
+        "verified_on": "2026-07-28",
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #90"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "ХранилищеНастроек",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 90,
-      "reference_path": null,
+      "reference_path": "references/ХранилищеНастроек.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание объекта",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.api-example.xbsl",
+          "role": "test-only XBSL API пример",
+          "required": false,
+          "basis": "skill"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/settings-repository",
           "claims": [
-            "существование вида"
+            "YAML-схема"
+          ]
+        },
+        {
+          "source_catalog": "xbsl_docs_9_1",
+          "doc_key": "stdlib/latest/element/xbsl/Std/SettingsStorages/SettingsStorage_ru",
+          "claims": [
+            "stdlib API"
           ]
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
+        "status": "passed",
+        "technology_build": "9.2.9-12",
+        "verified_on": "2026-07-28",
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #90"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "ХранимаяСтруктура",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 90,
-      "reference_path": null,
+      "reference_path": "references/ХранимаяСтруктура.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание объекта",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "xbsl_docs_9_1",
           "doc_key": "topics/latest/storable-structure-properties",
           "claims": [
-            "существование вида"
+            "YAML-схема",
+            "Поля"
           ]
         }
       ],
       "min_version": "9.1",
       "documentation_verified_on": "2026-07-28",
       "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
+        "status": "passed",
+        "technology_build": "9.2.9-12",
+        "verified_on": "2026-07-28",
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #90"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "КонтрактСервиса",
@@ -1019,34 +1108,47 @@
     },
     {
       "element_kind": "ПараметрыРаботыКлиента",
-      "status": "partial",
+      "status": "supported",
       "owner_skill": "xbsl-meta-add",
       "tracking_issue": 90,
-      "reference_path": null,
+      "reference_path": "references/ПараметрыРаботыКлиента.md",
       "shared_reference_paths": [
+        "references/types.md",
         "references/reference-contract.md"
       ],
-      "artifacts": [],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание объекта",
+          "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.xbsl",
+          "role": "модуль вычисления параметров",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
       "sources": [
         {
           "source_catalog": "official_element_9_2",
           "url": "https://1cmycloud.com/console/help/element/9.2/docs/topics/client-work-parameters/",
           "claims": [
-            "YAML-схема 9.2"
+            "YAML-схема 9.2",
+            "обработчик вычисления параметров"
           ]
         }
       ],
       "min_version": "9.2",
       "documentation_verified_on": "2026-07-28",
       "runtime_verification": {
-        "status": "not_run",
-        "technology_build": null,
-        "verified_on": null,
-        "method": null
+        "status": "passed",
+        "technology_build": "9.2.9-12",
+        "verified_on": "2026-07-28",
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-216.xasm; image 019fa958-8ab0-70be-a647-735da5c7ec90; UpdateApplicationConfiguration 019fa958-8df1-7fbe-b1fc-a7191da92c5 Completed"
       },
-      "known_gaps": [
-        "полная поддержка реализуется в #90"
-      ]
+      "known_gaps": []
     },
     {
       "element_kind": "ПараметрСамостоятельнойРегистрацииПользователя",

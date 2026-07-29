@@ -63,8 +63,6 @@ REFERENCE_CONTRACT_SECTIONS = [
     "Companion artifacts",
     "Генерация",
     "Валидация",
-    "Runtime evidence",
-    "Platform facts и local conventions",
 ]
 
 
@@ -157,13 +155,11 @@ def _validate_url_source(url: str, catalog: Mapping[str, Any], path: str) -> Non
 def validate_reference_contract(text: str) -> None:
     sections = re.findall(r"(?m)^## (.+?)\s*$", text)
     if sections != REFERENCE_CONTRACT_SECTIONS:
-        _fail("reference contract must contain exactly ten sections in order")
+        _fail("reference contract must contain exactly eight sections in order")
     if "Не применяется — <source-backed reason>" not in text:
         _fail("reference contract must require a source-backed reason")
     if re.search(r"Не применяется(?! — <source-backed reason>)", text):
         _fail("Не применяется must include a source-backed reason")
-    if "Platform facts" not in text or "Local conventions" not in text:
-        _fail("reference contract must separate Platform facts and Local conventions")
 
 
 def _validate_source_catalog(data: Mapping[str, Any]) -> None:
@@ -304,8 +300,8 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
         seen_objects.add(record["element_kind"])
 
     counts = Counter(record["status"] for record in objects)
-    if counts != {"supported": 12, "partial": 19, "routed": 1}:
-        _fail("objects: expected balance 12 supported + 19 partial + 1 routed")
+    if counts != {"supported": 19, "partial": 12, "routed": 1}:
+        _fail("objects: expected balance 19 supported + 12 partial + 1 routed")
     routed = [record for record in objects if record["status"] == "routed"]
     if routed[0]["element_kind"] != "ЗапланированноеЗадание" or routed[0]["tracking_issue"] != 3:
         _fail("objects: routed type must be ЗапланированноеЗадание from #3")

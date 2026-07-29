@@ -17,6 +17,9 @@ uv.lock
 # Claude local settings
 .claude/settings.local.json
 
+# Runtime verification artifacts (local only)
+.claude/skills/*/runtime-evidence/
+
 # Tools and materials (local only)
 tools/
 site/

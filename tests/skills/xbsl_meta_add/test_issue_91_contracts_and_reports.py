@@ -136,7 +136,7 @@ def section_names(text: str) -> list[str]:
 
 
 def source_ids(record: dict) -> set[str]:
-    return {source.get("doc_key", source.get("url")) for source in record["sources"]}
+    return {source.get("path", source.get("url")) for source in record["sources"]}
 
 
 def required_artifact_patterns(record: dict) -> set[str]:
@@ -162,7 +162,6 @@ def test_issue_91_registry_records_are_supported_and_routed(kind: str):
 
     assert record["status"] == "supported"
     assert record["owner_skill"] == "xbsl-meta-add"
-    assert record["tracking_issue"] == 91
     assert record["reference_path"] == expected["reference"]
     assert record["min_version"] == "9.1"
     assert record["shared_reference_paths"] == expected["shared_reference_paths"]
@@ -313,7 +312,7 @@ def test_report_color_scheme_fixtures_cover_dark_theme_and_fallback_without_repo
     assert bad["Цвета"] == ["#009E73"]
 
 
-def test_report_export_to_image_delta_is_documented_and_runtime_verified():
+def test_report_export_to_image_delta_is_documented():
     report = record_for("Отчет")
     reference = (REFERENCES / "Отчет.md").read_text(encoding="utf-8")
     positive = (
@@ -340,17 +339,6 @@ def test_report_export_to_image_delta_is_documented_and_runtime_verified():
     assert report_export_sources[0]["claims"] == [
             "9.2+ сигнатура, доступность, параметры, возвращаемый тип и исключения ЭкспортироватьВИзображение()"
     ]
-    assert report["runtime_verification"] == {
-        "status": "passed",
-        "technology_build": "9.2.9-12",
-        "verified_on": "2026-07-29",
-        "method": (
-            "1cmycloud test-app deploy.py applied TestApp 1.0-217.xasm with "
-            "ЭкспортОтчетаSmoke.xbsl calling ЭкспортироватьВИзображение(); "
-            "image 019fae4e-535b-757a-938c-f0df7c4c53d5; "
-            "UpdateApplicationConfiguration 019fae4e-563a-7437-83a7-5d091c1db5b0 Completed"
-        ),
-    }
     assert report["known_gaps"] == []
     assert "Feature delta 9.2+: ЭкспортироватьВИзображение()" in reference
     assert REPORT_EXPORT_URL in reference

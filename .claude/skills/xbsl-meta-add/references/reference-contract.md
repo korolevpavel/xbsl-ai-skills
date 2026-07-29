@@ -12,17 +12,17 @@ Reference фиксирует только подтвержденные свой�
 
 ## Версия и источники
 
-Каждый platform fact должен иметь точный источник: `doc_key` из indexed
-`xbsl-docs` либо официальный versioned HTTPS URL под базой, указанной в
-`source_catalog`.
+Каждый platform fact должен иметь точный источник: `path` относительно
+`source_catalog.base_url` либо официальный versioned HTTPS URL под базой,
+указанной в `source_catalog`.
 
 | Claim | Источник | Проверено | Что подтверждает |
 | --- | --- | --- | --- |
-| `<узкий claim>` | `<doc_key или versioned URL>` | `YYYY-MM-DD` | `<конкретное свойство или API>` |
+| `<узкий claim>` | `<path или versioned URL>` | `YYYY-MM-DD` | `<конкретное свойство или API>` |
 
-`latest` допустим только внутри indexed `doc_key`; versioned URL должен
-содержать сегмент версии документации. Release notes помогают найти дельту, но
-не заменяют тематическую YAML-схему или stdlib-сигнатуру.
+`path` должен быть переносимым относительным путём документации; versioned URL
+должен содержать сегмент версии документации. Release notes помогают найти
+дельту, но не заменяют тематическую YAML-схему или stdlib-сигнатуру.
 
 ## YAML
 

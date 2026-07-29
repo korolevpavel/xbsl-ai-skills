@@ -27,7 +27,6 @@ TOP_LEVEL_FIELDS = [
     "routing",
 ]
 SOURCE_CATALOG_FIELDS = [
-    "index_version",
     "documented_platform_version",
     "base_url",
 ]
@@ -35,19 +34,16 @@ OBJECT_FIELDS = [
     "element_kind",
     "status",
     "owner_skill",
-    "tracking_issue",
     "reference_path",
     "shared_reference_paths",
     "artifacts",
     "sources",
     "min_version",
     "documentation_verified_on",
-    "runtime_verification",
     "known_gaps",
 ]
 ARTIFACT_FIELDS = ["pattern", "role", "required", "basis"]
 SOURCE_FIELDS = ["source_catalog", "claims"]
-RUNTIME_FIELDS = ["status", "technology_build", "verified_on", "method"]
 ROUTING_FIELDS = ["category", "status", "route_to", "examples", "reason"]
 SHARED_REFERENCES = [
     "references/types.md",
@@ -170,9 +166,6 @@ def _validate_source_catalog(data: Mapping[str, Any]) -> None:
         _require_non_empty_string(source_id, f"source_catalog key {source_id!r}")
         _require_type(source, dict, f"source_catalog.{source_id}")
         _require_exact_keys(source, SOURCE_CATALOG_FIELDS, f"source_catalog.{source_id}")
-        index_version = source["index_version"]
-        if index_version is not None:
-            _require_non_empty_string(index_version, f"source_catalog.{source_id}.index_version")
         if source["documented_platform_version"] not in {"9.1", "9.2"}:
             _fail(f"source_catalog.{source_id}.documented_platform_version: invalid version")
         _require_https_base(source["base_url"], f"source_catalog.{source_id}.base_url")
@@ -191,37 +184,17 @@ def _validate_artifact(artifact: Any, path: str) -> None:
 
 def _validate_source(source: Any, catalog: Mapping[str, Any], path: str) -> None:
     _require_type(source, dict, path)
-    if set(source) != {*SOURCE_FIELDS, "doc_key"} and set(source) != {*SOURCE_FIELDS, "url"}:
-        _fail(f"{path}: expected source_catalog, claims and exactly one of doc_key/url")
+    if set(source) != {*SOURCE_FIELDS, "path"} and set(source) != {*SOURCE_FIELDS, "url"}:
+        _fail(f"{path}: expected source_catalog, claims and exactly one of path/url")
     source_id = source["source_catalog"]
     if source_id not in catalog:
         _fail(f"{path}.source_catalog: unknown source_catalog {source_id!r}")
     _require_string_list(source["claims"], f"{path}.claims", non_empty=True)
-    if "doc_key" in source:
-        _require_non_empty_string(source["doc_key"], f"{path}.doc_key")
+    if "path" in source:
+        _require_safe_path(source["path"], f"{path}.path")
     else:
         _require_non_empty_string(source["url"], f"{path}.url")
         _validate_url_source(source["url"], catalog[source_id], f"{path}.url versioned")
-
-
-def _validate_runtime(runtime: Any, path: str) -> None:
-    _require_type(runtime, dict, path)
-    _require_exact_keys(runtime, RUNTIME_FIELDS, path)
-    status = runtime["status"]
-    if status not in {"not_run", "passed", "failed"}:
-        _fail(f"{path}.status: invalid runtime status")
-    optional_values = [
-        runtime["technology_build"],
-        runtime["verified_on"],
-        runtime["method"],
-    ]
-    if status == "not_run":
-        if optional_values != [None, None, None]:
-            _fail(f"{path}: not_run runtime fields must be null")
-        return
-    for field in ("technology_build", "method"):
-        _require_non_empty_string(runtime[field], f"{path}.{field}")
-    _require_iso_date(runtime["verified_on"], f"{path}.verified_on")
 
 
 def _validate_object(record: Any, catalog: Mapping[str, Any], shared: set[str], path: str) -> None:
@@ -231,9 +204,6 @@ def _validate_object(record: Any, catalog: Mapping[str, Any], shared: set[str], 
     if record["status"] not in {"supported", "partial", "routed"}:
         _fail(f"{path}.status: invalid status")
     _require_non_empty_string(record["owner_skill"], f"{path}.owner_skill")
-    if record["tracking_issue"] is not None:
-        if not isinstance(record["tracking_issue"], int) or record["tracking_issue"] <= 0:
-            _fail(f"{path}.tracking_issue: expected positive integer or null")
     if record["reference_path"] is not None:
         _require_safe_path(record["reference_path"], f"{path}.reference_path")
     _require_string_list(record["shared_reference_paths"], f"{path}.shared_reference_paths", non_empty=False)
@@ -256,7 +226,6 @@ def _validate_object(record: Any, catalog: Mapping[str, Any], shared: set[str], 
     if min_version is None and (record["status"] != "partial" or not record["known_gaps"]):
         _fail(f"{path}.min_version: null is only allowed for partial records with known gaps")
     _require_iso_date(record["documentation_verified_on"], f"{path}.documentation_verified_on")
-    _validate_runtime(record["runtime_verification"], f"{path}.runtime_verification")
     _require_string_list(record["known_gaps"], f"{path}.known_gaps", non_empty=False)
 
 
@@ -303,8 +272,8 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
     if counts != {"supported": 24, "partial": 7, "routed": 1}:
         _fail("objects: expected balance 24 supported + 7 partial + 1 routed")
     routed = [record for record in objects if record["status"] == "routed"]
-    if routed[0]["element_kind"] != "ЗапланированноеЗадание" or routed[0]["tracking_issue"] != 3:
-        _fail("objects: routed type must be ЗапланированноеЗадание from #3")
+    if routed[0]["element_kind"] != "ЗапланированноеЗадание":
+        _fail("objects: routed type must be ЗапланированноеЗадание")
 
     routing = data["routing"]
     if not isinstance(routing, list) or not routing:
@@ -341,10 +310,6 @@ def dump_canonical_json(data: Mapping[str, Any]) -> str:
 
 def _escape_cell(value: Any) -> str:
     return str(value).replace("\r\n", "<br>").replace("\n", "<br>").replace("|", "\\|")
-
-
-def _format_issue(issue: Any) -> str:
-    return f"#{issue}" if issue is not None else "—"
 
 
 def _format_value(value: Any) -> str:
@@ -385,8 +350,8 @@ def render_markdown(data: Mapping[str, Any]) -> str:
         "",
         "## Объекты",
         "",
-        "| Вид элемента | Статус | Владелец | Issue | Min version | Reference | Required artifacts |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| Вид элемента | Статус | Владелец | Min version | Reference | Required artifacts |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
     for record in data["objects"]:
         lines.append(
@@ -394,7 +359,6 @@ def render_markdown(data: Mapping[str, Any]) -> str:
             f"`{_escape_cell(record['element_kind'])}` | "
             f"`{_escape_cell(record['status'])}` | "
             f"`{_escape_cell(record['owner_skill'])}` | "
-            f"{_format_issue(record['tracking_issue'])} | "
             f"`{_escape_cell(_format_value(record['min_version']))}` | "
             f"{_format_reference(record)} | "
             f"{_format_required_artifacts(record)} |"

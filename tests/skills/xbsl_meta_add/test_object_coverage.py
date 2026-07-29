@@ -78,7 +78,6 @@ def test_registry_has_exact_schema_initial_balance_and_safe_paths():
             "element_kind": "ЗапланированноеЗадание",
             "status": "routed",
             "owner_skill": "xbsl-scheduled-task",
-            "tracking_issue": 3,
             "reference_path": "references/ЗапланированноеЗадание.md",
             "shared_reference_paths": ["references/reference-contract.md"],
             "artifacts": [
@@ -97,25 +96,19 @@ def test_registry_has_exact_schema_initial_balance_and_safe_paths():
             ],
             "sources": [
                 {
-                    "source_catalog": "xbsl_docs_9_1",
-                    "doc_key": "topics/latest/scheduled-job-properties",
+                    "source_catalog": "official_element_9_1",
+                    "path": "topics/latest/scheduled-job-properties",
                     "claims": ["YAML-схема"],
                 },
                 {
-                    "source_catalog": "xbsl_docs_9_1",
-                    "doc_key": "topics/latest/scheduled-job-project-element",
+                    "source_catalog": "official_element_9_1",
+                    "path": "topics/latest/scheduled-job-project-element",
                     "claims": ["семантика модуля"],
                 },
             ],
             "min_version": "9.1",
             "documentation_verified_on": "2026-07-28",
-            "runtime_verification": {
-                "status": "not_run",
-                "technology_build": None,
-                "verified_on": None,
-                "method": None,
-            },
-            "known_gaps": ["owning skill реализуется в #3"],
+            "known_gaps": ["owning skill реализуется отдельно"],
         }
     ]
 
@@ -148,7 +141,7 @@ def test_registry_is_canonical_json_and_round_trips_byte_identically():
                     "sources": [
                         {
                             "source_catalog": "missing",
-                            "doc_key": "topics/latest/example",
+                            "path": "topics/latest/example",
                             "claims": ["YAML-схема"],
                         }
                     ]
@@ -161,10 +154,18 @@ def test_registry_is_canonical_json_and_round_trips_byte_identically():
             "path",
         ),
         (
-            lambda data: data["objects"][0]["runtime_verification"].update(
-                {"status": "passed"}
+            lambda data: data["objects"][0].update(
+                {
+                    "sources": [
+                        {
+                            "source_catalog": "official_element_9_1",
+                            "doc_key": "topics/latest/example",
+                            "claims": ["YAML-схема"],
+                        }
+                    ]
+                }
             ),
-            "runtime",
+            "path/url",
         ),
         (
             lambda data: data["objects"][0].update(
@@ -193,3 +194,34 @@ def test_registry_validation_rejects_contract_breaks(mutation, message):
 
     with pytest.raises(renderer.CoverageValidationError, match=message):
         renderer.validate_coverage_data(bad, repo_root=REPOSITORY_ROOT)
+
+
+def test_public_skill_artifacts_do_not_reference_local_only_materials():
+    forbidden_terms = [
+        "xbsl-docs",
+        "mcp__",
+        "xbsl_docs",
+        "doc_key",
+        "indexed",
+        "runtime_verification",
+        "Runtime evidence",
+        "test-only",
+        "fixture",
+        "contract-smoke",
+        "tracking_issue",
+        "#90",
+        "#91",
+    ]
+    scanned = []
+
+    for path in SKILL_ROOT.rglob("*"):
+        if not path.is_file() or "__pycache__" in path.parts:
+            continue
+        if path.suffix not in {".md", ".json", ".py"}:
+            continue
+        text = path.read_text(encoding="utf-8")
+        scanned.append(path)
+        for term in forbidden_terms:
+            assert term not in text, f"{path.relative_to(REPOSITORY_ROOT)} contains {term!r}"
+
+    assert scanned

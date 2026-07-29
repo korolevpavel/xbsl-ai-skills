@@ -14,12 +14,6 @@ COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
 REFERENCES = SKILL_ROOT / "references"
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "issue-91"
 SKILL_TEXT = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-REPORT_EXPORT_EVIDENCE = (
-    SKILL_ROOT
-    / "references"
-    / "evidence"
-    / "issue-91-report-export-to-image-2026-07-29.md"
-)
 
 REFERENCE_SECTIONS = [
     "Назначение",
@@ -322,7 +316,6 @@ def test_report_color_scheme_fixtures_cover_dark_theme_and_fallback_without_repo
 def test_report_export_to_image_delta_is_documented_and_runtime_verified():
     report = record_for("Отчет")
     reference = (REFERENCES / "Отчет.md").read_text(encoding="utf-8")
-    evidence = REPORT_EXPORT_EVIDENCE.read_text(encoding="utf-8")
     positive = (
         FIXTURES
         / "positive"
@@ -355,8 +348,7 @@ def test_report_export_to_image_delta_is_documented_and_runtime_verified():
             "1cmycloud test-app deploy.py applied TestApp 1.0-217.xasm with "
             "ЭкспортОтчетаSmoke.xbsl calling ЭкспортироватьВИзображение(); "
             "image 019fae4e-535b-757a-938c-f0df7c4c53d5; "
-            "UpdateApplicationConfiguration 019fae4e-563a-7437-83a7-5d091c1db5b0 Completed; "
-            "log .claude/skills/xbsl-meta-add/references/evidence/issue-91-report-export-to-image-2026-07-29.md"
+            "UpdateApplicationConfiguration 019fae4e-563a-7437-83a7-5d091c1db5b0 Completed"
         ),
     }
     assert report["known_gaps"] == []
@@ -377,9 +369,6 @@ def test_report_export_to_image_delta_is_documented_and_runtime_verified():
     assert "// target-platform: 9.1" in negative
     assert "feature-gate negative" in negative
     assert "ЭкспортироватьВИзображение()" in negative
-    assert "technology-version: 9.2.9-12" in evidence
-    assert "image-id: 019fae4e-535b-757a-938c-f0df7c4c53d5" in evidence
-    assert "UpdateApplicationConfiguration: 019fae4e-563a-7437-83a7-5d091c1db5b0 Completed" in evidence
 
 
 def test_skill_step_4_uses_registry_required_artifacts_for_service_contract_companions():

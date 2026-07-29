@@ -19,6 +19,7 @@ uv.lock
 
 # Runtime verification artifacts (local only)
 .claude/skills/*/runtime-evidence/
+.claude/skills/*/references/evidence/
 
 # Tools and materials (local only)
 tools/

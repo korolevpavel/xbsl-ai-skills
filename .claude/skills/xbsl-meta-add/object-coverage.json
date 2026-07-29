@@ -491,7 +491,7 @@
         "status": "passed",
         "technology_build": "9.2.9-12",
         "verified_on": "2026-07-29",
-        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-217.xasm with ЭкспортОтчетаSmoke.xbsl calling ЭкспортироватьВИзображение(); image 019fae4e-535b-757a-938c-f0df7c4c53d5; UpdateApplicationConfiguration 019fae4e-563a-7437-83a7-5d091c1db5b0 Completed; log .claude/skills/xbsl-meta-add/references/evidence/issue-91-report-export-to-image-2026-07-29.md"
+        "method": "1cmycloud test-app deploy.py applied TestApp 1.0-217.xasm with ЭкспортОтчетаSmoke.xbsl calling ЭкспортироватьВИзображение(); image 019fae4e-535b-757a-938c-f0df7c4c53d5; UpdateApplicationConfiguration 019fae4e-563a-7437-83a7-5d091c1db5b0 Completed"
       },
       "known_gaps": []
     },

@@ -221,6 +221,32 @@ def test_build_xasm_creates_expected_archive(build, monkeypatch, tmp_path: Path)
         assert "CommitId: abc123" in manifest
 
 
+def test_build_xasm_includes_same_name_report_query_companion(build, tmp_path: Path) -> None:
+    project_dir = tmp_path / "repo" / "acme" / "demo"
+    write_project_yaml(project_dir)
+    subsystem = project_dir / "Отчеты"
+    subsystem.mkdir()
+    (subsystem / "Продажи.yaml").write_text(
+        "ВидЭлемента: Отчет\nИмя: Продажи\nВидИсточникаДанных: Запрос\n",
+        encoding="utf-8",
+    )
+    (subsystem / "Продажи.xbql").write_text(
+        "ВЫБРАТЬ Продажи.Сумма КАК Сумма ИЗ Продажи\n",
+        encoding="utf-8",
+    )
+
+    output_path = build.build_xasm(
+        str(project_dir), str(tmp_path / "out"), "1.0-2", "abc123", "main"
+    )
+
+    with zipfile.ZipFile(output_path) as archive:
+        names = set(archive.namelist())
+    assert {
+        "acme/demo/Отчеты/Продажи.yaml",
+        "acme/demo/Отчеты/Продажи.xbql",
+    } <= names
+
+
 def test_main_requires_project_yaml(build, monkeypatch, capsys, tmp_path: Path) -> None:
     captured = run_main(build, monkeypatch, capsys, ["--project-dir", str(tmp_path)], expected_exit=1)
 

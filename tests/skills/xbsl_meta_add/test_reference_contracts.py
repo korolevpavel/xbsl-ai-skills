@@ -15,9 +15,14 @@ FORM_SKILL = REPOSITORY_ROOT / ".claude/skills/xbsl-form-add/SKILL.md"
 FORM_REPORT_REFERENCE = (
     REPOSITORY_ROOT / ".claude/skills/xbsl-form-add/references/ФормаОтчета.md"
 )
+REPORT_FIXTURES = (
+    Path(__file__).resolve().parent / "fixtures" / "contracts-and-reports"
+)
 
-REPORT_YAML = (EXAMPLES / "ОтчетОборотыПродаж.yaml").read_text()
-REPORT_XBQL = (EXAMPLES / "ОтчетОборотыПродаж.xbql").read_text()
+REPORT_YAML_PATH = EXAMPLES / "ОтчетОборотыПродаж.yaml"
+REPORT_XBQL_PATH = EXAMPLES / "ОтчетОборотыПродаж.xbql"
+REPORT_YAML = REPORT_YAML_PATH.read_text()
+REPORT_XBQL = REPORT_XBQL_PATH.read_text()
 CATALOG_UUID_TERMS = {
     "объект",
     "пользовательские реквизиты",
@@ -80,6 +85,19 @@ def root_scalar(text: str, key: str) -> str | None:
     if match is None:
         return None
     return match.group("value").strip()
+
+
+def assert_query_report_companion(yaml_path: Path) -> Path:
+    text = yaml_path.read_text(encoding="utf-8")
+    name = root_scalar(text, "Имя")
+
+    assert root_scalar(text, "ВидИсточникаДанных") == "Запрос"
+    assert "Запрос" not in top_level_keys(text)
+    assert name and yaml_path.stem == name
+    query_path = yaml_path.with_suffix(".xbql")
+    assert query_path.is_file(), "same-name .xbql companion is required"
+    assert query_path.read_text(encoding="utf-8").strip(), "query must not be empty"
+    return query_path
 
 
 def yaml_list_item_mappings(text: str, key: str) -> list[dict[str, str]]:
@@ -313,6 +331,56 @@ def test_report_reference_keeps_properties_at_report_root():
 def test_report_and_xbql_parameter_sets_are_equal():
     assert report_parameter_names(REPORT_YAML) == xbql_parameter_names(REPORT_XBQL)
     assert report_parameter_names(REPORT_YAML) == {"НачалоПериода"}
+
+
+def test_query_report_uses_implicit_same_name_xbql_companion():
+    assert root_scalar(REPORT_YAML, "ВидИсточникаДанных") == "Запрос"
+    assert "Запрос" not in top_level_keys(REPORT_YAML)
+    assert REPORT_YAML_PATH.stem == root_scalar(REPORT_YAML, "Имя")
+    assert REPORT_XBQL_PATH.stem == REPORT_YAML_PATH.stem
+    assert REPORT_XBQL.strip()
+    assert assert_query_report_companion(REPORT_YAML_PATH) == REPORT_XBQL_PATH
+
+
+def test_positive_report_yaml_never_declares_query_file_as_a_property():
+    candidates = list(EXAMPLES.glob("*.yaml")) + list(
+        (REPORT_FIXTURES / "positive").rglob("*.yaml")
+    )
+    report_paths = [
+        path
+        for path in candidates
+        if root_scalar(path.read_text(encoding="utf-8"), "ВидЭлемента") == "Отчет"
+    ]
+
+    assert report_paths
+    for path in report_paths:
+        assert "Запрос" not in top_level_keys(path.read_text(encoding="utf-8")), path
+
+
+def test_report_reference_query_example_uses_implicit_xbql_companion():
+    reference = read_reference("Отчет.md")
+    example = yaml_example(reference, "ВидИсточникаДанных: Запрос")
+
+    assert "Запрос" not in top_level_keys(example)
+    assert "одноименный" in reference
+    assert "непуст" in reference
+
+
+@pytest.mark.parametrize("case", ["missing_query", "misnamed_query"])
+def test_missing_or_misnamed_query_report_companion_is_rejected(case: str):
+    yaml_path = REPORT_FIXTURES / "negative" / "Отчет" / case / "Продажи.yaml"
+    query_files = list(yaml_path.parent.glob("*.xbql"))
+
+    if case == "misnamed_query":
+        assert len(query_files) == 1
+        assert query_files[0].stem != root_scalar(
+            yaml_path.read_text(encoding="utf-8"), "Имя"
+        )
+    else:
+        assert query_files == []
+
+    with pytest.raises(AssertionError, match="same-name .xbql companion is required"):
+        assert_query_report_companion(yaml_path)
 
 
 def test_report_reference_requires_exact_query_parameter_set_unconditionally():

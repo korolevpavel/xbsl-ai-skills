@@ -234,6 +234,30 @@ def test_minimal_daily_scheduled_task_fixture_matches_contract_and_validator(cap
     assert captured.err == ""
 
 
+def test_time_literals_are_unquoted_in_public_contract_and_fixtures():
+    fixture_name = "ЗапланированноеЗадание.yaml"
+    paths = [
+        SCHEDULED_SKILL_ROOT / "SKILL.md",
+        SCHEDULED_SKILL_ROOT / "references" / "ЗапланированноеЗадание.md",
+        FIXTURES / "minimal" / fixture_name,
+        FIXTURES / "negative" / "handler_with_parameters" / fixture_name,
+        FIXTURES / "negative" / "missing_companion" / fixture_name,
+        FIXTURES / "negative" / "missing_handler" / fixture_name,
+        FIXTURES / "negative" / "wrong_handler_name" / fixture_name,
+    ]
+    unquoted_time = re.compile(
+        r"(?m)^\s*ЗапуститьВ:\s+(?:[01]\d|2[0-3]):[0-5]\d\s*$"
+    )
+    quoted_time = re.compile(
+        r'''(?m)^\s*ЗапуститьВ:\s*["'](?:[01]\d|2[0-3]):[0-5]\d["']\s*$'''
+    )
+
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        assert unquoted_time.search(text), str(path)
+        assert quoted_time.search(text) is None, str(path)
+
+
 @pytest.mark.parametrize(
     ("case", "rule_id", "message"),
     [

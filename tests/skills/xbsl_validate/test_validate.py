@@ -178,7 +178,7 @@ def test_json_envelope_uses_stable_summary_sorting_and_paths(capsys):
     assert code == 1
     assert stderr == ""
     data = parse_json(stdout)
-    assert data["summary"] == {"files": 6, "errors": 2, "warnings": 3}
+    assert data["summary"] == {"files": 6, "errors": 3, "warnings": 3}
     assert data["diagnostics"] == sorted(
         data["diagnostics"],
         key=lambda item: (
@@ -196,6 +196,7 @@ def test_json_envelope_uses_stable_summary_sorting_and_paths(capsys):
         ("warning", "coverage.out_of_scope", None),
         ("error", "coverage.unknown_type", None),
         ("error", "owner.scheduled_task.missing_companion", None),
+        ("error", "owner.scheduled_task.location", None),
     }
     assert sum(
         1
@@ -392,6 +393,360 @@ def test_functional_object_type_slot_still_uses_types_invalid(capsys):
 
 def test_schema_routing_json_is_deterministic(capsys):
     args = ["--format=json", str(FIXTURES / "schema_routing")]
+
+    first = run_cli(args, capsys)
+    second = run_cli(args, capsys)
+
+    assert first == second
+
+
+def test_supported_object_validators_accept_documented_fixtures(capsys):
+    targets = [
+        FIXTURES / "object_rules" / "report" / "valid" / "Продажи.yaml",
+        FIXTURES / "object_rules" / "register" / "valid" / "Остатки.yaml",
+        FIXTURES / "object_rules" / "register" / "valid" / "Курсы.yaml",
+        FIXTURES / "object_rules" / "register" / "valid" / "ВыгруженныеДанные.yaml",
+        FIXTURES / "object_rules" / "register" / "valid" / "ОборотыБезТипа.yaml",
+        FIXTURES / "object_rules" / "scheduled" / "valid" / "ЕжедневнаяОчистка.yaml",
+        FIXTURES
+        / "object_rules"
+        / "scheduled"
+        / "valid_mixed"
+        / "СмешанноеРасписание.yaml",
+        FIXTURES
+        / "object_rules"
+        / "scheduled"
+        / "valid_nested"
+        / "Пакет"
+        / "ВложенноеЗадание.yaml",
+    ]
+
+    code, stdout, stderr = run_cli(["--format=json", *map(str, targets)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 0
+    assert stderr == ""
+    assert data["summary"] == {"files": 8, "errors": 0, "warnings": 0}
+    assert data["diagnostics"] == []
+
+
+def test_report_object_specific_rules_have_stable_ids(capsys):
+    root = FIXTURES / "object_rules" / "report"
+    targets = [
+        root / "invalid_yaml_query" / "ОшибочныйЗапрос.yaml",
+        root / "missing_companion" / "БезЗапроса.yaml",
+        root / "table_without_source" / "ТабличныйОтчет.yaml",
+        root / "parameter_mismatch" / "ПараметризованныйОтчет.yaml",
+        root / "invalid_interface" / "ОтчетСИнтерфейсом.yaml",
+        root / "missing_parameter_type" / "ПараметрБезТипа.yaml",
+        root / "query_with_source" / "ЗапросСИсточником.yaml",
+    ]
+
+    code, stdout, stderr = run_cli(["--format=json", *map(str, targets)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 7, "errors": 7, "warnings": 0}
+    assert sorted(item["rule_id"] for item in data["diagnostics"]) == sorted(
+        [
+            "owner.report.source",
+            "owner.report.query_companion",
+            "owner.report.source",
+            "owner.report.query_parameters",
+            "owner.report.interface",
+            "owner.report.query_parameters",
+            "owner.report.source",
+        ]
+    )
+
+
+def test_register_object_specific_rules_have_stable_ids(capsys):
+    root = FIXTURES / "object_rules" / "register"
+    targets = [
+        root / "missing_dimensions" / "ПустыеИзмерения.yaml",
+        root / "missing_resources" / "ПустыеРесурсы.yaml",
+        root / "bad_member" / "НеверныйЭлемент.yaml",
+        root / "bad_uuid" / "НеверныйИдентификатор.yaml",
+        root / "bad_resource_type" / "СтроковыйРесурс.yaml",
+        root / "missing_registrar" / "БезРегистратора.yaml",
+        root / "bad_kind" / "НеверныйВид.yaml",
+    ]
+
+    code, stdout, stderr = run_cli(["--format=json", *map(str, targets)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 7, "errors": 7, "warnings": 0}
+    assert sorted(item["rule_id"] for item in data["diagnostics"]) == sorted(
+        [
+            "owner.register.dimensions",
+            "owner.register.resources",
+            "owner.register.member",
+            "owner.register.invalid_uuid",
+            "owner.register.resource_type",
+            "owner.register.registrar",
+            "owner.register.kind",
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    ("collection", "rule_id"),
+    [
+        ("Измерения", "owner.register.dimensions"),
+        ("Ресурсы", "owner.register.resources"),
+        ("Реквизиты", "owner.register.member"),
+    ],
+)
+def test_null_register_collections_are_diagnostics_instead_of_a_crash(
+    collection, rule_id, tmp_path, capsys
+):
+    target = tmp_path / f"{collection}.yaml"
+    target.write_text(
+        "ВидЭлемента: РегистрСведений\n"
+        "Ид: 22911111-1111-4111-8111-111111111111\n"
+        "Имя: ПроверкаNull\n"
+        f"{collection}: null\n",
+        encoding="utf-8",
+    )
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 1, "errors": 1, "warnings": 0}
+    assert [item["rule_id"] for item in data["diagnostics"]] == [rule_id]
+
+
+def test_non_scalar_discriminators_are_stable_diagnostics(tmp_path, capsys):
+    report = tmp_path / "Отчет.yaml"
+    report.write_text(
+        "ВидЭлемента: Отчет\n"
+        "Ид: 23111111-1111-4111-8111-111111111111\n"
+        "Имя: Отчет\n"
+        "ВидИсточникаДанных: []\n",
+        encoding="utf-8",
+    )
+    register = tmp_path / "Регистр.yaml"
+    register.write_text(
+        "ВидЭлемента: РегистрНакопления\n"
+        "Ид: 23211111-1111-4111-8111-111111111111\n"
+        "Имя: Регистр\n"
+        "ВидРегистра: []\n"
+        "Измерения:\n"
+        "  - Ид: 23311111-1111-4111-8111-111111111111\n"
+        "    Имя: Аналитика\n"
+        "    Тип: Строка\n"
+        "Ресурсы:\n"
+        "  - Ид: 23411111-1111-4111-8111-111111111111\n"
+        "    Имя: Сумма\n"
+        "Реквизиты:\n"
+        "  - Имя: Регистратор\n"
+        "    Тип: Документ.Ссылка?\n",
+        encoding="utf-8",
+    )
+    subsystem = tmp_path / "Подсистема.yaml"
+    subsystem.write_text("Интерфейс: {}\n", encoding="utf-8")
+    scheduled = tmp_path / "Задание.yaml"
+    scheduled.write_text(
+        "ВидЭлемента: ЗапланированноеЗадание\n"
+        "Ид: 23511111-1111-4111-8111-111111111111\n"
+        "Имя: Задание\n"
+        "Расписание:\n"
+        "  - Вид: []\n",
+        encoding="utf-8",
+    )
+    scheduled.with_suffix(".xbsl").write_text(
+        "@Обработчик\nметод Обработчик()\n;\n", encoding="utf-8"
+    )
+
+    code, stdout, stderr = run_cli(
+        ["--format=json", str(report), str(register), str(scheduled)], capsys
+    )
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 3, "errors": 3, "warnings": 0}
+    assert sorted(item["rule_id"] for item in data["diagnostics"]) == sorted(
+        [
+            "owner.report.source",
+            "owner.register.kind",
+            "owner.scheduled_task.schedule",
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "type_value", ["ДвоичныйОбъект.Ссылка?", "Пользователи.Ссылка?"]
+)
+def test_registrar_rejects_known_non_document_references(type_value):
+    validator = load_validator()
+
+    assert validator.reference_registrar_type(type_value) is False
+
+
+def test_scheduled_task_object_specific_rules_have_stable_ids(capsys):
+    root = FIXTURES / "object_rules" / "scheduled"
+    targets = [
+        root / "quoted_time" / "СтроковоеВремя.yaml",
+        root / "missing_schedule" / "БезРасписания.yaml",
+        root / "invalid_schedule" / "НеверноеРасписание.yaml",
+        root / "invalid_location" / "КорневоеЗадание.yaml",
+        root / "yaml_handler" / "ОбработчикВYaml.yaml",
+        root / "wrong_handler" / "ОбработчикСПараметром.yaml",
+        root / "wrong_handler_binding" / "НепривязанныйОбработчик.yaml",
+    ]
+
+    code, stdout, stderr = run_cli(["--format=json", *map(str, targets)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 7, "errors": 7, "warnings": 0}
+    assert sorted(item["rule_id"] for item in data["diagnostics"]) == sorted(
+        [
+            "owner.scheduled_task.time_literal",
+            "owner.scheduled_task.schedule",
+            "owner.scheduled_task.schedule",
+            "owner.scheduled_task.location",
+            "owner.scheduled_task.yaml_handler",
+            "owner.scheduled_task.handler",
+            "owner.scheduled_task.handler",
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        "        Вид: Однократно\n",
+        "        Вид: Однократно\n        ЗапуститьВ: foo\n",
+        (
+            "        Вид: Однократно\n"
+            '        ЗапуститьВ: "2026-08-27T10:00:00Z"\n'
+        ),
+        "        Вид: Периодическое\n",
+        "        Вид: Периодическое\n        Период: foo\n",
+        "        Вид: Периодическое\n        Период: 500мс\n",
+        "        Вид: Периодическое\n        Период: " + "9" * 5000 + "с\n",
+        "        Вид: Еженедельно\n        ЗапуститьВ: 08:00\n",
+        "        Вид: Ежемесячно\n        ЗапуститьВ: 08:00\n",
+        (
+            "        Вид: Ежемесячно\n"
+            "        ЗапуститьВ: 08:00\n"
+            "        Месяцы: [Январь]\n"
+        ),
+    ],
+)
+def test_schedule_kinds_require_documented_fields(entry, tmp_path, capsys):
+    subsystem = tmp_path / "Подсистема.yaml"
+    subsystem.write_text("Интерфейс: {}\n", encoding="utf-8")
+    target = tmp_path / "Задание.yaml"
+    target.write_text(
+        "ВидЭлемента: ЗапланированноеЗадание\n"
+        "Ид: 23611111-1111-4111-8111-111111111111\n"
+        "Имя: Задание\n"
+        "Расписание:\n"
+        "    -\n"
+        f"{entry}",
+        encoding="utf-8",
+    )
+    target.with_suffix(".xbsl").write_text(
+        "@Обработчик\nметод Обработчик()\n;\n", encoding="utf-8"
+    )
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 1, "errors": 1, "warnings": 0}
+    assert [item["rule_id"] for item in data["diagnostics"]] == [
+        "owner.scheduled_task.schedule"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("1с", True),
+        ("+3с", True),
+        ("1ч30м5с", True),
+        ("999999999999999мс", True),
+        ("0с", False),
+        ("500мс", False),
+        ("-3с", False),
+        ("1000000000000000мс", False),
+        ("9" * 5000 + "с", False),
+    ],
+)
+def test_positive_duration_literal_bounds(value, expected):
+    validator = load_validator()
+
+    assert validator.valid_positive_duration_literal(value) is expected
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("0000-12-31 06:00:00.000 Z", True),
+        ("2026-08-27T10:00:00Z", True),
+        ("2025-05-01 23:30:40.345 UTC+3", True),
+        ("4000-01-01 17:59:59.999 Z", True),
+        ("4001-01-01 00:00:00 Z", False),
+        ("2026-08-27 9:00 Z", False),
+        ("foo", False),
+    ],
+)
+def test_moment_literal_shape_and_bound_years(value, expected):
+    validator = load_validator()
+
+    assert validator.valid_moment_literal(value) is expected
+
+
+def test_scheduled_task_unreadable_companion_is_a_stable_diagnostic(
+    monkeypatch, capsys
+):
+    target = (
+        FIXTURES
+        / "object_rules"
+        / "scheduled"
+        / "valid"
+        / "ЕжедневнаяОчистка.yaml"
+    )
+    companion = target.with_suffix(".xbsl")
+    original_read_text = Path.read_text
+
+    def read_text(path, *args, **kwargs):
+        if path == companion:
+            raise UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte")
+        return original_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 1, "errors": 1, "warnings": 0}
+    assert [item["rule_id"] for item in data["diagnostics"]] == [
+        "owner.scheduled_task.unreadable_companion"
+    ]
+
+
+def test_object_specific_json_is_deterministic(capsys):
+    target = (
+        FIXTURES
+        / "object_rules"
+        / "report"
+        / "parameter_mismatch"
+        / "ПараметризованныйОтчет.yaml"
+    )
+    args = ["--format=json", str(target)]
 
     first = run_cli(args, capsys)
     second = run_cli(args, capsys)

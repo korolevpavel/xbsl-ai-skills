@@ -712,6 +712,8 @@ def test_main_non_token_action_prints_error_and_exits_on_token_fetch_failure(api
         ),
         (["--action", "update-technology-version", "--app-id", "app-1"], "--technology-version required"),
         (["--action", "get-group-task"], "--task-id required"),
+        (["--action", "list-app-tasks"], "--app-id required"),
+        (["--action", "get-app-task"], "--task-id required"),
     ],
 )
 def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv: list[str], expected_error: str) -> None:
@@ -1119,6 +1121,15 @@ def test_update_technology_version_does_not_rewrite_project_yaml(
             ("GET", "https://example.com/console/api/v2/applications/app-1/dumps/dump-1", "TOKEN", None),
             {"id": "dump-1", "status": "Done"},
         ),
+        (
+            ["--action", "get-app-task", "--task-id", "task-1"],
+            ("GET", "https://example.com/console/api/v2/tasks/application-tasks/task-1", "TOKEN", None),
+            {
+                "id": "task-1",
+                "status": "Completed",
+                "operation-type": "UpdateApplicationConfiguration",
+            },
+        ),
     ],
 )
 def test_main_single_request_actions(api, monkeypatch, capsys, argv: list[str], expected_call, response) -> None:
@@ -1136,6 +1147,49 @@ def test_main_single_request_actions(api, monkeypatch, capsys, argv: list[str], 
 
     assert calls == [expected_call]
     assert result == response
+
+
+def test_list_app_tasks_uses_actual_endpoint_and_filters_application(api, monkeypatch, capsys) -> None:
+    calls = []
+    response = [
+        {"id": "task-1", "application-id": "app-1", "status": "Completed"},
+        {"id": "task-2", "application-id": "app-2", "status": "Failed"},
+    ]
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    monkeypatch.setattr(
+        api,
+        "api_request",
+        lambda method, url, token, body=None: calls.append((method, url, token, body))
+        or response,
+    )
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action",
+            "list-app-tasks",
+            "--app-id",
+            "app-1",
+            "--base-url",
+            "https://example.com",
+            "--client-id",
+            "client",
+            "--client-secret",
+            "secret",
+        ],
+    )
+
+    assert calls == [
+        (
+            "GET",
+            "https://example.com/console/api/v2/tasks/application-tasks",
+            "TOKEN",
+            None,
+        )
+    ]
+    assert result == [response[0]]
 
 
 @pytest.mark.parametrize(

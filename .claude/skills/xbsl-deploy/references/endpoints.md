@@ -135,11 +135,21 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 - Content-Type: `application/octet-stream` (бинарный файл)
 - Query params: `SpaceId`, `BranchName`, `CommitId`, `CommitMessage`, `Version`, `Modified`
 - Без `{id}` в пути — создаёт новый проект. С `{id}/assemblies` — добавляет сборку к существующему.
+- Перед созданием без `{id}` `api.py` fail-closed сверяет точную пару
+  `Vendor + Name` из `Assembly.yaml` со всеми доступными проектами целевого
+  пространства. Для сравнения используются поля сборок
+  `project-developer + project-name`; одного top-level `ProjectDto.name`
+  недостаточно, потому что `ProjectDto` не содержит поставщика.
+- Совпадение, ошибка чтения или неполный ответ блокируют бинарный POST. Для
+  продолжения с найденным проектом нужен явный `--project-id`. Совпадение в
+  любой доступной сборке считается консервативным конфликтом; найденный ID
+  остаётся кандидатом для ручной проверки и не выбирается автоматически.
 
 ### Поля сборки (ответ AssemblyDto)
 - `assembly-version` — версия сборки (используется как `{version}` в path)
 - `created` — дата создания
 - `project-id` — идентификатор проекта
+- `project-developer` — техническое имя поставщика проекта (`Поставщик` / `Vendor`)
 - `project-name` — имя проекта
 - `project-version` — версия проекта
 - `branch-name` — имя ветки

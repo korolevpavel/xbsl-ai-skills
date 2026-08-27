@@ -30,7 +30,9 @@ Env vars:
 
 import argparse
 import datetime
+import json
 import os
+import re
 import subprocess
 import sys
 import zipfile
@@ -41,6 +43,20 @@ INCLUDE_EXTENSIONS = {'.yaml', '.xbsl', '.xbql', '.md', '.txt'}
 # Каталоги и файлы, исключаемые из сборки
 EXCLUDE_DIRS = {'.claude', '.git', '__pycache__', 'node_modules', '.github'}
 EXCLUDE_FILES = {'.gitignore', '.env', '.DS_Store'}
+COMPATIBILITY_MODE_PATTERN = re.compile(r'^[0-9]+\.[0-9]+$')
+
+
+def compatibility_mode_format_error(value: str) -> dict | None:
+    if COMPATIBILITY_MODE_PATTERN.fullmatch(value):
+        return None
+    return {
+        'error': 'Invalid compatibility mode format',
+        'details': {
+            'value': value,
+            'expected': '<major>.<minor>',
+        },
+        'rule_id': 'xbsl-init.compatibility_mode_format',
+    }
 
 
 def detect_project_kind(project_dir: str) -> str:
@@ -213,6 +229,14 @@ def main():
         sys.exit(1)
     project_dir = os.path.abspath(project_dir)
 
+    meta = parse_simple_yaml(os.path.join(project_dir, 'Проект.yaml'))
+    if 'РежимСовместимости' in meta:
+        compatibility_mode = meta['РежимСовместимости']
+        format_error = compatibility_mode_format_error(compatibility_mode)
+        if format_error:
+            print(json.dumps(format_error, ensure_ascii=False), file=sys.stderr)
+            sys.exit(1)
+
     # — Git-метаданные
     repo_dir = os.path.dirname(os.path.dirname(project_dir))
     commit, branch = git_info(repo_dir)
@@ -222,7 +246,6 @@ def main():
         branch = args.branch
 
     # — Версия
-    meta = parse_simple_yaml(os.path.join(project_dir, 'Проект.yaml'))
     base_version = meta.get('Версия', '1.0')
     version = args.version or next_version(base_version, args.last_build)
 

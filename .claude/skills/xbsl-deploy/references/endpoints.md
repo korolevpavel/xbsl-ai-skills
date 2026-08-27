@@ -44,6 +44,9 @@ Base URL: `$ELEMENT_BASE_URL` (например `https://1cmycloud.com`)
 - `source.project-version-id` — ID конкретной сборки (`image-id` из ответа `upload-build`). Приоритетнее чем `image-id`.
 - Только `type: "repository"` поддерживается.
 - `technology-version` — опционально; если не указан, платформа использует версию по умолчанию.
+- `technology-version` имеет формат `<major>.<minor>.<patch>-<build>` и относится
+  к облачному приложению. Это не `РежимСовместимости` из `Проект.yaml`;
+  API не должен выводить или изменять одно значение по другому.
 
 ### Версия технологии
 

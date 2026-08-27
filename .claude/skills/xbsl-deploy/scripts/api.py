@@ -51,6 +51,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -63,6 +64,7 @@ TOKEN_TTL = 3600
 ASSEMBLY_MANIFEST_MAX_BYTES = 64 * 1024
 IDENTITY_CONFLICT_RULE_ID = "deploy.project_identity_conflict"
 IDENTITY_PREFLIGHT_RULE_ID = "deploy.project_identity_preflight_failed"
+TECHNOLOGY_VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$")
 
 
 class TokenFetchError(Exception):
@@ -286,6 +288,19 @@ def find_project_identity_conflicts(
             conflicts.append(project_id)
 
     return sorted(conflicts)
+
+
+def technology_version_format_error(value: str) -> dict | None:
+    if TECHNOLOGY_VERSION_PATTERN.fullmatch(value):
+        return None
+    return {
+        "error": "Invalid technology version format",
+        "details": {
+            "value": value,
+            "expected": "<major>.<minor>.<patch>-<build>",
+        },
+        "rule_id": "deploy.technology_version_format",
+    }
 
 
 def parse_json_or_text(raw: str):
@@ -580,6 +595,11 @@ def main():
         if not args.name:
             print(json.dumps({"error": "--name required"}, ensure_ascii=False))
             sys.exit(1)
+        if args.technology_version:
+            format_error = technology_version_format_error(args.technology_version)
+            if format_error:
+                print(json.dumps(format_error, ensure_ascii=False))
+                sys.exit(1)
         url = f"{base}/console/api/v2/applications"
         source: dict = {"type": "repository"}
         if args.version_id:
@@ -646,6 +666,10 @@ def main():
             sys.exit(1)
         if not args.technology_version:
             print(json.dumps({"error": "--technology-version required"}, ensure_ascii=False))
+            sys.exit(1)
+        format_error = technology_version_format_error(args.technology_version)
+        if format_error:
+            print(json.dumps(format_error, ensure_ascii=False))
             sys.exit(1)
         url = f"{base}/console/api/v2/tasks/group-tasks/update-applications-technology"
         body = {"technology-version": args.technology_version, "applications": [args.app_id]}

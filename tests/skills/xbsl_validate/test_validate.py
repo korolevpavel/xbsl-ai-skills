@@ -358,3 +358,42 @@ def test_invalid_nullable_union_keeps_stable_cli_rule_id(
     assert data["summary"] == {"files": 1, "errors": 1, "warnings": 0}
     assert [item["rule_id"] for item in data["diagnostics"]] == ["types.invalid"]
     assert data["diagnostics"][0]["message"] == f"Invalid type expression: {expression}"
+
+
+def test_schema_routing_precedes_functional_object_common_validation(capsys):
+    target = FIXTURES / "schema_routing"
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 0
+    assert stderr == ""
+    assert data["summary"] == {"files": 3, "errors": 0, "warnings": 3}
+    assert {item["rule_id"] for item in data["diagnostics"]} == {
+        "coverage.out_of_scope"
+    }
+    assert not {
+        "common.required_field",
+        "types.invalid",
+    } & {item["rule_id"] for item in data["diagnostics"]}
+
+
+def test_functional_object_type_slot_still_uses_types_invalid(capsys):
+    target = FIXTURES / "invalid" / "bad_type.yaml"
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 1, "errors": 1, "warnings": 0}
+    assert [item["rule_id"] for item in data["diagnostics"]] == ["types.invalid"]
+
+
+def test_schema_routing_json_is_deterministic(capsys):
+    args = ["--format=json", str(FIXTURES / "schema_routing")]
+
+    first = run_cli(args, capsys)
+    second = run_cli(args, capsys)
+
+    assert first == second

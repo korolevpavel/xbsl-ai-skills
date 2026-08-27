@@ -21,6 +21,14 @@ VALIDATOR_PATH = (
     / "scripts"
     / "validate.py"
 )
+EXPLORE_PATH = (
+    REPOSITORY_ROOT
+    / ".claude"
+    / "skills"
+    / "xbsl-explore"
+    / "scripts"
+    / "explore.py"
+)
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 REFERENCE_SECTIONS = [
@@ -135,6 +143,15 @@ def load_validator():
     return module
 
 
+def load_explore():
+    assert EXPLORE_PATH.exists(), "missing xbsl-explore CLI"
+    spec = importlib.util.spec_from_file_location("xbsl_explore", EXPLORE_PATH)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def parse_json(stdout: str) -> dict:
     data = json.loads(stdout)
     assert list(data) == ["schema_version", "diagnostics", "summary"]
@@ -181,6 +198,79 @@ def test_public_scheduled_task_skill_declares_owner_workflow_and_reference():
     assert "Минимальная версия платформы: 9.1+" in reference_text
 
 
+def test_scheduled_task_contract_requires_an_explicit_subsystem_destination():
+    skill_text = (SCHEDULED_SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+    reference_text = (
+        SCHEDULED_SKILL_ROOT / "references" / "ЗапланированноеЗадание.md"
+    ).read_text(encoding="utf-8")
+    normalized_skill = " ".join(skill_text.split())
+
+    assert "{subsystem_path}/{Имя}.yaml" in skill_text
+    assert "{subsystem_path}/{Имя}.xbsl" in skill_text
+    assert "{project_path}/{Имя}" not in skill_text
+    assert (
+        "Если `Подсистема` указана, выбери точное совпадение внутри проекта"
+        in normalized_skill
+    )
+    assert (
+        "Если `Подсистема` не указана и найдено несколько подсистем, уточни "
+        "целевую у пользователя; не используй `suggested_path` как неявный выбор."
+        in normalized_skill
+    )
+    assert "проверяй имя только в ее `projects[].subsystems[].objects`" in normalized_skill
+    assert "Подсистема.yaml" in reference_text
+
+
+def test_minimal_fixture_pair_is_owned_by_the_discovered_subsystem():
+    project = FIXTURES / "minimal"
+    subsystem = project / "Основное"
+    yaml_path = subsystem / "ЗапланированноеЗадание.yaml"
+    module_path = subsystem / "ЗапланированноеЗадание.xbsl"
+
+    assert (project / "Проект.yaml").is_file()
+    assert (subsystem / "Подсистема.yaml").is_file()
+    assert yaml_path.is_file()
+    assert module_path.is_file()
+    assert yaml_path.parent == module_path.parent == subsystem
+    assert not (project / yaml_path.name).exists()
+    assert not (project / module_path.name).exists()
+
+    explore = load_explore()
+    projects = explore.find_projects(str(FIXTURES))
+    discovered_project = next(item for item in projects if item["path"] == str(project))
+    assert discovered_project["subsystems"] == [
+        {
+            "name": "Основное",
+            "path": str(subsystem),
+            "objects": [
+                {
+                    "name": "ЕжедневнаяОчистка",
+                    "type": "ЗапланированноеЗадание",
+                    "file": "ЗапланированноеЗадание.yaml",
+                }
+            ],
+        }
+    ]
+    assert explore.find_suggested_path([discovered_project]) == str(subsystem)
+
+
+def test_explore_suggestion_is_ambiguous_with_multiple_subsystems():
+    explore = load_explore()
+    projects = [
+        {
+            "name": "ТестовыйПроект",
+            "path": "/project",
+            "subsystems": [
+                {"name": "Первая", "path": "/project/Первая", "objects": []},
+                {"name": "Целевая", "path": "/project/Целевая", "objects": []},
+            ],
+        }
+    ]
+
+    assert explore.find_suggested_path(projects) == "/project/Первая"
+    assert len(projects[0]["subsystems"]) > 1
+
+
 def test_public_scheduled_task_artifacts_do_not_reference_local_only_materials():
     scanned = []
 
@@ -200,7 +290,7 @@ def test_public_scheduled_task_artifacts_do_not_reference_local_only_materials()
 
 
 def test_minimal_daily_scheduled_task_fixture_matches_contract_and_validator(capsys):
-    root = FIXTURES / "minimal"
+    root = FIXTURES / "minimal" / "Основное"
     yaml_path = root / "ЗапланированноеЗадание.yaml"
     module_path = root / "ЗапланированноеЗадание.xbsl"
     data = load_yaml(yaml_path)
@@ -239,7 +329,7 @@ def test_time_literals_are_unquoted_in_public_contract_and_fixtures():
     paths = [
         SCHEDULED_SKILL_ROOT / "SKILL.md",
         SCHEDULED_SKILL_ROOT / "references" / "ЗапланированноеЗадание.md",
-        FIXTURES / "minimal" / fixture_name,
+        FIXTURES / "minimal" / "Основное" / fixture_name,
         FIXTURES / "negative" / "handler_with_parameters" / fixture_name,
         FIXTURES / "negative" / "missing_companion" / fixture_name,
         FIXTURES / "negative" / "missing_handler" / fixture_name,

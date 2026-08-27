@@ -29,7 +29,11 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
 - использует sibling skill `xbsl-meta-add/object-coverage.json` из того же
   корня `skills` как единственный registry типов, статусов и владельцев;
 - использует `xbsl-meta-add/references/types.md` как источник grammar для
-  `Тип`.
+  `Тип`;
+- сначала определяет owning schema; common-поля и grammar `Тип` проверяет
+  только у функциональных объектов и только в их документированных type slots,
+  а UI, `Проект.yaml` и `Подсистема.yaml` маршрутизирует без объектных
+  false-positive diagnostics.
 
 Коды завершения:
 

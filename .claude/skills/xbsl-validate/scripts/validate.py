@@ -48,6 +48,24 @@ CODE_2_RULES = {
     "yaml.parse",
     "yaml.duplicate_key",
 }
+FUNCTIONAL_TYPE_COLLECTIONS = frozenset(
+    {
+        "Реквизиты",
+        "Измерения",
+        "Ресурсы",
+        "Параметры",
+        "ПараметрыЗаписи",
+        "ПараметрыУдаления",
+        "ПараметрыЗапроса",
+        "Поля",
+        "Константы",
+        "Свойства",
+    }
+)
+STRUCTURAL_FILE_KINDS = {
+    "Проект.yaml": "Проект",
+    "Подсистема.yaml": "Подсистема",
+}
 
 
 @dataclass(frozen=True)
@@ -295,17 +313,19 @@ def key_line(text: str, key: str) -> int | None:
     return text[: match.start()].count("\n") + 1
 
 
-def walk_values(value: Any, key: str) -> list[tuple[Any, int | None]]:
-    result: list[tuple[Any, int | None]] = []
-    def walk(node: Any) -> None:
+def walk_functional_type_values(value: Any) -> list[Any]:
+    result: list[Any] = []
+
+    def walk(node: Any, collection: str | None = None) -> None:
         if isinstance(node, dict):
+            if collection in FUNCTIONAL_TYPE_COLLECTIONS and "Тип" in node:
+                result.append(node["Тип"])
             for node_key, node_value in node.items():
-                if node_key == key:
-                    result.append((node_value, None))
-                walk(node_value)
+                walk(node_value, node_key)
         elif isinstance(node, list):
             for item in node:
-                walk(item)
+                walk(item, collection)
+
     walk(value)
     return result
 
@@ -359,9 +379,7 @@ def valid_type_expression(value: str) -> bool:
     return value in SCALAR_TYPES or bool(NAME_RE.fullmatch(value))
 
 
-def validate_common(input_file: InputFile, document: Any) -> list[Diagnostic]:
-    diagnostics: list[Diagnostic] = []
-    text = input_file.actual_path.read_text(encoding="utf-8")
+def validate_yaml_root(input_file: InputFile, document: Any) -> list[Diagnostic]:
     if not isinstance(document, dict):
         return [
             Diagnostic(
@@ -372,6 +390,15 @@ def validate_common(input_file: InputFile, document: Any) -> list[Diagnostic]:
                 "YAML root must be a mapping",
             )
         ]
+    return []
+
+
+def validate_common(input_file: InputFile, document: Any) -> list[Diagnostic]:
+    diagnostics = validate_yaml_root(input_file, document)
+    if diagnostics:
+        return diagnostics
+
+    text = input_file.actual_path.read_text(encoding="utf-8")
 
     for field in ("ВидЭлемента", "Ид", "Имя"):
         if field not in document:
@@ -406,7 +433,7 @@ def validate_common(input_file: InputFile, document: Any) -> list[Diagnostic]:
                 "Invalid UUID in field Ид",
             )
         )
-    for type_value, _ in walk_values(document, "Тип"):
+    for type_value in walk_functional_type_values(document):
         if not isinstance(type_value, str) or not valid_type_expression(type_value):
             diagnostics.append(
                 Diagnostic(
@@ -462,15 +489,25 @@ ROUTED_VALIDATORS: dict[str, Callable[[InputFile, Mapping[str, Any]], list[Diagn
 }
 
 
+def resolve_schema_kind(input_file: InputFile, document: Mapping[str, Any]) -> str | None:
+    kind = document.get("ВидЭлемента")
+    if isinstance(kind, str) and kind:
+        return kind
+    if "ВидЭлемента" not in document:
+        return STRUCTURAL_FILE_KINDS.get(input_file.actual_path.name)
+    return None
+
+
 def validate_coverage_status(
     input_file: InputFile,
     document: Any,
     objects: Mapping[str, Any],
     routing: Mapping[str, Any],
+    schema_kind: str | None = None,
 ) -> list[Diagnostic]:
     if not isinstance(document, dict):
         return []
-    kind = document.get("ВидЭлемента")
+    kind = schema_kind if schema_kind is not None else document.get("ВидЭлемента")
     if not isinstance(kind, str) or not kind:
         return []
     if kind in objects:
@@ -532,15 +569,26 @@ def validate_file(
     document, parse_error = load_yaml(input_file)
     if parse_error is not None:
         return [parse_error]
-    diagnostics = validate_common(input_file, document)
-    can_dispatch = (
-        isinstance(document, dict)
-        and "ВидЭлемента" in document
-        and isinstance(document["ВидЭлемента"], str)
-        and bool(document["ВидЭлемента"])
+
+    diagnostics = validate_yaml_root(input_file, document)
+    if diagnostics:
+        return diagnostics
+
+    schema_kind = resolve_schema_kind(input_file, document)
+    if schema_kind is None:
+        return validate_common(input_file, document)
+
+    if schema_kind in objects:
+        diagnostics.extend(validate_common(input_file, document))
+    diagnostics.extend(
+        validate_coverage_status(
+            input_file,
+            document,
+            objects,
+            routing,
+            schema_kind=schema_kind,
+        )
     )
-    if can_dispatch:
-        diagnostics.extend(validate_coverage_status(input_file, document, objects, routing))
     return diagnostics
 
 

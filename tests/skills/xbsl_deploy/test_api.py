@@ -8,6 +8,7 @@ import runpy
 import sys
 import urllib.error
 import urllib.request
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -52,6 +53,51 @@ def run_main(api, monkeypatch, capsys, argv: list[str], expected_exit: int | Non
 
     assert exc_info.value.code == expected_exit
     return json.loads(capsys.readouterr().out)
+
+
+def write_assembly(path: Path, *, vendor: str = "Demo", name: str = "TestApp") -> Path:
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr(
+            "Assembly.yaml",
+            (
+                "ManifestVersion: 1.0\n"
+                "ProjectKind: Application\n"
+                f"Vendor: {vendor}\n"
+                f"Name: {name}\n"
+                "Version: 1.0-1\n"
+            ),
+        )
+    return path
+
+
+def run_upload_build(
+    api,
+    monkeypatch,
+    capsys,
+    build_path: Path | str,
+    *,
+    project_id: str = "",
+    space_id: str = "",
+    expected_exit: int | None = None,
+):
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    argv = [
+        "--action",
+        "upload-build",
+        "--file",
+        str(build_path),
+        "--base-url",
+        "https://example.com",
+        "--client-id",
+        "client",
+        "--client-secret",
+        "secret",
+    ]
+    if project_id:
+        argv.extend(("--project-id", project_id))
+    if space_id:
+        argv.extend(("--space-id", space_id))
+    return run_main(api, monkeypatch, capsys, argv, expected_exit=expected_exit)
 
 
 @pytest.fixture
@@ -135,6 +181,17 @@ def test_build_branch_body_skips_optional_fields_when_missing(api) -> None:
 def test_require_object_response_returns_dict_or_none(api) -> None:
     assert api.require_object_response({"id": "branch-1"}) == {"id": "branch-1"}
     assert api.require_object_response([{"id": "branch-1"}]) is None
+
+
+def test_read_assembly_identity_handles_quoted_values_and_yaml_comments(api, tmp_path: Path) -> None:
+    build_path = tmp_path / "TestApp.xasm"
+    with zipfile.ZipFile(build_path, "w") as archive:
+        archive.writestr(
+            "Assembly.yaml",
+            "Vendor: Demo # supplier\nName: \"TestApp\" # technical project name\n",
+        )
+
+    assert api.read_assembly_identity(str(build_path)) == ("Demo", "TestApp")
 
 
 @pytest.mark.parametrize(
@@ -1019,22 +1076,6 @@ def test_main_single_request_actions(api, monkeypatch, capsys, argv: list[str], 
             ),
             {"id": "assembly-1"},
         ),
-        (
-            ["--action", "upload-build", "--file", "/tmp/build.zip"],
-            (
-                "POST",
-                "https://example.com/console/api/v2/projects",
-                "TOKEN",
-                "/tmp/build.zip",
-                {
-                    "SpaceId": "",
-                    "BranchName": "",
-                    "CommitId": "",
-                    "CommitMessage": "",
-                },
-            ),
-            {"id": "project-1"},
-        ),
     ],
 )
 def test_main_upload_build_routes_to_binary_request(api, monkeypatch, capsys, argv: list[str], expected_call, response) -> None:
@@ -1056,6 +1097,352 @@ def test_main_upload_build_routes_to_binary_request(api, monkeypatch, capsys, ar
 
     assert calls == [expected_call]
     assert result == response
+
+
+def test_upload_without_project_id_blocks_exact_identity_before_binary(
+    api, monkeypatch, capsys, tmp_path: Path
+) -> None:
+    build_path = write_assembly(tmp_path / "TestApp.xasm")
+    calls = []
+
+    def fake_request(method, url, token, body=None):
+        calls.append((method, url, token, body))
+        if url.endswith("/projects"):
+            return {
+                "projects": [
+                    {
+                        "id": "group-1",
+                        "project-kind": "Group",
+                        "space-id": "space-1",
+                        "deleted": False,
+                    },
+                    {
+                        "id": "project-1",
+                        "project-kind": "Application",
+                        "space-id": "space-1",
+                        "deleted": False,
+                    },
+                ]
+            }
+        assert url.endswith("/projects/project-1/assemblies")
+        return {
+            "assemblies": [
+                {"project-developer": "OldVendor", "project-name": "OldApp"},
+                {"project-developer": "Demo", "project-name": "TestApp"},
+            ]
+        }
+
+    monkeypatch.setattr(api, "api_request", fake_request)
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda *_args, **_kwargs: pytest.fail("upload must not be called on identity conflict"),
+    )
+
+    result = run_upload_build(
+        api, monkeypatch, capsys, build_path, space_id="space-1", expected_exit=1
+    )
+
+    assert calls == [
+        ("GET", "https://example.com/console/api/v2/projects", "TOKEN", None),
+        (
+            "GET",
+            "https://example.com/console/api/v2/projects/project-1/assemblies",
+            "TOKEN",
+            None,
+        ),
+    ]
+    assert result["rule_id"] == "deploy.project_identity_conflict"
+    assert result["identity"] == {"vendor": "Demo", "name": "TestApp"}
+    assert result["project-ids"] == ["project-1"]
+    assert "--project-id" in result["details"]
+
+
+def test_upload_without_project_id_collects_all_exact_identity_conflicts(
+    api, monkeypatch, capsys, tmp_path: Path
+) -> None:
+    build_path = write_assembly(tmp_path / "TestApp.xasm")
+    calls = []
+
+    def fake_request(method, url, token, body=None):
+        calls.append((method, url, token, body))
+        if url.endswith("/projects"):
+            return [
+                {"id": "project-b", "project-kind": "Application", "deleted": False},
+                {"id": "project-a", "project-kind": "Application", "deleted": False},
+            ]
+        return [{"project-developer": "Demo", "project-name": "TestApp"}]
+
+    monkeypatch.setattr(api, "api_request", fake_request)
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda *_args, **_kwargs: pytest.fail("upload must not be called on identity conflict"),
+    )
+
+    result = run_upload_build(api, monkeypatch, capsys, build_path, expected_exit=1)
+
+    assert result["project-ids"] == ["project-a", "project-b"]
+    assert [call[1] for call in calls] == [
+        "https://example.com/console/api/v2/projects",
+        "https://example.com/console/api/v2/projects/project-b/assemblies",
+        "https://example.com/console/api/v2/projects/project-a/assemblies",
+    ]
+
+
+def test_upload_without_project_id_fails_closed_when_project_listing_fails_without_leaking_details(
+    api, monkeypatch, capsys, tmp_path: Path
+) -> None:
+    build_path = write_assembly(tmp_path / "TestApp.xasm")
+    calls = []
+
+    monkeypatch.setattr(
+        api,
+        "api_request",
+        lambda method, url, token, body=None: calls.append((method, url, token, body))
+        or {"error": "HTTP 503", "details": {"token": "DO_NOT_PRINT"}},
+    )
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda *_args, **_kwargs: pytest.fail("upload must not be called when preflight is unavailable"),
+    )
+
+    result = run_upload_build(api, monkeypatch, capsys, build_path, expected_exit=1)
+
+    assert len(calls) == 1
+    assert result["rule_id"] == "deploy.project_identity_preflight_failed"
+    assert "HTTP 503" in result["details"]
+    assert "DO_NOT_PRINT" not in json.dumps(result)
+
+
+@pytest.mark.parametrize(
+    ("existing_vendor", "existing_name"),
+    [("demo", "TestApp"), ("Demo", "testapp"), ("Other", "TestApp"), ("Demo", "Other")],
+)
+def test_upload_without_project_id_uses_exact_pair_and_keeps_create_flow_when_unique(
+    api,
+    monkeypatch,
+    capsys,
+    tmp_path: Path,
+    existing_vendor: str,
+    existing_name: str,
+) -> None:
+    build_path = write_assembly(tmp_path / "TestApp.xasm")
+    calls = []
+
+    def fake_request(method, url, token, body=None):
+        calls.append((method, url, token, body))
+        if url.endswith("/projects"):
+            return [{"id": "project-1", "project-kind": "Application", "deleted": False}]
+        return [{"project-developer": existing_vendor, "project-name": existing_name}]
+
+    def fake_binary(method, url, token, file_path, params=None):
+        calls.append((method, url, token, file_path, params))
+        return {"id": "project-new"}
+
+    monkeypatch.setattr(api, "api_request", fake_request)
+    monkeypatch.setattr(api, "api_request_binary", fake_binary)
+
+    result = run_upload_build(api, monkeypatch, capsys, build_path, space_id="space-1")
+
+    assert result == {"id": "project-new"}
+    assert calls[-1] == (
+        "POST",
+        "https://example.com/console/api/v2/projects",
+        "TOKEN",
+        str(build_path),
+        {
+            "SpaceId": "space-1",
+            "BranchName": "",
+            "CommitId": "",
+            "CommitMessage": "",
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    "assemblies_response",
+    [
+        {"error": "HTTP 502", "details": {"token": "DO_NOT_PRINT"}},
+        {},
+        [],
+        [{"project-developer": "Demo"}],
+    ],
+)
+def test_upload_without_project_id_fails_closed_when_project_identity_is_unavailable(
+    api,
+    monkeypatch,
+    capsys,
+    tmp_path: Path,
+    assemblies_response,
+) -> None:
+    build_path = write_assembly(tmp_path / "TestApp.xasm")
+    calls = []
+
+    def fake_request(method, url, token, body=None):
+        calls.append((method, url, token, body))
+        if url.endswith("/projects"):
+            return [{"id": "project-1", "project-kind": "Application", "deleted": False}]
+        return assemblies_response
+
+    monkeypatch.setattr(api, "api_request", fake_request)
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda *_args, **_kwargs: pytest.fail("upload must not be called when identity is unavailable"),
+    )
+
+    result = run_upload_build(api, monkeypatch, capsys, build_path, expected_exit=1)
+
+    assert len(calls) == 2
+    assert result["rule_id"] == "deploy.project_identity_preflight_failed"
+    assert "project-1" in result["details"]
+    assert "DO_NOT_PRINT" not in json.dumps(result)
+
+
+@pytest.mark.parametrize(
+    "archive_kind",
+    ["not_zip", "missing_manifest", "missing_name", "duplicate_manifest", "yaml_escape"],
+)
+def test_upload_without_project_id_rejects_invalid_local_identity_before_network(
+    api,
+    monkeypatch,
+    capsys,
+    tmp_path: Path,
+    archive_kind: str,
+) -> None:
+    build_path = tmp_path / "TestApp.xasm"
+    if archive_kind == "not_zip":
+        build_path.write_bytes(b"not a zip archive")
+    else:
+        with zipfile.ZipFile(build_path, "w") as archive:
+            if archive_kind != "missing_manifest":
+                if archive_kind == "missing_name":
+                    manifest = "Vendor: Demo\n"
+                elif archive_kind == "yaml_escape":
+                    manifest = 'Vendor: "De\\x6do"\nName: TestApp\n'
+                else:
+                    manifest = "Vendor: Demo\nName: TestApp\n"
+                archive.writestr("Assembly.yaml", manifest)
+                if archive_kind == "duplicate_manifest":
+                    with pytest.warns(UserWarning, match="Duplicate name"):
+                        archive.writestr("Assembly.yaml", manifest)
+
+    monkeypatch.setattr(
+        api,
+        "api_request",
+        lambda *_args, **_kwargs: pytest.fail("network must not be called for invalid local identity"),
+    )
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda *_args, **_kwargs: pytest.fail("upload must not be called for invalid local identity"),
+    )
+
+    result = run_upload_build(api, monkeypatch, capsys, build_path, expected_exit=1)
+
+    assert result["rule_id"] == "deploy.project_identity_preflight_failed"
+
+
+def test_upload_without_project_id_ignores_deleted_and_other_space_projects(
+    api, monkeypatch, capsys, tmp_path: Path
+) -> None:
+    build_path = write_assembly(tmp_path / "TestApp.xasm")
+    read_calls = []
+    binary_calls = []
+
+    def fake_request(method, url, token, body=None):
+        read_calls.append((method, url, token, body))
+        assert url.endswith("/projects")
+        return [
+            {
+                "id": "deleted-project",
+                "project-kind": "Application",
+                "space-id": "space-1",
+                "deleted": True,
+            },
+            {
+                "id": "other-space-project",
+                "project-kind": "Application",
+                "space-id": "space-2",
+                "deleted": False,
+            },
+        ]
+
+    monkeypatch.setattr(api, "api_request", fake_request)
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda method, url, token, file_path, params=None: binary_calls.append(
+            (method, url, token, file_path, params)
+        )
+        or {"id": "project-new"},
+    )
+
+    result = run_upload_build(api, monkeypatch, capsys, build_path, space_id="space-1")
+
+    assert result == {"id": "project-new"}
+    assert len(read_calls) == 1
+    assert len(binary_calls) == 1
+
+
+def test_upload_without_project_id_fails_closed_on_malformed_project_space_id(
+    api, monkeypatch, capsys, tmp_path: Path
+) -> None:
+    build_path = write_assembly(tmp_path / "TestApp.xasm")
+    monkeypatch.setattr(
+        api,
+        "api_request",
+        lambda *_args, **_kwargs: [
+            {
+                "id": "project-1",
+                "project-kind": "Application",
+                "space-id": {"id": "space-1"},
+                "deleted": False,
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda *_args, **_kwargs: pytest.fail("upload must not be called for malformed space id"),
+    )
+
+    result = run_upload_build(
+        api, monkeypatch, capsys, build_path, space_id="space-1", expected_exit=1
+    )
+
+    assert result["rule_id"] == "deploy.project_identity_preflight_failed"
+    assert "space id" in result["details"]
+
+
+def test_upload_with_project_id_skips_identity_preflight(api, monkeypatch, capsys) -> None:
+    binary_calls = []
+    monkeypatch.setattr(
+        api,
+        "api_request",
+        lambda *_args, **_kwargs: pytest.fail("read-only preflight must be skipped with explicit project id"),
+    )
+    monkeypatch.setattr(
+        api,
+        "api_request_binary",
+        lambda method, url, token, file_path, params=None: binary_calls.append(
+            (method, url, token, file_path, params)
+        )
+        or {"id": "assembly-1"},
+    )
+
+    result = run_upload_build(
+        api,
+        monkeypatch,
+        capsys,
+        "/path/need-not-exist.xasm",
+        project_id="project-1",
+    )
+
+    assert result == {"id": "assembly-1"}
+    assert binary_calls[0][1] == "https://example.com/console/api/v2/projects/project-1/assemblies"
 
 
 def test_main_sync_branch_uses_branch_id_from_env(api, monkeypatch, capsys) -> None:

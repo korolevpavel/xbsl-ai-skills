@@ -56,15 +56,23 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 
 # TTL кеша токена в секундах
 TOKEN_TTL = 3600
+ASSEMBLY_MANIFEST_MAX_BYTES = 64 * 1024
+IDENTITY_CONFLICT_RULE_ID = "deploy.project_identity_conflict"
+IDENTITY_PREFLIGHT_RULE_ID = "deploy.project_identity_preflight_failed"
 
 
 class TokenFetchError(Exception):
     def __init__(self, payload: dict):
         super().__init__(payload.get("error", "token fetch error"))
         self.payload = payload
+
+
+class IdentityPreflightError(Exception):
+    """Безопасная диагностическая ошибка preflight без сырых ответов API."""
 
 
 def build_error(error: str, details=None, response=None) -> dict:
@@ -74,6 +82,210 @@ def build_error(error: str, details=None, response=None) -> dict:
     if response is not None:
         payload["response"] = response
     return payload
+
+
+def identity_preflight_error(details: str) -> dict:
+    return {
+        "error": "Project identity preflight failed",
+        "details": details,
+        "rule_id": IDENTITY_PREFLIGHT_RULE_ID,
+    }
+
+
+def identity_conflict_error(vendor: str, name: str, project_ids: list[str]) -> dict:
+    ids = sorted(set(project_ids))
+    return {
+        "error": "Project identity conflict",
+        "details": (
+            "Existing project assembly metadata contains the exact Vendor + Name identity. "
+            "Inspect the listed project(s), then repeat with an explicit --project-id only if "
+            "the selected project is correct; automatic selection is forbidden."
+        ),
+        "rule_id": IDENTITY_CONFLICT_RULE_ID,
+        "identity": {"vendor": vendor, "name": name},
+        "project-ids": ids,
+    }
+
+
+def safe_api_error(response, fallback: str) -> str:
+    """Вернуть только безопасное поле error, не копируя details/response с секретами."""
+    if isinstance(response, dict) and isinstance(response.get("error"), str):
+        return response["error"]
+    return fallback
+
+
+def api_collection(response, wrapper_keys: tuple[str, ...]) -> list | None:
+    if isinstance(response, list):
+        return response
+    if not isinstance(response, dict) or "error" in response:
+        return None
+    for key in wrapper_keys:
+        value = response.get(key)
+        if isinstance(value, list):
+            return value
+    return None
+
+
+def parse_manifest_value(raw_value: str) -> str:
+    """Разобрать безопасный строковый YAML scalar и отбросить inline comment."""
+    value = raw_value.strip()
+    if not value:
+        return ""
+    if value.startswith('"'):
+        try:
+            parsed, end = json.JSONDecoder().raw_decode(value)
+        except json.JSONDecodeError as error:
+            raise IdentityPreflightError("Assembly.yaml contains invalid quoted identity") from error
+        if not isinstance(parsed, str):
+            raise IdentityPreflightError("Assembly.yaml identity must be a string")
+        remainder = value[end:].strip()
+        if remainder and not remainder.startswith("#"):
+            raise IdentityPreflightError("Assembly.yaml contains trailing identity data")
+        return parsed
+    if value.startswith("'"):
+        characters: list[str] = []
+        index = 1
+        while index < len(value):
+            if value[index] != "'":
+                characters.append(value[index])
+                index += 1
+                continue
+            if index + 1 < len(value) and value[index + 1] == "'":
+                characters.append("'")
+                index += 2
+                continue
+            remainder = value[index + 1:].strip()
+            if remainder and not remainder.startswith("#"):
+                raise IdentityPreflightError("Assembly.yaml contains trailing identity data")
+            return "".join(characters)
+        raise IdentityPreflightError("Assembly.yaml contains invalid quoted identity")
+
+    for index, character in enumerate(value):
+        if character == "#" and index > 0 and value[index - 1].isspace():
+            value = value[:index].rstrip()
+            break
+    return value
+
+
+def read_assembly_identity(file_path: str) -> tuple[str, str]:
+    """Прочитать точную пару Vendor + Name из корневого Assembly.yaml."""
+    try:
+        with zipfile.ZipFile(file_path) as archive:
+            manifests = [info for info in archive.infolist() if info.filename == "Assembly.yaml"]
+            if not manifests:
+                raise IdentityPreflightError("Assembly.yaml is missing at archive root")
+            if len(manifests) != 1:
+                raise IdentityPreflightError("Archive contains duplicate Assembly.yaml entries")
+            manifest_info = manifests[0]
+            if manifest_info.file_size > ASSEMBLY_MANIFEST_MAX_BYTES:
+                raise IdentityPreflightError("Assembly.yaml is too large")
+            manifest = archive.read(manifest_info).decode("utf-8-sig")
+    except IdentityPreflightError:
+        raise
+    except Exception as error:
+        raise IdentityPreflightError(f"Cannot read Assembly.yaml: {type(error).__name__}") from error
+
+    values: dict[str, str] = {}
+    for line in manifest.splitlines():
+        if not line or line[0].isspace() or line.lstrip().startswith("#") or ":" not in line:
+            continue
+        key, _, raw_value = line.partition(":")
+        key = key.strip()
+        if key not in ("Vendor", "Name"):
+            continue
+        value = parse_manifest_value(raw_value)
+        if not value:
+            raise IdentityPreflightError(f"Assembly.yaml field {key} is empty")
+        if not value.isidentifier():
+            raise IdentityPreflightError(f"Assembly.yaml field {key} is not a valid identifier")
+        if key in values:
+            raise IdentityPreflightError(f"Assembly.yaml contains duplicate {key} fields")
+        values[key] = value
+
+    missing = [key for key in ("Vendor", "Name") if key not in values]
+    if missing:
+        raise IdentityPreflightError(
+            "Assembly.yaml is missing required identity field(s): " + ", ".join(missing)
+        )
+    return values["Vendor"], values["Name"]
+
+
+def assembly_identity(record: dict) -> tuple[str, str] | None:
+    vendor = record.get("project-developer")
+    name = record.get("project-name")
+    if isinstance(vendor, str) and vendor and isinstance(name, str) and name:
+        return vendor, name
+    return None
+
+
+def find_project_identity_conflicts(
+    base: str,
+    token: str,
+    space_id: str,
+    target_identity: tuple[str, str],
+) -> list[str]:
+    projects_url = f"{base}/console/api/v2/projects"
+    projects_response = api_request("GET", projects_url, token)
+    projects = api_collection(projects_response, ("items", "projects"))
+    if projects is None:
+        reason = safe_api_error(projects_response, "unexpected list-projects response")
+        raise IdentityPreflightError(f"Cannot list projects: {reason}")
+
+    conflicts: list[str] = []
+    seen_project_ids: set[str] = set()
+    for project in projects:
+        if not isinstance(project, dict):
+            raise IdentityPreflightError("Cannot inspect project identity: malformed project record")
+        if str(project.get("project-kind", "")).casefold() == "group":
+            continue
+        if project.get("deleted") is True:
+            continue
+        project_space_id = project.get("space-id")
+        if space_id and project_space_id:
+            if not isinstance(project_space_id, str):
+                raise IdentityPreflightError(
+                    "Cannot inspect project identity: malformed project space id"
+                )
+            if project_space_id != space_id:
+                continue
+
+        project_id = project.get("id")
+        if not isinstance(project_id, str) or not project_id:
+            raise IdentityPreflightError("Cannot inspect project identity: project id is missing")
+        if project_id in seen_project_ids:
+            continue
+        seen_project_ids.add(project_id)
+
+        assemblies_url = f"{base}/console/api/v2/projects/{project_id}/assemblies"
+        assemblies_response = api_request("GET", assemblies_url, token)
+        assemblies = api_collection(assemblies_response, ("items", "assemblies"))
+        if assemblies is None:
+            reason = safe_api_error(assemblies_response, "unexpected list-builds response")
+            raise IdentityPreflightError(
+                f"Cannot inspect project {project_id} identity: {reason}"
+            )
+        if not assemblies:
+            raise IdentityPreflightError(
+                f"Cannot inspect project {project_id} identity: no assemblies returned"
+            )
+
+        identities: set[tuple[str, str]] = set()
+        for assembly in assemblies:
+            if not isinstance(assembly, dict):
+                raise IdentityPreflightError(
+                    f"Cannot inspect project {project_id} identity: malformed assembly record"
+                )
+            identity = assembly_identity(assembly)
+            if identity is None:
+                raise IdentityPreflightError(
+                    f"Cannot inspect project {project_id} identity: assembly identity is missing"
+                )
+            identities.add(identity)
+
+        if target_identity in identities:
+            conflicts.append(project_id)
+
+    return sorted(conflicts)
 
 
 def parse_json_or_text(raw: str):
@@ -487,6 +699,28 @@ def main():
         if args.project_id:
             url = f"{base}/console/api/v2/projects/{args.project_id}/assemblies"
         else:
+            try:
+                identity = read_assembly_identity(args.file)
+                conflicts = find_project_identity_conflicts(
+                    base,
+                    token,
+                    args.space_id,
+                    identity,
+                )
+            except IdentityPreflightError as error:
+                print(json.dumps(
+                    identity_preflight_error(str(error)),
+                    ensure_ascii=False,
+                    indent=2,
+                ))
+                sys.exit(1)
+            if conflicts:
+                print(json.dumps(
+                    identity_conflict_error(*identity, conflicts),
+                    ensure_ascii=False,
+                    indent=2,
+                ))
+                sys.exit(1)
             url = f"{base}/console/api/v2/projects"
         params = {
             "SpaceId": args.space_id,

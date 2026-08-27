@@ -32,6 +32,7 @@ HTTP-клиент для Console API v2 (1С:Предприятие.Элемен
     {python} api.py --action get-dump --app-id <id> --dump-id <id>
     {python} api.py --action merge-branch --branch-id <id>
     {python} api.py --action list-app-tasks --app-id <id>
+    {python} api.py --action get-app-task --task-id <id>
     {python} api.py --action get-technology-version --app-id <id>
     {python} api.py --action update-technology-version --app-id <id> --technology-version <version>
 
@@ -934,6 +935,14 @@ def main():
         # Фильтруем по application-id на клиенте (API не поддерживает query-фильтр)
         if isinstance(result, list):
             result = [t for t in result if t.get("application-id") == args.app_id]
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif action == "get-app-task":
+        if not args.task_id:
+            print(json.dumps({"error": "--task-id required"}, ensure_ascii=False))
+            sys.exit(1)
+        url = f"{base}/console/api/v2/tasks/application-tasks/{args.task_id}"
+        result = api_request("GET", url, token)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
     else:

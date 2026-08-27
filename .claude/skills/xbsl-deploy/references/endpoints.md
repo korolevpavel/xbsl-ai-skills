@@ -240,12 +240,12 @@ POST /console/api/v2/applications/{app-id}/project/update
 
 | Метод | Endpoint | Описание |
 |---|---|---|
-| GET | `/console/api/v2/tasks/applications` | Список фоновых задач приложений |
-| GET | `/console/api/v2/tasks/{id}` | Информация о задаче |
+| GET | `/console/api/v2/tasks/application-tasks` | Список фоновых задач приложений; фильтрация по `application-id` выполняется клиентом |
+| GET | `/console/api/v2/tasks/application-tasks/{id}` | Информация о конкретной задаче приложения |
 
 ### Поля задачи
 - `id` — идентификатор
-- `status` — статус (`InProgress`, `Done`, `Error`)
+- `status` — статус (`InProgress`, `Completed`, `Failed`, `Cancelled`/`Canceled`; также возможны совместимые `Done`/`Error`)
 - `operation-type` — тип операции (например `CreateApplication`, `StartApplication`)
 - `start-date` / `end-date` — даты начала и окончания
 - `application-id` — идентификатор приложения

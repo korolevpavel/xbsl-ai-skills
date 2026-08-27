@@ -340,6 +340,24 @@ grep "ВидПроекта" <путь>/Проект.yaml
 3. **Жди явного подтверждения** пользователя («да», «исправь», «ок» и т.п.).
 4. Только после подтверждения — внеси исправление и повтори деплой.
 
+`deploy.py` не считает старое состояние `Running` доказательством успешного
+обновления. Перед `project-update` он сохраняет существующие application task,
+после вызова использует явный task ID из ответа/current-task либо требует ровно
+одну новую `UpdateApplicationConfiguration`, читает её через
+`/tasks/application-tasks/{id}` и ждёт terminal status. Неоднозначный набор
+новых задач блокирует проверку. После `Completed`
+дополнительно проверяются `Running`, `error == null`, `current-task == null` и
+точный `source.project-version-id` загруженной сборки.
+
+- ошибка API/transport или нечитаемый API-ответ: `deploy.api_request_failed`;
+- Failed/Error/Cancelled/Canceled у task или ошибка приложения:
+  `deploy.application_update_failed`;
+- отсутствие новой terminal task, таймаут, незавершённая `current-task` или
+  несовпавший `project-version-id`: `deploy.application_update_unverified`.
+
+Все диагностики fail-closed: команда завершится с ненулевым кодом и не выведет
+сообщение об успешном деплое.
+
 **Путь 2** (из git-ветки): нужны `ELEMENT_APP_ID`, `ELEMENT_BRANCH_ID`.
 ⚠️ `sync-branch` требует браузерную сессию — через API **невозможен** (Bearer возвращает 403).
 ```bash

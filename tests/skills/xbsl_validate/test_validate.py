@@ -430,6 +430,188 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
     assert data["diagnostics"] == []
 
 
+@pytest.mark.parametrize(
+    ("relative_path", "line", "rule_id", "message_fragment"),
+    [
+        (
+            "report/invalid_yaml_query/ОшибочныйЗапрос.yaml",
+            5,
+            "owner.report.source",
+            "same-name .xbql companion",
+        ),
+        (
+            "report/missing_companion/БезЗапроса.yaml",
+            None,
+            "owner.report.query_companion",
+            "same-name .xbql companion",
+        ),
+        (
+            "report/misnamed_companion/Остатки.yaml",
+            None,
+            "owner.report.query_companion",
+            "same-name .xbql companion",
+        ),
+        (
+            "report/table_without_source/ТабличныйОтчет.yaml",
+            None,
+            "owner.report.source",
+            "non-empty ИсточникДанных",
+        ),
+        (
+            "report/parameter_mismatch/ПараметризованныйОтчет.yaml",
+            None,
+            "owner.report.query_parameters",
+            "exact set of &parameters",
+        ),
+        (
+            "report/invalid_interface/ОтчетСИнтерфейсом.yaml",
+            None,
+            "owner.report.interface",
+            "nested under Интерфейс",
+        ),
+        (
+            "report/invalid_form/ОтчетСФормой.yaml",
+            None,
+            "owner.report.interface",
+            "nested under Интерфейс",
+        ),
+        (
+            "report/missing_parameter_type/ПараметрБезТипа.yaml",
+            None,
+            "owner.report.query_parameters",
+            "exact set of &parameters",
+        ),
+        (
+            "report/query_with_source/ЗапросСИсточником.yaml",
+            None,
+            "owner.report.source",
+            "must not define",
+        ),
+        (
+            "register/missing_dimensions/ПустыеИзмерения.yaml",
+            None,
+            "owner.register.dimensions",
+            "non-empty Измерения",
+        ),
+        (
+            "register/missing_resources/ПустыеРесурсы.yaml",
+            None,
+            "owner.register.resources",
+            "non-empty Ресурсы",
+        ),
+        (
+            "register/bad_member/НеверныйЭлемент.yaml",
+            None,
+            "owner.register.member",
+            "requires non-empty Имя and Тип",
+        ),
+        (
+            "register/bad_uuid/НеверныйИдентификатор.yaml",
+            None,
+            "owner.register.invalid_uuid",
+            "invalid Ид",
+        ),
+        (
+            "register/bad_resource_type/СтроковыйРесурс.yaml",
+            None,
+            "owner.register.resource_type",
+            "type Число",
+        ),
+        (
+            "register/missing_registrar/БезРегистратора.yaml",
+            None,
+            "owner.register.registrar",
+            "requires one Регистратор",
+        ),
+        (
+            "register/bad_kind/НеверныйВид.yaml",
+            None,
+            "owner.register.kind",
+            "Остатки or Обороты",
+        ),
+        (
+            "scheduled/quoted_time/СтроковоеВремя.yaml",
+            9,
+            "owner.scheduled_task.time_literal",
+            "unquoted HH:MM",
+        ),
+        (
+            "scheduled/missing_schedule/БезРасписания.yaml",
+            None,
+            "owner.scheduled_task.schedule",
+            "non-empty list",
+        ),
+        (
+            "scheduled/invalid_schedule/НеверноеРасписание.yaml",
+            None,
+            "owner.scheduled_task.schedule",
+            "documented schedule entries",
+        ),
+        (
+            "scheduled/invalid_location/КорневоеЗадание.yaml",
+            None,
+            "owner.scheduled_task.location",
+            "inside a subsystem directory",
+        ),
+        (
+            "scheduled/split_companion/ПодсистемаЗадания/РазделенноеЗадание.yaml",
+            None,
+            "owner.scheduled_task.missing_companion",
+            "companion .xbsl file is required",
+        ),
+        (
+            "scheduled/yaml_handler/ОбработчикВYaml.yaml",
+            None,
+            "owner.scheduled_task.yaml_handler",
+            "same-name .xbsl companion",
+        ),
+        (
+            "scheduled/wrong_handler/ОбработчикСПараметром.yaml",
+            None,
+            "owner.scheduled_task.handler",
+            "Обработчик() without parameters",
+        ),
+        (
+            "scheduled/wrong_handler_binding/НепривязанныйОбработчик.yaml",
+            None,
+            "owner.scheduled_task.handler",
+            "Обработчик() without parameters",
+        ),
+    ],
+)
+def test_object_specific_fixture_maps_to_exact_diagnostic(
+    relative_path, line, rule_id, message_fragment, capsys
+):
+    target = FIXTURES / "object_rules" / relative_path
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 1, "errors": 1, "warnings": 0}
+    [diagnostic] = data["diagnostics"]
+    assert diagnostic["path"] == str(target)
+    assert diagnostic["line"] == line
+    assert diagnostic["severity"] == "error"
+    assert diagnostic["rule_id"] == rule_id
+    assert message_fragment in diagnostic["message"]
+
+
+def test_companion_regression_fixtures_contain_the_wrongly_placed_decoys():
+    report_root = FIXTURES / "object_rules" / "report" / "misnamed_companion"
+    assert (report_root / "ДругойОтчет.xbql").is_file()
+    assert not (report_root / "Остатки.xbql").exists()
+
+    scheduled_root = FIXTURES / "object_rules" / "scheduled" / "split_companion"
+    assert (
+        scheduled_root / "ПодсистемаОбработчика" / "РазделенноеЗадание.xbsl"
+    ).is_file()
+    assert not (
+        scheduled_root / "ПодсистемаЗадания" / "РазделенноеЗадание.xbsl"
+    ).exists()
+
+
 def test_report_object_specific_rules_have_stable_ids(capsys):
     root = FIXTURES / "object_rules" / "report"
     targets = [

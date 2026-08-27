@@ -333,17 +333,29 @@ def split_top_level(text: str, separator: str) -> list[str]:
 def valid_type_expression(value: str) -> bool:
     if not value or value.strip() != value:
         return False
+    union = split_top_level(value, "|")
+    if len(union) > 1:
+        nullable = union[-1] == "?"
+        members = union[:-1] if nullable else union
+        if nullable and len(members) < 2:
+            return False
+        return all(
+            member
+            and member != "?"
+            and not member.endswith("?")
+            and valid_type_expression(member)
+            for member in members
+        )
     if value.endswith("?"):
         inner = value[:-1]
         return bool(inner) and not inner.endswith("?") and valid_type_expression(inner)
-    union = split_top_level(value, "|")
-    if len(union) > 1:
-        return all(part and valid_type_expression(part) for part in union)
     if value.startswith("Массив<"):
         if not value.endswith(">"):
             return False
         inner = value[len("Массив<") : -1]
         return bool(inner) and valid_type_expression(inner)
+    if value == "Неопределено":
+        return False
     return value in SCALAR_TYPES or bool(NAME_RE.fullmatch(value))
 
 

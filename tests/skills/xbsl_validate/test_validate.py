@@ -292,3 +292,69 @@ def test_cli_is_read_only_and_deterministic(tmp_path, capsys):
 
     assert first == second
     assert snapshot_tree(target) == before
+
+
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    [
+        ("Строка?", True),
+        ("Строка|Число", True),
+        ("Строка|Число|Булево", True),
+        ("Строка|Число|?", True),
+        ("Строка|Число|Булево|?", True),
+        ("Поступление.Ссылка|Списание.Ссылка|?", True),
+        ("Массив<Строка?>", True),
+        ("Массив<Поступление.Ссылка|Списание.Ссылка|?>", True),
+        ("Массив<Массив<Строка|Число|?>>", True),
+        ("Строка|?", False),
+        ("Строка|Число?", False),
+        ("Строка?|Число", False),
+        ("Поступление.Ссылка?|Списание.Ссылка?", False),
+        ("Массив<Поступление.Ссылка|Списание.Ссылка?>", False),
+        ("Массив<Массив<Строка|Число?>>", False),
+        ("?|Строка|Число", False),
+        ("Строка|Число|?|?", False),
+        ("Строка | Число | ?", False),
+        ("Неопределено", False),
+        ("Строка|Неопределено", False),
+    ],
+)
+def test_nullable_union_type_grammar(expression, expected):
+    validator = load_validator()
+
+    assert validator.valid_type_expression(expression) is expected
+
+
+@pytest.mark.parametrize(
+    "expression",
+    [
+        "Строка|?",
+        "Строка|Число?",
+        "Поступление.Ссылка?|Списание.Ссылка?",
+        "Неопределено",
+        "Строка|Неопределено",
+    ],
+)
+def test_invalid_nullable_union_keeps_stable_cli_rule_id(
+    expression, tmp_path, capsys
+):
+    target = tmp_path / "Тип.yaml"
+    target.write_text(
+        "ВидЭлемента: Справочник\n"
+        "Ид: 11111111-1111-4111-8111-111111111111\n"
+        "Имя: ПроверкаТипа\n"
+        "Реквизиты:\n"
+        "  - Ид: 22222222-2222-4222-8222-222222222222\n"
+        "    Имя: Значение\n"
+        f"    Тип: {expression}\n",
+        encoding="utf-8",
+    )
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert data["summary"] == {"files": 1, "errors": 1, "warnings": 0}
+    assert [item["rule_id"] for item in data["diagnostics"]] == ["types.invalid"]
+    assert data["diagnostics"][0]["message"] == f"Invalid type expression: {expression}"

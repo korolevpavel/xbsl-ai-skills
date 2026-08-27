@@ -682,6 +682,7 @@ def test_main_non_token_action_prints_error_and_exits_on_token_fetch_failure(api
     ("argv", "expected_error"),
     [
         (["--action", "create-app"], "--name required"),
+        (["--action", "create-app", "--technology-version", "9.1"], "--name required"),
         (["--action", "get-app"], "--app-id required"),
         (["--action", "delete-app"], "--app-id required"),
         (["--action", "start-app"], "--app-id required"),
@@ -705,6 +706,10 @@ def test_main_non_token_action_prints_error_and_exits_on_token_fetch_failure(api
         (["--action", "get-dump"], "--app-id and --dump-id required"),
         (["--action", "get-technology-version"], "--app-id required"),
         (["--action", "update-technology-version"], "--app-id required"),
+        (
+            ["--action", "update-technology-version", "--technology-version", "9.1"],
+            "--app-id required",
+        ),
         (["--action", "update-technology-version", "--app-id", "app-1"], "--technology-version required"),
         (["--action", "get-group-task"], "--task-id required"),
     ],
@@ -721,6 +726,97 @@ def test_main_validates_required_action_arguments(api, monkeypatch, capsys, argv
     )
 
     assert result == {"error": expected_error}
+
+
+@pytest.mark.parametrize(
+    ("argv", "invalid_value"),
+    [
+        (
+            ["--action", "update-technology-version", "--app-id", "app-1", "--technology-version", "9.1"],
+            "9.1",
+        ),
+        (
+            ["--action", "update-technology-version", "--app-id", "app-1", "--technology-version", "9.2.9"],
+            "9.2.9",
+        ),
+        (
+            ["--action", "create-app", "--name", "demo", "--technology-version", "9.2.9-12-extra"],
+            "9.2.9-12-extra",
+        ),
+    ],
+)
+def test_main_rejects_invalid_technology_version_before_api_request(
+    api, monkeypatch, capsys, argv: list[str], invalid_value: str
+) -> None:
+    calls = []
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    monkeypatch.setattr(api, "api_request", lambda *args, **kwargs: calls.append((args, kwargs)) or {})
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [*argv, "--base-url", "https://example.com", "--client-id", "client", "--client-secret", "secret"],
+        expected_exit=1,
+    )
+
+    assert result == {
+        "error": "Invalid technology version format",
+        "details": {
+            "value": invalid_value,
+            "expected": "<major>.<minor>.<patch>-<build>",
+        },
+        "rule_id": "deploy.technology_version_format",
+    }
+    assert calls == []
+
+
+def test_update_technology_version_does_not_rewrite_project_yaml(
+    api, monkeypatch, capsys, tmp_path: Path
+) -> None:
+    project_yaml = tmp_path / "Проект.yaml"
+    original = "Имя: Demo\nРежимСовместимости: 9.1\n"
+    project_yaml.write_text(original, encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    calls = []
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    monkeypatch.setattr(
+        api,
+        "api_request",
+        lambda method, url, token, body=None: calls.append((method, url, token, body))
+        or {"id": "task-1"},
+    )
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action",
+            "update-technology-version",
+            "--app-id",
+            "app-1",
+            "--technology-version",
+            "9.2.9-12",
+            "--base-url",
+            "https://example.com",
+            "--client-id",
+            "client",
+            "--client-secret",
+            "secret",
+        ],
+    )
+
+    assert result == {"id": "task-1"}
+    assert calls == [
+        (
+            "POST",
+            "https://example.com/console/api/v2/tasks/group-tasks/update-applications-technology",
+            "TOKEN",
+            {"technology-version": "9.2.9-12", "applications": ["app-1"]},
+        )
+    ]
+    assert project_yaml.read_text(encoding="utf-8") == original
 
 
 @pytest.mark.parametrize(

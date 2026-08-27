@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import importlib.util
+import json
 import runpy
 import sys
 import zipfile
@@ -109,6 +110,11 @@ def test_parse_simple_yaml_ignores_nested_fields(build, tmp_path: Path) -> None:
     assert result["Имя"] == "DemoYandexMaps"
     assert result["Версия"] == "1.0.0"
     assert result["Поставщик"] == "korolevpavel"
+
+
+@pytest.mark.parametrize("value", ["6.0", "9.0", "9.1"])
+def test_compatibility_mode_format_accepts_major_minor(build, value: str) -> None:
+    assert build.compatibility_mode_format_error(value) is None
 
 
 def test_git_info_returns_commit_and_branch(build, monkeypatch) -> None:
@@ -221,6 +227,29 @@ def test_build_xasm_creates_expected_archive(build, monkeypatch, tmp_path: Path)
         assert "CommitId: abc123" in manifest
 
 
+def test_build_xasm_preserves_explicit_compatibility_mode(build, tmp_path: Path) -> None:
+    project_dir = tmp_path / "repo" / "TestVendor" / "CompatibilityRegression"
+    project_dir.mkdir(parents=True)
+    project_yaml = (
+        "Поставщик: TestVendor\n"
+        "Имя: CompatibilityRegression\n"
+        "Версия: 1.0\n"
+        "РежимСовместимости: 9.1\n"
+    )
+    (project_dir / "Проект.yaml").write_text(project_yaml, encoding="utf-8")
+
+    output_path = build.build_xasm(
+        str(project_dir), str(tmp_path / "out"), "1.0-1", "abc123", "fix/120"
+    )
+
+    with zipfile.ZipFile(output_path) as archive:
+        archived_project = archive.read(
+            "TestVendor/CompatibilityRegression/Проект.yaml"
+        ).decode("utf-8")
+
+    assert archived_project == project_yaml
+
+
 def test_build_xasm_includes_same_name_report_query_companion(build, tmp_path: Path) -> None:
     project_dir = tmp_path / "repo" / "acme" / "demo"
     write_project_yaml(project_dir)
@@ -252,6 +281,39 @@ def test_main_requires_project_yaml(build, monkeypatch, capsys, tmp_path: Path) 
 
     assert captured.out == ""
     assert "ERROR: Проект.yaml not found. Use --project-dir" in captured.err
+
+
+@pytest.mark.parametrize("invalid_value", ["", "9", "9.2.9-12", "9.1-extra"])
+def test_main_rejects_invalid_compatibility_mode_format(
+    build, monkeypatch, capsys, tmp_path: Path, invalid_value: str
+) -> None:
+    project_dir = tmp_path / "repo" / "TestVendor" / "DemoApp"
+    write_project_yaml(project_dir)
+    project_yaml = project_dir / "Проект.yaml"
+    project_yaml.write_text(
+        project_yaml.read_text(encoding="utf-8")
+        + f"РежимСовместимости: {invalid_value}\n",
+        encoding="utf-8",
+    )
+
+    captured = run_main(
+        build,
+        monkeypatch,
+        capsys,
+        ["--project-dir", str(project_dir), "--output", str(tmp_path / "out")],
+        expected_exit=1,
+    )
+
+    assert captured.out == ""
+    assert json.loads(captured.err) == {
+        "error": "Invalid compatibility mode format",
+        "details": {
+            "value": invalid_value,
+            "expected": "<major>.<minor>",
+        },
+        "rule_id": "xbsl-init.compatibility_mode_format",
+    }
+    assert not (tmp_path / "out").exists()
 
 
 def test_main_uses_explicit_overrides(build, monkeypatch, capsys, tmp_path: Path) -> None:

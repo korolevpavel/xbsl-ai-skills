@@ -33,7 +33,25 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
 - сначала определяет owning schema; common-поля и grammar `Тип` проверяет
   только у функциональных объектов и только в их документированных type slots,
   а UI, `Проект.yaml` и `Подсистема.yaml` маршрутизирует без объектных
-  false-positive diagnostics.
+  false-positive diagnostics;
+- для `Отчет`, `РегистрНакопления`, `РегистрСведений` и
+  `ЗапланированноеЗадание` запускает object-specific validators после common
+  слоя.
+
+Стабильные object-specific rule ID:
+
+- отчет: `owner.report.source`, `owner.report.query_companion`,
+  `owner.report.query_parameters`, `owner.report.interface`;
+- регистр: `owner.register.dimensions`, `owner.register.resources`,
+  `owner.register.member`, `owner.register.invalid_uuid`,
+  `owner.register.resource_type`, `owner.register.registrar`,
+  `owner.register.kind`;
+- запланированное задание: `owner.scheduled_task.schedule`,
+  `owner.scheduled_task.time_literal`, `owner.scheduled_task.location`,
+  `owner.scheduled_task.yaml_handler`,
+  `owner.scheduled_task.missing_companion`,
+  `owner.scheduled_task.unreadable_companion`,
+  `owner.scheduled_task.handler`.
 
 Коды завершения:
 

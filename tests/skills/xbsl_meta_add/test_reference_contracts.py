@@ -3,6 +3,7 @@ import re
 import sys
 
 import pytest
+import yaml
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -85,6 +86,11 @@ def root_scalar(text: str, key: str) -> str | None:
     if match is None:
         return None
     return match.group("value").strip()
+
+
+def assert_report_interface_properties_are_not_top_level(data: dict) -> None:
+    assert "ВключатьВАвтоИнтерфейс" not in data, "auto-interface must be nested"
+    assert "Форма" not in data, "custom report form must be nested"
 
 
 def assert_query_report_companion(yaml_path: Path) -> Path:
@@ -254,10 +260,6 @@ def access_parameter_shapes_are_valid(text: str) -> bool:
     )
 
 
-def has_root_interface_wrapper(text: str) -> bool:
-    return re.search(r"(?m)^Интерфейс[ \t]*:", text) is not None
-
-
 def yaml_field_blocks(text: str) -> list[str]:
     """Return direct properties of developer-field YAML mappings in examples."""
     blocks = re.findall(r"```yaml\n(.*?)```", text, re.DOTALL)
@@ -306,26 +308,49 @@ def empty_value_policy_is_valid(text: str) -> bool:
     )
 
 
+def test_report_auto_interface_property_is_nested_under_interface():
+    data = yaml.safe_load(REPORT_YAML)
+
+    assert data["Интерфейс"]["ВключатьВАвтоИнтерфейс"] == "Истина"
+    assert "Форма" not in data["Интерфейс"]
+    assert_report_interface_properties_are_not_top_level(data)
+
+
 @pytest.mark.parametrize(
-    "wrapper",
+    ("field", "value", "message"),
     [
-        "Интерфейс: { Форма: ФормаОтчета }",
-        "Интерфейс: # запрещенный root-wrapper",
+        ("ВключатьВАвтоИнтерфейс", "Истина", "auto-interface must be nested"),
+        ("Форма", "ПродажиФормаОтчета", "custom report form must be nested"),
     ],
 )
-def test_report_root_interface_wrapper_check_detects_inline_forms(wrapper: str):
-    assert has_root_interface_wrapper(wrapper)
+def test_legacy_top_level_report_interface_properties_are_rejected(
+    field: str, value: str, message: str
+):
+    data = yaml.safe_load(
+        f"ВидЭлемента: Отчет\nИмя: Продажи\n{field}: {value}\nИнтерфейс: {{}}\n"
+    )
+
+    with pytest.raises(AssertionError, match=message):
+        assert_report_interface_properties_are_not_top_level(data)
 
 
-def test_report_root_properties_are_not_nested_under_interface():
-    assert {"ВключатьВАвтоИнтерфейс", "Форма"} <= top_level_keys(REPORT_YAML)
-    assert not has_root_interface_wrapper(REPORT_YAML)
+def test_report_reference_nests_auto_interface_property():
+    example = yaml_example(read_reference("Отчет.md"), "ВидИсточникаДанных: Запрос")
+    data = yaml.safe_load(example)
+
+    assert data["Интерфейс"]["ВключатьВАвтоИнтерфейс"] == "Истина"
+    assert "Форма" not in data["Интерфейс"]
+    assert_report_interface_properties_are_not_top_level(data)
 
 
-def test_report_reference_keeps_properties_at_report_root():
-    example = yaml_example(read_reference("Отчет.md"), "Форма: ФормаОтчета")
-    assert {"ВключатьВАвтоИнтерфейс", "Форма"} <= top_level_keys(example)
-    assert not has_root_interface_wrapper(example)
+def test_report_reference_keeps_custom_form_independently():
+    example = yaml_example(
+        read_reference("Отчет.md"), "Форма: <ИмяОтчета>ФормаОтчета"
+    )
+    data = yaml.safe_load(example)
+
+    assert data["Интерфейс"] == {"Форма": "<ИмяОтчета>ФормаОтчета"}
+    assert_report_interface_properties_are_not_top_level(data)
 
 
 def test_report_and_xbql_parameter_sets_are_equal():
@@ -409,11 +434,18 @@ def test_accumulation_virtual_fields_use_russian_suffixes():
     assert "Turnover" not in REPORT_XBQL
 
 
-def test_report_form_consumers_keep_properties_at_report_root():
+def test_report_form_consumers_nest_auto_interface_property():
     for consumer in (FORM_SKILL.read_text(), FORM_REPORT_REFERENCE.read_text()):
-        example = report_object_example(consumer)
-        assert {"ВключатьВАвтоИнтерфейс", "Форма"} <= top_level_keys(example)
-        assert not has_root_interface_wrapper(example)
+        data = yaml.safe_load(report_object_example(consumer))
+        assert data["Интерфейс"]["ВключатьВАвтоИнтерфейс"] == "Истина"
+        assert_report_interface_properties_are_not_top_level(data)
+
+
+def test_report_form_consumers_keep_custom_form_independently():
+    for consumer in (FORM_SKILL.read_text(), FORM_REPORT_REFERENCE.read_text()):
+        data = yaml.safe_load(report_object_example(consumer))
+        assert data["Интерфейс"]["Форма"] == "<ИмяОтчета>ФормаОтчета"
+        assert_report_interface_properties_are_not_top_level(data)
 
 
 def test_information_register_key_and_leading_dimension_are_distinct():

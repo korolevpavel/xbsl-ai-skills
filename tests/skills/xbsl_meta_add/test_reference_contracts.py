@@ -60,6 +60,25 @@ def read_reference(name: str) -> str:
     return (REFERENCES / name).read_text()
 
 
+def lifecycle_handler_block(text: str, method_name: str) -> str:
+    blocks = [
+        block
+        for block in xbsl_code_blocks(text)
+        if f"метод {method_name}(" in block
+    ]
+    assert len(blocks) == 1, f"expected one {method_name} example"
+    return blocks[0]
+
+
+def lifecycle_handler_executable_body_lines(block: str) -> list[str]:
+    body = block.split(")\n", maxsplit=1)[1].rsplit("\n;", maxsplit=1)[0]
+    return [
+        line.strip()
+        for line in body.splitlines()
+        if line.strip() and not line.lstrip().startswith("//")
+    ]
+
+
 def report_object_example(text: str) -> str:
     blocks = re.findall(r"```yaml\n(.*?)```", text, re.DOTALL)
     return next(
@@ -595,6 +614,35 @@ def test_uuid_bearing_list_item_check_rejects_missing_own_id():
     assert not yaml_reference_list_items_have_ids(
         example, "ПространстваБлокировок"
     )
+
+
+def test_document_lifecycle_calculates_persisted_fields_before_current_write():
+    before_write = lifecycle_handler_block(
+        read_reference("Документ.md"), "ПередЗаписью"
+    )
+
+    assert "Автор = Пользователи.ТекущийПользователь" in before_write
+    assert "Строка.Сумма = Строка.Количество * Строка.Цена" in before_write
+    assert "Сумма = СуммаДокумента" in before_write
+
+
+def test_document_after_write_example_contains_only_post_effects():
+    after_write = lifecycle_handler_block(
+        read_reference("Документ.md"), "ПослеЗаписи"
+    )
+
+    assert lifecycle_handler_executable_body_lines(after_write) == []
+    assert "движен" in after_write.casefold()
+    assert "уведом" in after_write.casefold()
+
+
+def test_document_lifecycle_reference_requires_explicit_safe_repeat_write():
+    text = read_reference("Документ.md")
+
+    assert "не являются частью текущей записи" in text
+    assert "не гарантируется без явной повторной записи" in text
+    assert "исключительный сценарий" in text
+    assert "защиту от рекурсии" in text
 
 
 @pytest.mark.parametrize(

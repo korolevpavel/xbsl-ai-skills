@@ -47,6 +47,27 @@ compatibility:
     assert build_site.parse_frontmatter(frontmatter)["runtime"] == [PYTHON_RUNTIME_LABEL]
 
 
+def test_parse_frontmatter_reads_skill_metadata_runtime() -> None:
+    frontmatter = """\
+metadata:
+  runtime: Node.js + @playwright/test
+"""
+
+    assert build_site.parse_frontmatter(frontmatter)["runtime"] == [
+        "Node.js + @playwright/test"
+    ]
+
+
+def test_collect_skills_exposes_playwright_runtime_only_for_playwright() -> None:
+    skills = collect_actual_skills()
+    runtime_by_slug = {skill.slug: skill.runtime for skill in skills}
+
+    assert runtime_by_slug["xbsl-playwright"] == ["Node.js + @playwright/test"]
+    for slug, runtime in runtime_by_slug.items():
+        if slug != "xbsl-playwright":
+            assert "Node.js + @playwright/test" not in runtime
+
+
 def test_collect_skills_normalizes_runtime_for_all_direct_python_skills() -> None:
     skills = collect_actual_skills()
     runtime_by_slug = {

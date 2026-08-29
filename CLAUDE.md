@@ -39,6 +39,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     xbsl-deploy/         # деплой на 1С:Предприятие.Элемент
         scripts/api.py   # HTTP-клиент Console API v2
         references/endpoints.md
+    xbsl-playwright/     # instruction-only Playwright UI/E2E для deployed-приложений
+        references/     # authoring, authentication, run-and-debug
     xbsl-pattern-register/  # паттерн движений по регистру накопления и сведений
         scripts/extract_meta.py   # извлекает поля РН, РС и Документа из YAML
         references/движения-рн.md # шаблоны кода паттернов A1–A5, B (РегистрНакопления)
@@ -77,6 +79,14 @@ scripts/build_site.py    # сборка GitHub Pages из README и SKILL.md ф�
 
 ### xbsl-deploy
 Управляет приложениями на платформе 1С:Предприятие.Элемент через Console API v2. `scripts/api.py` — самодостаточный HTTP-клиент (только stdlib Python 3.10+). Конфигурируется через env vars: `ELEMENT_BASE_URL`, `ELEMENT_CLIENT_ID`, `ELEMENT_CLIENT_SECRET` (обязательные), `ELEMENT_APP_ID`, `ELEMENT_PROJECT_ID`, `ELEMENT_BRANCH`, `ELEMENT_SPACE_ID` (опциональные).
+
+### xbsl-playwright
+Создаёт, изменяет, запускает и диагностирует TypeScript-тесты `@playwright/test`
+для уже доступных по `ELEMENT_APP_URL` приложений. Переиспользует существующий
+Playwright setup либо после dry-run и подтверждения создаёт изолированный
+consumer-пакет `e2e/`. Работает с интерактивным `storageState`, trace,
+screenshot, CRUD и multi-role/RLS, но не выполняет deploy/cloud API, не меняет
+application source и не добавляет Node-зависимости в этот репозиторий.
 
 ### xbsl-form-info
 Анализирует существующий объект конфигурации и возвращает JSON: `object_path`, `fields`, `tc`, `namespace`, `suggested_layout`, `existing_forms`. **Вызывается перед `xbsl-form-add` и `xbsl-file-add`** для получения структуры объекта.
@@ -178,11 +188,17 @@ pip install -r requirements-dev.txt
 name: имя-скилла        # совпадает с именем папки, a-z0-9-
 description: >          # что делает + когда вызывать (до 1024 символов)
   ...
-compatibility: Requires Python 3.
+metadata:               # опционально, только если нужен явный runtime на сайте
+  runtime: Node.js + @playwright/test
 ---
 ```
 
-Ресурсы скилла (`references/`, `scripts/`) ссылаются из SKILL.md относительными путями (`references/foo.md`), но в bash-командах используется полный путь от корня проекта (`.claude/skills/<имя>/scripts/foo.py`).
+Новый frontmatter обязан проходить актуальный `skill-creator/quick_validate.py`.
+Он разрешает `name`, `description`, `license`, `allowed-tools` и `metadata`;
+legacy-ключ `compatibility` в новых скиллах не добавляй. Для instruction-only
+скилла без прямого runtime-бейджа секцию `metadata` опускай.
+
+Ресурсы скилла (`references/`, `scripts/`) ссылаются из SKILL.md относительными путями (`references/foo.md`), но в bash-командах используется полный путь от корня проекта (`skills/<имя>/scripts/foo.py`).
 
 При разработке нового скилла для 1С:Элемент — ориентируйся на существующие скиллы как образец.
 

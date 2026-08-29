@@ -1213,6 +1213,26 @@ def parse_frontmatter(frontmatter: str | None) -> dict[str, object]:
                 result["runtime"] = normalize_runtime_labels(runtime)
             continue
 
+        if key == "metadata" and not value:
+            metadata: dict[str, str] = {}
+            index += 1
+            while index < len(lines):
+                nested = lines[index]
+                if re.match(r"^[A-Za-z0-9_-]+:", nested):
+                    break
+                metadata_match = re.match(
+                    r"^\s+([A-Za-z0-9_-]+):\s*(.+?)\s*$", nested
+                )
+                if metadata_match:
+                    metadata[metadata_match.group(1)] = (
+                        metadata_match.group(2).strip('"').strip("'")
+                    )
+                index += 1
+            result[key] = metadata
+            if metadata.get("runtime"):
+                result["runtime"] = normalize_runtime_labels([metadata["runtime"]])
+            continue
+
         result[key] = value.strip('"').strip("'")
         index += 1
 

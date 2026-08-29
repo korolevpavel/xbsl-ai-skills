@@ -11,7 +11,7 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-explore/scripts/explore.py"
+SCRIPT_PATH = ROOT_DIR / "skills/xbsl-explore/scripts/explore.py"
 
 
 def load_explore_module():

@@ -10,8 +10,8 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[3]
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
 PROJECT_DIR = FIXTURE_ROOT / "Demo" / "RegressionApp"
-VALIDATE_SCRIPT = ROOT_DIR / ".claude/skills/xbsl-validate/scripts/validate.py"
-BUILD_SCRIPT = ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/build.py"
+VALIDATE_SCRIPT = ROOT_DIR / "skills/xbsl-validate/scripts/validate.py"
+BUILD_SCRIPT = ROOT_DIR / "skills/xbsl-deploy/scripts/build.py"
 
 
 def test_composite_fixture_is_tracked_and_validates_without_errors() -> None:

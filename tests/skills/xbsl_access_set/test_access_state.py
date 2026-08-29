@@ -10,7 +10,7 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-access-set/scripts/access_state.py"
+SCRIPT_PATH = ROOT_DIR / "skills/xbsl-access-set/scripts/access_state.py"
 
 
 def load_access_state_module():

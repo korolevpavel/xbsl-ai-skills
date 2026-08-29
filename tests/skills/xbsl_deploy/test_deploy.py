@@ -12,9 +12,9 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/deploy.py"
-SKILL_PATH = ROOT_DIR / ".claude/skills/xbsl-deploy/SKILL.md"
-ENDPOINTS_PATH = ROOT_DIR / ".claude/skills/xbsl-deploy/references/endpoints.md"
+SCRIPT_PATH = ROOT_DIR / "skills/xbsl-deploy/scripts/deploy.py"
+SKILL_PATH = ROOT_DIR / "skills/xbsl-deploy/SKILL.md"
+ENDPOINTS_PATH = ROOT_DIR / "skills/xbsl-deploy/references/endpoints.md"
 
 
 def load_deploy_module():
@@ -1675,11 +1675,11 @@ def test_script_entrypoint_executes_main(monkeypatch, capsys) -> None:
     runpy.run_path(str(SCRIPT_PATH), run_name="__main__")
 
     assert calls == [
-        [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "list-app-tasks", "--app-id", "app-1"],
-        [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "sync-branch", "--app-id", "app-1", "--branch-id", "branch-1"],
-        [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "get-app-task", "--task-id", "task-new"],
-        [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "get-app", "--app-id", "app-1"],
-        [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "get-app", "--app-id", "app-1"],
-        [sys.executable, str(ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"), "--action", "list-app-tasks", "--app-id", "app-1"],
+        [sys.executable, str(ROOT_DIR / "skills/xbsl-deploy/scripts/api.py"), "--action", "list-app-tasks", "--app-id", "app-1"],
+        [sys.executable, str(ROOT_DIR / "skills/xbsl-deploy/scripts/api.py"), "--action", "sync-branch", "--app-id", "app-1", "--branch-id", "branch-1"],
+        [sys.executable, str(ROOT_DIR / "skills/xbsl-deploy/scripts/api.py"), "--action", "get-app-task", "--task-id", "task-new"],
+        [sys.executable, str(ROOT_DIR / "skills/xbsl-deploy/scripts/api.py"), "--action", "get-app", "--app-id", "app-1"],
+        [sys.executable, str(ROOT_DIR / "skills/xbsl-deploy/scripts/api.py"), "--action", "get-app", "--app-id", "app-1"],
+        [sys.executable, str(ROOT_DIR / "skills/xbsl-deploy/scripts/api.py"), "--action", "list-app-tasks", "--app-id", "app-1"],
     ]
     assert "https://entrypoint.example.com" in capsys.readouterr().out

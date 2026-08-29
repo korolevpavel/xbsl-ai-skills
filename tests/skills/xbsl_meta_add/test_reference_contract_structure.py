@@ -10,7 +10,6 @@ import pytest
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 REFERENCE_CONTRACT = (
     REPOSITORY_ROOT
-    / ".claude"
     / "skills"
     / "xbsl-meta-add"
     / "references"

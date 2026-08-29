@@ -21,37 +21,38 @@
 
 | Скилл | Описание |
 |-------|----------|
-| [`xbsl-uuid`](.claude/skills/xbsl-uuid/SKILL.md) | Генерация UUID v4 для объектов конфигурации |
-| [`xbsl-init`](.claude/skills/xbsl-init/SKILL.md) | Инициализация нового проекта: создаёт Проект.yaml, Проект.xbsl и Подсистема.yaml в правильном формате |
-| [`xbsl-subsystem-add`](.claude/skills/xbsl-subsystem-add/SKILL.md) | Добавление новой подсистемы в существующий проект: создаёт папку и Подсистема.yaml |
-| [`xbsl-explore`](.claude/skills/xbsl-explore/SKILL.md) | Разведка структуры проекта: находит проекты, подсистемы, объекты, проверяет конфликты имён |
-| [`xbsl-meta-add`](.claude/skills/xbsl-meta-add/SKILL.md) | Создание объекта конфигурации (Справочник, Документ, Перечисление и др.) по описанию |
-| [`xbsl-form-info`](.claude/skills/xbsl-form-info/SKILL.md) | Анализ объекта конфигурации: возвращает реквизиты, ТЧ, пространство имён и существующие формы |
-| [`xbsl-form-add`](.claude/skills/xbsl-form-add/SKILL.md) | Создание формы интерфейса (ФормаОбъекта и/или ФормаСписка) для объекта конфигурации |
-| [`xbsl-file-add`](.claude/skills/xbsl-file-add/SKILL.md) | Добавление файловых вложений (СписокФайлов) к объекту конфигурации: стандартные вложения, одиночный файл, категории |
-| [`xbsl-image-add`](.claude/skills/xbsl-image-add/SKILL.md) | Добавление фото/изображений (аватар, фото товара, иконка) к объекту конфигурации: P5 — простая загрузка, P6 — ресайз и обрезка по кругу |
-| [`xbsl-deploy`](.claude/skills/xbsl-deploy/SKILL.md) | Управление приложениями на 1С:Предприятие.Элемент: деплой, запуск, остановка, статус, merge |
-| [`xbsl-pattern-register`](.claude/skills/xbsl-pattern-register/SKILL.md) | Движения по регистру накопления (приход, расход, обороты, контроль остатков) и регистру сведений (запись, удаление, срез последних) |
-| [`xbsl-form-cards`](.claude/skills/xbsl-form-cards/SKILL.md) | Создание формы списка в виде карточек (матричная компоновка) для Справочников и Документов |
-| [`xbsl-rename`](.claude/skills/xbsl-rename/SKILL.md) | Безопасное переименование объекта конфигурации и обновление всех ссылок во всём проекте |
-| [`xbsl-form-dashboard`](.claude/skills/xbsl-form-dashboard/SKILL.md) | Создание главной страницы приложения с виджетами: KPI-счётчики, навигационные карточки, таблицы, диаграммы, карусели и бенто-сетки |
-| [`xbsl-lib-connect`](.claude/skills/xbsl-lib-connect/SKILL.md) | Подключение внешней библиотеки (.xlib) к проекту: из файла, папки с исходниками или GitHub/GitLab URL |
-| [`xbsl-access-set`](.claude/skills/xbsl-access-set/SKILL.md) | Управление правами доступа объектов конфигурации: сводка текущего состояния и пакетная установка КонтрольДоступа |
-| [`xbsl-pattern-rls`](.claude/skills/xbsl-pattern-rls/SKILL.md) | Реализация RLS (построчный доступ): ключи доступа, обработчики разрешений, паттерны P0–P3 |
-| [`xbsl-validate`](.claude/skills/xbsl-validate/SKILL.md) | Read-only проверка YAML-файлов проекта: синтаксис, duplicate keys, общие invariants, grammar типов и coverage dispatch |
+| [`xbsl-uuid`](skills/xbsl-uuid/SKILL.md) | Генерация UUID v4 для объектов конфигурации |
+| [`xbsl-init`](skills/xbsl-init/SKILL.md) | Инициализация нового проекта: создаёт Проект.yaml, Проект.xbsl и Подсистема.yaml в правильном формате |
+| [`xbsl-subsystem-add`](skills/xbsl-subsystem-add/SKILL.md) | Добавление новой подсистемы в существующий проект: создаёт папку и Подсистема.yaml |
+| [`xbsl-explore`](skills/xbsl-explore/SKILL.md) | Разведка структуры проекта: находит проекты, подсистемы, объекты, проверяет конфликты имён |
+| [`xbsl-meta-add`](skills/xbsl-meta-add/SKILL.md) | Создание объекта конфигурации (Справочник, Документ, Перечисление и др.) по описанию |
+| [`xbsl-form-info`](skills/xbsl-form-info/SKILL.md) | Анализ объекта конфигурации: возвращает реквизиты, ТЧ, пространство имён и существующие формы |
+| [`xbsl-form-add`](skills/xbsl-form-add/SKILL.md) | Создание формы интерфейса (ФормаОбъекта и/или ФормаСписка) для объекта конфигурации |
+| [`xbsl-file-add`](skills/xbsl-file-add/SKILL.md) | Добавление файловых вложений (СписокФайлов) к объекту конфигурации: стандартные вложения, одиночный файл, категории |
+| [`xbsl-image-add`](skills/xbsl-image-add/SKILL.md) | Добавление фото/изображений (аватар, фото товара, иконка) к объекту конфигурации: P5 — простая загрузка, P6 — ресайз и обрезка по кругу |
+| [`xbsl-deploy`](skills/xbsl-deploy/SKILL.md) | Управление приложениями на 1С:Предприятие.Элемент: деплой, запуск, остановка, статус, merge |
+| [`xbsl-pattern-register`](skills/xbsl-pattern-register/SKILL.md) | Движения по регистру накопления (приход, расход, обороты, контроль остатков) и регистру сведений (запись, удаление, срез последних) |
+| [`xbsl-form-cards`](skills/xbsl-form-cards/SKILL.md) | Создание формы списка в виде карточек (матричная компоновка) для Справочников и Документов |
+| [`xbsl-rename`](skills/xbsl-rename/SKILL.md) | Безопасное переименование объекта конфигурации и обновление всех ссылок во всём проекте |
+| [`xbsl-form-dashboard`](skills/xbsl-form-dashboard/SKILL.md) | Создание главной страницы приложения с виджетами: KPI-счётчики, навигационные карточки, таблицы, диаграммы, карусели и бенто-сетки |
+| [`xbsl-lib-connect`](skills/xbsl-lib-connect/SKILL.md) | Подключение внешней библиотеки (.xlib) к проекту: из файла, папки с исходниками или GitHub/GitLab URL |
+| [`xbsl-access-set`](skills/xbsl-access-set/SKILL.md) | Управление правами доступа объектов конфигурации: сводка текущего состояния и пакетная установка КонтрольДоступа |
+| [`xbsl-pattern-rls`](skills/xbsl-pattern-rls/SKILL.md) | Реализация RLS (построчный доступ): ключи доступа, обработчики разрешений, паттерны P0–P3 |
+| [`xbsl-scheduled-task`](skills/xbsl-scheduled-task/SKILL.md) | Создание запланированного задания и обязательного одноимённого XBSL-обработчика |
+| [`xbsl-validate`](skills/xbsl-validate/SKILL.md) | Read-only проверка YAML-файлов проекта: синтаксис, duplicate keys, общие invariants, grammar типов и coverage dispatch |
 
 Покрытие типов `xbsl-meta-add` для 1С:Предприятие.Элемент 9.3 хранится в
 каноническом registry
-[`object-coverage.json`](.claude/skills/xbsl-meta-add/object-coverage.json).
+[`object-coverage.json`](skills/xbsl-meta-add/object-coverage.json).
 Человекочитаемая матрица
-[`object-coverage.md`](.claude/skills/xbsl-meta-add/object-coverage.md)
+[`object-coverage.md`](skills/xbsl-meta-add/object-coverage.md)
 генерируется из JSON и не редактируется вручную.
 
 Общие reference-контракты находятся в
-[`references/`](.claude/skills/xbsl-meta-add/references/):
-[`reference-contract.md`](.claude/skills/xbsl-meta-add/references/reference-contract.md),
-[`types.md`](.claude/skills/xbsl-meta-add/references/types.md) и
-[`ТабличныеЧасти.md`](.claude/skills/xbsl-meta-add/references/ТабличныеЧасти.md).
+[`references/`](skills/xbsl-meta-add/references/):
+[`reference-contract.md`](skills/xbsl-meta-add/references/reference-contract.md),
+[`types.md`](skills/xbsl-meta-add/references/types.md) и
+[`ТабличныеЧасти.md`](skills/xbsl-meta-add/references/ТабличныеЧасти.md).
 
 ## Требования
 
@@ -63,12 +64,22 @@
 
 ## Установка
 
-Клонируй репозиторий и скопируй скиллы в свой проект:
+Клонируй репозиторий. Канонические исходники находятся в top-level каталоге
+`skills/`; `.claude/skills` не является source mirror.
+
+Для Claude Code скопируй содержимое source-каталога в runtime-каталог проекта:
 
 ```bash
 git clone https://github.com/korolevpavel/xbsl-ai-skills.git
 mkdir -p /путь/к/твоему/проекту/.claude/skills/
-cp -r xbsl-ai-skills/.claude/skills/ /путь/к/твоему/проекту/.claude/skills/
+cp -r xbsl-ai-skills/skills/. /путь/к/твоему/проекту/.claude/skills/
+```
+
+Для Codex установи их в runtime-каталог пользователя:
+
+```bash
+mkdir -p ~/.codex/skills/
+cp -r xbsl-ai-skills/skills/. ~/.codex/skills/
 ```
 
 ## Использование
@@ -150,7 +161,7 @@ coverage run -m pytest && coverage report
 
 ## GitHub Pages
 
-Сайт собирается автоматически через GitHub Actions из `README.md` и файлов `.claude/skills/*/SKILL.md`.
+Сайт собирается автоматически через GitHub Actions из `README.md` и файлов `skills/*/SKILL.md`.
 
 Локальная сборка:
 
@@ -161,7 +172,7 @@ pip install -r requirements-site.txt
 
 ## Добавление новых скиллов
 
-Каждый скилл — папка в `.claude/skills/` с файлом `SKILL.md`. Frontmatter:
+Каждый скилл — папка в `skills/` с файлом `SKILL.md`. Frontmatter:
 
 ```yaml
 ---

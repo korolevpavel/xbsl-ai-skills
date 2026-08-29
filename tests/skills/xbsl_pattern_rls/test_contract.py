@@ -4,14 +4,14 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SKILL_PATH = ROOT_DIR / ".claude/skills/xbsl-pattern-rls/SKILL.md"
-REFERENCE_PATH = ROOT_DIR / ".claude/skills/xbsl-pattern-rls/references/rls-паттерны.md"
+SKILL_PATH = ROOT_DIR / "skills/xbsl-pattern-rls/SKILL.md"
+REFERENCE_PATH = ROOT_DIR / "skills/xbsl-pattern-rls/references/rls-паттерны.md"
 POSITIVE_FIXTURES_DIR = ROOT_DIR / "tests/skills/xbsl_pattern_rls/fixtures/positive"
 FIXTURE_PATH = (
     ROOT_DIR
     / "tests/skills/xbsl_pattern_rls/fixtures/positive/document_before_write/ЗаказКлиента.Объект.xbsl"
 )
-ACCESS_SET_PATH = ROOT_DIR / ".claude/skills/xbsl-access-set/SKILL.md"
+ACCESS_SET_PATH = ROOT_DIR / "skills/xbsl-access-set/SKILL.md"
 
 
 def test_public_contract_does_not_name_unsupported_before_write_handler() -> None:

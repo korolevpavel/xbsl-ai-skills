@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SKILL_ROOT = ROOT_DIR / ".claude/skills/xbsl-form-dashboard"
+SKILL_ROOT = ROOT_DIR / "skills/xbsl-form-dashboard"
 REFERENCES = SKILL_ROOT / "references"
 
 

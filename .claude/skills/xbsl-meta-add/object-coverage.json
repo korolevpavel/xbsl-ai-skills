@@ -2,7 +2,7 @@
   "schema_version": 2,
   "target_platform": {
     "name": "1С:Предприятие.Элемент",
-    "version": "9.2"
+    "version": "9.3"
   },
   "shared_references": [
     "references/types.md",
@@ -239,6 +239,12 @@
           "pattern": "*.yaml",
           "role": "описание объекта",
           "required": true,
+          "basis": "platform"
+        },
+        {
+          "pattern": "*.xbsl",
+          "role": "обработчик автоматического расчета ключа",
+          "required": false,
           "basis": "platform"
         }
       ],

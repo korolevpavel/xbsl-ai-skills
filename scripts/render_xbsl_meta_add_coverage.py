@@ -103,6 +103,20 @@ def _require_safe_path(value: Any, path: str) -> None:
         _fail(f"{path}: unsafe path")
 
 
+def _parse_version(value: Any, path: str) -> tuple[int, ...]:
+    _require_non_empty_string(value, path)
+    if re.fullmatch(r"\d+(?:\.\d+)*", value) is None:
+        _fail(f"{path}: expected numeric dotted version")
+    return tuple(int(part) for part in value.split("."))
+
+
+def _version_lte(left: str, right: str) -> bool:
+    left_parts = _parse_version(left, "min_version")
+    right_parts = _parse_version(right, "target_platform.version")
+    width = max(len(left_parts), len(right_parts))
+    return left_parts + (0,) * (width - len(left_parts)) <= right_parts + (0,) * (width - len(right_parts))
+
+
 def validate_reference_contract(text: str) -> None:
     sections = re.findall(r"(?m)^## (.+?)\s*$", text)
     if sections != REFERENCE_CONTRACT_SECTIONS:
@@ -120,7 +134,7 @@ def _validate_artifact(artifact: Any, path: str) -> None:
         _fail(f"{path}.basis: invalid basis")
 
 
-def _validate_object(record: Any, shared: set[str], path: str) -> None:
+def _validate_object(record: Any, shared: set[str], target_version: str, path: str) -> None:
     _require_type(record, dict, path)
     _require_exact_keys(record, OBJECT_FIELDS, path)
     _require_non_empty_string(record["element_kind"], f"{path}.element_kind")
@@ -138,8 +152,10 @@ def _validate_object(record: Any, shared: set[str], path: str) -> None:
     for index, artifact in enumerate(record["artifacts"]):
         _validate_artifact(artifact, f"{path}.artifacts[{index}]")
     min_version = record["min_version"]
-    if min_version is not None and min_version not in {"9.1", "9.2"}:
-        _fail(f"{path}.min_version: invalid version")
+    if min_version is not None:
+        _parse_version(min_version, f"{path}.min_version")
+        if not _version_lte(min_version, target_version):
+            _fail(f"{path}.min_version: feature version exceeds target platform")
     if record["status"] in {"supported", "routed"} and min_version is None:
         _fail(f"{path}.min_version: supported/routed objects require min_version")
     if min_version is None and (record["status"] != "partial" or not record["known_gaps"]):
@@ -163,8 +179,13 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
     _require_exact_keys(data, TOP_LEVEL_FIELDS, "top-level")
     if data["schema_version"] != 2:
         _fail("schema_version: expected 2")
-    if data["target_platform"] != {"name": "1С:Предприятие.Элемент", "version": "9.2"}:
-        _fail("target_platform: expected 1С:Предприятие.Элемент 9.2")
+    target_platform = data["target_platform"]
+    if not isinstance(target_platform, dict) or list(target_platform) != ["name", "version"]:
+        _fail("target_platform: expected name and version")
+    if target_platform["name"] != "1С:Предприятие.Элемент":
+        _fail("target_platform.name: expected 1С:Предприятие.Элемент")
+    target_version = target_platform["version"]
+    _parse_version(target_version, "target_platform.version")
 
     if data["shared_references"] != SHARED_REFERENCES:
         _fail("shared_references: unexpected shared reference list")
@@ -180,7 +201,7 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
     seen_objects: set[str] = set()
     shared = set(data["shared_references"])
     for index, record in enumerate(objects):
-        _validate_object(record, shared, f"objects[{index}]")
+        _validate_object(record, shared, target_version, f"objects[{index}]")
         if record["element_kind"] in seen_objects:
             _fail(f"objects: duplicate element_kind {record['element_kind']!r}")
         seen_objects.add(record["element_kind"])

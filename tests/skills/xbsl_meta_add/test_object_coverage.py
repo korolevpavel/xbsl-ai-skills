@@ -56,7 +56,7 @@ def test_registry_has_exact_schema_initial_balance_and_safe_paths():
     assert data["schema_version"] == 2
     assert data["target_platform"] == {
         "name": "1С:Предприятие.Элемент",
-        "version": "9.2",
+        "version": "9.3",
     }
     assert data["shared_references"] == [
         "references/types.md",
@@ -148,6 +148,20 @@ def test_registry_validation_rejects_contract_breaks(mutation, message):
 
     with pytest.raises(renderer.CoverageValidationError, match=message):
         renderer.validate_coverage_data(bad, repo_root=REPOSITORY_ROOT)
+
+
+def test_version_gate_is_numeric_and_rejects_features_above_target():
+    renderer = load_renderer()
+    data = load_registry()
+
+    allowed = copy.deepcopy(data)
+    allowed["objects"][0]["min_version"] = "9.3"
+    renderer.validate_coverage_data(allowed, repo_root=REPOSITORY_ROOT)
+
+    too_new = copy.deepcopy(data)
+    too_new["objects"][0]["min_version"] = "9.10"
+    with pytest.raises(renderer.CoverageValidationError, match="exceeds target"):
+        renderer.validate_coverage_data(too_new, repo_root=REPOSITORY_ROOT)
 
 
 def test_public_skill_artifacts_do_not_reference_local_only_materials():

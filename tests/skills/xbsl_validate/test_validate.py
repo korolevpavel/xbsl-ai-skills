@@ -408,6 +408,12 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
         FIXTURES / "object_rules" / "register" / "valid" / "ВыгруженныеДанные.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "ОборотыБезТипа.yaml",
         FIXTURES / "object_rules" / "scheduled" / "valid" / "ЕжедневнаяОчистка.yaml",
+        FIXTURES / "object_rules" / "access_key" / "valid_default" / "КлючЗаказов.yaml",
+        FIXTURES / "object_rules" / "access_key" / "valid_automatic" / "КлючЗаказов.yaml",
+        FIXTURES / "object_rules" / "access_key" / "valid_automatic_disabled" / "КлючЗаказов.yaml",
+        FIXTURES / "object_rules" / "access_key" / "valid_manual" / "КлючЗаказов.yaml",
+        FIXTURES / "object_rules" / "access_key" / "valid_custom_parameter" / "КлючЗаказов.yaml",
+        FIXTURES / "object_rules" / "access_key" / "valid_owner_parameter" / "КлючЗаказов.yaml",
         FIXTURES
         / "object_rules"
         / "scheduled"
@@ -426,7 +432,7 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
 
     assert code == 0
     assert stderr == ""
-    assert data["summary"] == {"files": 8, "errors": 0, "warnings": 0}
+    assert data["summary"] == {"files": 14, "errors": 0, "warnings": 0}
     assert data["diagnostics"] == []
 
 
@@ -577,6 +583,24 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
             "owner.scheduled_task.handler",
             "Обработчик() without parameters",
         ),
+        (
+            "access_key/invalid_manual_recalculation/КлючЗаказов.yaml",
+            5,
+            "owner.access_key.system_recalculation_mode",
+            "must not define",
+        ),
+        (
+            "access_key/invalid_boolean/КлючЗаказов.yaml",
+            4,
+            "owner.access_key.boolean_literal",
+            "Истина or Ложь",
+        ),
+        (
+            "access_key/invalid_custom_parameter/КлючЗаказов.yaml",
+            4,
+            "owner.access_key.parameter_uuid",
+            "requires a valid UUID",
+        ),
     ],
 )
 def test_object_specific_fixture_maps_to_exact_diagnostic(
@@ -610,6 +634,23 @@ def test_companion_regression_fixtures_contain_the_wrongly_placed_decoys():
     assert not (
         scheduled_root / "ПодсистемаЗадания" / "РазделенноеЗадание.xbsl"
     ).exists()
+
+
+def test_manual_access_key_handler_is_a_warning(capsys):
+    target = (
+        FIXTURES
+        / "object_rules"
+        / "access_key"
+        / "manual_handler"
+        / "КлючЗаказов.yaml"
+    )
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 0
+    assert stderr == ""
+    assert data["summary"] == {"files": 1, "errors": 0, "warnings": 1}
+    assert data["diagnostics"][0]["rule_id"] == "owner.access_key.manual_handler_ignored"
 
 
 def test_report_object_specific_rules_have_stable_ids(capsys):

@@ -468,6 +468,80 @@ def validate_common(input_file: InputFile, document: Any) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_access_key(
+    input_file: InputFile, document: Mapping[str, Any]
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    text = input_file.actual_path.read_text(encoding="utf-8")
+
+    for field in ("РучнаяВыдача", "ОтключитьСистемныеПересчеты"):
+        if field in document and document[field] not in {"Истина", "Ложь"}:
+            diagnostics.append(
+                Diagnostic(
+                    input_file.display_path,
+                    key_line(text, field),
+                    "error",
+                    "owner.access_key.boolean_literal",
+                    f"{field} must be the string literal Истина or Ложь",
+                )
+            )
+
+    manual = document.get("РучнаяВыдача", "Ложь") == "Истина"
+    if manual and "ОтключитьСистемныеПересчеты" in document:
+        diagnostics.append(
+            Diagnostic(
+                input_file.display_path,
+                key_line(text, "ОтключитьСистемныеПересчеты"),
+                "error",
+                "owner.access_key.system_recalculation_mode",
+                "Manual access key must not define ОтключитьСистемныеПересчеты",
+            )
+        )
+
+    parameters = document.get("Параметры", [])
+    if isinstance(parameters, list):
+        for parameter in parameters:
+            if not isinstance(parameter, dict) or parameter.get("Имя") == "Владелец":
+                continue
+            parameter_id = parameter.get("Ид")
+            if not isinstance(parameter_id, str) or UUID_RE.fullmatch(parameter_id) is None:
+                parameter_name = parameter.get("Имя", "<unknown>")
+                diagnostics.append(
+                    Diagnostic(
+                        input_file.display_path,
+                        key_line(text, "Параметры"),
+                        "error",
+                        "owner.access_key.parameter_uuid",
+                        f"Developer access-key parameter {parameter_name} requires a valid UUID",
+                    )
+                )
+
+    if manual:
+        companion = input_file.actual_path.with_suffix(".xbsl")
+        if companion.is_file():
+            try:
+                companion_text = companion.read_text(encoding="utf-8")
+            except (OSError, UnicodeError):
+                companion_text = ""
+            handler = re.search(
+                r"(?m)^[ \t]*@Обработчик(?:[^\r\n]*)\r?\n"
+                r"(?:(?:[ \t]*|[ \t]*//[^\r\n]*|[ \t]*@[^\r\n]+)\r?\n)*"
+                r"[ \t]*метод[ \t]+ПроверитьНаличиеКлючейДоступа[ \t]*\(",
+                companion_text,
+            )
+            if handler is not None:
+                diagnostics.append(
+                    Diagnostic(
+                        input_file.display_path,
+                        None,
+                        "warning",
+                        "owner.access_key.manual_handler_ignored",
+                        "Manual access key companion handler ПроверитьНаличиеКлючейДоступа is ignored",
+                    )
+                )
+    return diagnostics
+
+
 def validate_report(input_file: InputFile, document: Mapping[str, Any]) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     source_kind = document.get("ВидИсточникаДанных", "Таблица")
@@ -1081,6 +1155,7 @@ SUPPORTED_VALIDATORS: dict[
     "Отчет": validate_report,
     "РегистрНакопления": validate_register,
     "РегистрСведений": validate_register,
+    "КлючДоступа": validate_access_key,
 }
 
 

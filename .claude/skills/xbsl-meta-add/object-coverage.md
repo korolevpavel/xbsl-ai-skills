@@ -2,7 +2,7 @@
 
 <!-- GENERATED FILE: source is object-coverage.json; do not edit manually. -->
 
-Целевая платформа: **1С:Предприятие.Элемент 9.2**.
+Целевая платформа: **1С:Предприятие.Элемент 9.3**.
 
 ## Баланс
 

@@ -27,7 +27,7 @@ def test_composite_fixture_is_tracked_and_validates_without_errors() -> None:
 
     assert result.returncode == 0
     assert result.stderr == ""
-    assert payload["summary"] == {"files": 7, "errors": 0, "warnings": 3}
+    assert payload["summary"] == {"files": 9, "errors": 0, "warnings": 3}
     assert {diagnostic["severity"] for diagnostic in payload["diagnostics"]} == {
         "warning"
     }
@@ -98,12 +98,23 @@ def test_composite_fixture_build_preserves_cross_cutting_contracts(tmp_path: Pat
         document = archive.read(
             "Demo/RegressionApp/Контракты/РасчетныйДокумент.yaml"
         ).decode("utf-8")
+        automatic_key = archive.read(
+            "Demo/RegressionApp/Контракты/КонтрактныйАвтоматическийКлюч.yaml"
+        ).decode("utf-8")
+        manual_key = archive.read(
+            "Demo/RegressionApp/Контракты/КонтрактныйРучнойКлюч.yaml"
+        ).decode("utf-8")
+        manual_api = archive.read(
+            "Demo/RegressionApp/Контракты/КонтрактныйРучнойКлюч.xbsl"
+        ).decode("utf-8")
 
     assert {
         "Demo/RegressionApp/Контракты/ЕжедневнаяПроверка.xbsl",
         "Demo/RegressionApp/Контракты/КонтрактныйОтчет.xbql",
         "Demo/RegressionApp/Контракты/КонтрактныйОтчетФормаОтчета.yaml",
         "Demo/RegressionApp/Контракты/РасчетныйДокумент.Объект.xbsl",
+        "Demo/RegressionApp/Контракты/КонтрактныйАвтоматическийКлюч.xbsl",
+        "Demo/RegressionApp/Контракты/КонтрактныйРучнойКлюч.xbsl",
     } <= names
     assert "Vendor: Demo" in manifest
     assert "Name: RegressionApp" in manifest
@@ -120,6 +131,14 @@ def test_composite_fixture_build_preserves_cross_cutting_contracts(tmp_path: Pat
     assert "Имя: Номер\n        Длина: 8" in document
     assert "Имя: Сумма" in document
     assert "Имя: Строки" in document
+    assert "РучнаяВыдача: Ложь" in automatic_key
+    assert "ОтключитьСистемныеПересчеты: Истина" in automatic_key
+    assert "РучнаяВыдача: Истина" in manual_key
+    assert "ПроверитьНаличиеКлючейДоступа" not in manual_api
+    assert ".Выдать(" in manual_api
+    assert ".Отозвать(" in manual_api
+    assert ".ОтозватьКлючи(" in manual_api
+    assert "ВыдатьКлючиДоступа(" in manual_api
 
     before_write_start = lifecycle.index("метод ПередЗаписью(")
     next_method_start = lifecycle.find("\nметод ", before_write_start + 1)

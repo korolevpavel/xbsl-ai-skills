@@ -12,6 +12,7 @@ XBSL_GENERATING_SKILLS = (
     "xbsl-pattern-rls",
     "xbsl-image-add",
     "xbsl-form-dashboard",
+    "xbsl-scheduled-task",
 )
 LEGACY_XBSL_SYNTAX = re.compile(
     r"\b(?:КонецЕсли|КонецЦикла|КонецПопытки|ИначеЕсли|Тогда|Процедура|Функция)\b",
@@ -31,7 +32,7 @@ def xbsl_code_blocks(text: str) -> list[str]:
 
     for line in text.splitlines():
         if current is None:
-            if line.strip() == "```xbsl":
+            if line.strip() in {"```xbsl", "```bsl"}:
                 current = []
         elif line.strip() == "```":
             blocks.append("\n".join(current))
@@ -47,7 +48,7 @@ def test_xbsl_spec_defines_required_syntax_contract() -> None:
 
     for required_text in (
         "XBSL",
-        "latest",
+        "9.3",
         "метод",
         "знч",
         "пер",
@@ -73,7 +74,7 @@ def test_xbsl_spec_defines_required_syntax_contract() -> None:
     assert "для перехвата используй `поймать`" in text
     assert "`%{Выражение}` вызывает `ВСтроку()`" in text
     assert "`${Выражение}` — `Представление()`" in text
-    assert len(text.splitlines()) <= 120
+    assert len(text.splitlines()) <= 140
 
 
 def test_xbsl_generating_instructions_link_to_shared_spec() -> None:

@@ -13,7 +13,7 @@ from typing import Sequence
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SOURCE = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
+DEFAULT_SOURCE = REPOSITORY_ROOT / "skills" / "xbsl-meta-add"
 DEFAULT_DESTINATION = Path.home() / ".codex" / "skills" / "xbsl-meta-add"
 
 
@@ -140,6 +140,18 @@ def _cleanup(path: Path) -> None:
 
 
 def check(source: Path, destination: Path) -> int:
+    source = Path(source).expanduser()
+    destination = Path(destination).expanduser()
+    if (
+        source.exists()
+        and source.is_dir()
+        and not _has_symlink_component(source)
+        and destination.is_symlink()
+        and not _has_symlink_component(destination.parent)
+        and destination.resolve() == source.resolve()
+    ):
+        print("clean")
+        return 0
     source, destination = validate_paths(source, destination)
     if compare_trees(source, destination):
         print("clean")

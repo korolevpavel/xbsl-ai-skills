@@ -69,6 +69,19 @@ def test_check_reports_missing_clean_and_drift_without_mutating(tmp_path):
     assert snapshot(destination) == drift_snapshot
 
 
+def test_check_accepts_direct_runtime_symlink_to_canonical_source(tmp_path):
+    sync = load_sync()
+    source = make_source(tmp_path)
+    destination = tmp_path / "installed" / "xbsl-meta-add"
+    destination.parent.mkdir(parents=True)
+    os.symlink(source, destination)
+
+    assert sync.main(["--source", str(source), "--destination", str(destination), "--check"]) == 0
+    assert destination.is_symlink()
+    assert destination.resolve() == source.resolve()
+    assert sync.main(["--source", str(source), "--destination", str(destination), "--sync"]) == 2
+
+
 def test_sync_installs_exact_mirror_and_removes_extra_entries_by_replacement(tmp_path):
     sync = load_sync()
     source = make_source(tmp_path)

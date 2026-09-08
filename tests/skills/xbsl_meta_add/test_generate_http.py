@@ -9,7 +9,7 @@ import tempfile
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                                ".claude", "skills", "xbsl-meta-add", "scripts"))
+                                "skills", "xbsl-meta-add", "scripts"))
 
 from generate_http import (
     parse_routes,

@@ -44,16 +44,16 @@
 
 Покрытие типов `xbsl-meta-add` для 1С:Предприятие.Элемент 9.3 хранится в
 каноническом registry
-[`object-coverage.json`](.claude/skills/xbsl-meta-add/object-coverage.json).
+[`object-coverage.json`](skills/xbsl-meta-add/object-coverage.json).
 Человекочитаемая матрица
-[`object-coverage.md`](.claude/skills/xbsl-meta-add/object-coverage.md)
+[`object-coverage.md`](skills/xbsl-meta-add/object-coverage.md)
 генерируется из JSON и не редактируется вручную.
 
 Общие reference-контракты находятся в
-[`references/`](.claude/skills/xbsl-meta-add/references/):
-[`reference-contract.md`](.claude/skills/xbsl-meta-add/references/reference-contract.md),
-[`types.md`](.claude/skills/xbsl-meta-add/references/types.md) и
-[`ТабличныеЧасти.md`](.claude/skills/xbsl-meta-add/references/ТабличныеЧасти.md).
+[`references/`](skills/xbsl-meta-add/references/):
+[`reference-contract.md`](skills/xbsl-meta-add/references/reference-contract.md),
+[`types.md`](skills/xbsl-meta-add/references/types.md) и
+[`ТабличныеЧасти.md`](skills/xbsl-meta-add/references/ТабличныеЧасти.md).
 
 ## Требования
 
@@ -66,12 +66,22 @@
 
 ## Установка
 
-Клонируй репозиторий и скопируй скиллы в свой проект:
+Клонируй репозиторий. Канонические исходники находятся в top-level каталоге
+`skills/`; `.claude/skills` не является source mirror.
+
+Для Claude Code скопируй содержимое source-каталога в runtime-каталог проекта:
 
 ```bash
 git clone https://github.com/korolevpavel/xbsl-ai-skills.git
 mkdir -p /путь/к/твоему/проекту/.claude/skills/
-cp -r xbsl-ai-skills/.claude/skills/ /путь/к/твоему/проекту/.claude/skills/
+cp -r xbsl-ai-skills/skills/. /путь/к/твоему/проекту/.claude/skills/
+```
+
+Для Codex установи их в runtime-каталог пользователя:
+
+```bash
+mkdir -p ~/.codex/skills/
+cp -r xbsl-ai-skills/skills/. ~/.codex/skills/
 ```
 
 ## Использование
@@ -157,7 +167,7 @@ coverage run -m pytest && coverage report
 
 ## GitHub Pages
 
-Сайт собирается автоматически через GitHub Actions из `README.md` и файлов `.claude/skills/*/SKILL.md`.
+Сайт собирается автоматически через GitHub Actions из `README.md` и файлов `skills/*/SKILL.md`.
 
 Локальная сборка:
 
@@ -168,7 +178,7 @@ pip install -r requirements-site.txt
 
 ## Добавление новых скиллов
 
-Каждый скилл — папка в `.claude/skills/` с файлом `SKILL.md`. Frontmatter:
+Каждый скилл — папка в `skills/` с файлом `SKILL.md`. Frontmatter:
 
 ```yaml
 ---

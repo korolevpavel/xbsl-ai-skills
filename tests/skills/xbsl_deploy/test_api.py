@@ -16,7 +16,7 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/api.py"
+SCRIPT_PATH = ROOT_DIR / "skills/xbsl-deploy/scripts/api.py"
 
 
 class FakeResponse:

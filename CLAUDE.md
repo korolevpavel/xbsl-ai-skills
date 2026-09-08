@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Структура репозитория
 
 ```
-.claude/skills/          # скиллы Claude Code
+skills/                  # единственные канонические исходники скиллов
     xbsl-uuid/           # генерация UUID v4
     xbsl-init/           # инициализация нового проекта
     xbsl-explore/        # разведка структуры проекта
@@ -56,6 +56,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
         references/rls-паттерны.md # шаблоны P0–P3 паттернов доступа
     xbsl-validate/          # read-only валидация YAML: syntax, duplicate keys, coverage dispatch
     xbsl-scheduled-task/    # создание ЗапланированноеЗадание + одноимённого handler
+docs/xbsl-spec.md         # общий синтаксический контракт XBSL
+.claude/                 # только локальные настройки Claude Code
 tools/                   # материалы и инструменты (в .gitignore)
 scripts/build_site.py    # сборка GitHub Pages из README и SKILL.md файлов
 ```
@@ -182,7 +184,7 @@ pip install -r requirements-dev.txt
 
 ## Разработка скиллов
 
-Каждый скилл — папка в `.claude/skills/` с обязательным файлом `SKILL.md`. Frontmatter:
+Каждый скилл — папка в `skills/` с обязательным файлом `SKILL.md`. Frontmatter:
 ```yaml
 ---
 name: имя-скилла        # совпадает с именем папки, a-z0-9-
@@ -205,7 +207,7 @@ legacy-ключ `compatibility` в новых скиллах не добавля
 ### XBSL-код
 
 Перед созданием или изменением `.xbsl` обязательно прочитай
-`.claude/xbsl-spec.md`. Это компактный синтаксический контракт, а не справочник API:
+`docs/xbsl-spec.md`. Это компактный синтаксический контракт, а не справочник API:
 типы, методы платформы, аннотации и сигнатуры обработчиков сверяй через `xbsl-docs`
 и профильные `references/` скилла.
 

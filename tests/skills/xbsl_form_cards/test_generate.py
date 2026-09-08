@@ -10,7 +10,7 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-form-cards/scripts/generate.py"
+SCRIPT_PATH = ROOT_DIR / "skills/xbsl-form-cards/scripts/generate.py"
 
 
 def load_generate_module():

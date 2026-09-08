@@ -10,12 +10,11 @@ import yaml
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-SCHEDULED_SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-scheduled-task"
-META_SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
+SCHEDULED_SKILL_ROOT = REPOSITORY_ROOT / "skills" / "xbsl-scheduled-task"
+META_SKILL_ROOT = REPOSITORY_ROOT / "skills" / "xbsl-meta-add"
 COVERAGE_PATH = META_SKILL_ROOT / "object-coverage.json"
 VALIDATOR_PATH = (
     REPOSITORY_ROOT
-    / ".claude"
     / "skills"
     / "xbsl-validate"
     / "scripts"
@@ -23,7 +22,6 @@ VALIDATOR_PATH = (
 )
 EXPLORE_PATH = (
     REPOSITORY_ROOT
-    / ".claude"
     / "skills"
     / "xbsl-explore"
     / "scripts"

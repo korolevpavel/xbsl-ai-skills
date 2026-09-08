@@ -10,11 +10,11 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPOSITORY_ROOT / "tests"))
 from test_xbsl_spec_contract import xbsl_code_blocks
 
-EXAMPLES = REPOSITORY_ROOT / ".claude/skills/xbsl-meta-add/examples"
-REFERENCES = REPOSITORY_ROOT / ".claude/skills/xbsl-meta-add/references"
-FORM_SKILL = REPOSITORY_ROOT / ".claude/skills/xbsl-form-add/SKILL.md"
+EXAMPLES = REPOSITORY_ROOT / "skills/xbsl-meta-add/examples"
+REFERENCES = REPOSITORY_ROOT / "skills/xbsl-meta-add/references"
+FORM_SKILL = REPOSITORY_ROOT / "skills/xbsl-form-add/SKILL.md"
 FORM_REPORT_REFERENCE = (
-    REPOSITORY_ROOT / ".claude/skills/xbsl-form-add/references/ФормаОтчета.md"
+    REPOSITORY_ROOT / "skills/xbsl-form-add/references/ФормаОтчета.md"
 )
 REPORT_FIXTURES = (
     Path(__file__).resolve().parent / "fixtures" / "contracts-and-reports"

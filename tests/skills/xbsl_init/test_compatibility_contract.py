@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-INIT_SKILL = ROOT_DIR / ".claude/skills/xbsl-init/SKILL.md"
-DEPLOY_SKILL = ROOT_DIR / ".claude/skills/xbsl-deploy/SKILL.md"
+INIT_SKILL = ROOT_DIR / "skills/xbsl-init/SKILL.md"
+DEPLOY_SKILL = ROOT_DIR / "skills/xbsl-deploy/SKILL.md"
 FIXTURE_DIR = Path(__file__).parent / "fixtures/compatibility_9_1_technology_9_2"
 
 

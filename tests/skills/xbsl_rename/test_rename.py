@@ -10,7 +10,7 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-rename/scripts/rename.py"
+SCRIPT_PATH = ROOT_DIR / "skills/xbsl-rename/scripts/rename.py"
 
 
 def load_rename_module():

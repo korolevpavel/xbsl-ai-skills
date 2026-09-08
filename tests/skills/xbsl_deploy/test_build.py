@@ -13,7 +13,7 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-deploy/scripts/build.py"
+SCRIPT_PATH = ROOT_DIR / "skills/xbsl-deploy/scripts/build.py"
 
 
 def load_build_module():

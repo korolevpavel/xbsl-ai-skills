@@ -34,9 +34,9 @@
 ### Task 1: Reject legacy HTTP roots and align the skill command
 
 **Files:**
-- Modify: `.claude/skills/xbsl-meta-add/scripts/generate_http.py`
-- Modify: `.claude/skills/xbsl-meta-add/SKILL.md`
-- Modify: `.claude/skills/xbsl-meta-add/references/HttpСервис.md`
+- Modify: `skills/xbsl-meta-add/scripts/generate_http.py`
+- Modify: `skills/xbsl-meta-add/SKILL.md`
+- Modify: `skills/xbsl-meta-add/references/HttpСервис.md`
 - Modify: `tests/skills/xbsl_meta_add/test_generate_http.py`
 
 **Interfaces:**
@@ -106,7 +106,7 @@ Call it once in the create flow before printing the dry-run or writing files. Co
 In `SKILL.md`, use:
 
 ```bash
-{python} .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+{python} skills/xbsl-meta-add/scripts/generate_http.py \
   --name <ИмяСервиса> \
   --url /<ресурс> \
   --routes "GET /, POST /, GET /{id}, PUT /{id}, DELETE /{id}" \
@@ -130,9 +130,9 @@ Expected: all tests pass.
 - [ ] **Step 6: Commit the independently testable HTTP correction**
 
 ```bash
-git add .claude/skills/xbsl-meta-add/SKILL.md \
-  .claude/skills/xbsl-meta-add/references/HttpСервис.md \
-  .claude/skills/xbsl-meta-add/scripts/generate_http.py \
+git add skills/xbsl-meta-add/SKILL.md \
+  skills/xbsl-meta-add/references/HttpСервис.md \
+  skills/xbsl-meta-add/scripts/generate_http.py \
   tests/skills/xbsl_meta_add/test_generate_http.py \
   docs/superpowers/plans/2026-07-27-xbsl-meta-add-issue-88.md
 git commit -m "fix(xbsl-meta-add): correct HTTP service root contract" \
@@ -142,12 +142,12 @@ git commit -m "fix(xbsl-meta-add): correct HTTP service root contract" \
 ### Task 2: Make report metadata and XBQL a single checked contract
 
 **Files:**
-- Create: `.claude/skills/xbsl-meta-add/examples/ОтчетОборотыПродаж.yaml`
-- Create: `.claude/skills/xbsl-meta-add/examples/ОтчетОборотыПродаж.xbql`
+- Create: `skills/xbsl-meta-add/examples/ОтчетОборотыПродаж.yaml`
+- Create: `skills/xbsl-meta-add/examples/ОтчетОборотыПродаж.xbql`
 - Create: `tests/skills/xbsl_meta_add/test_reference_contracts.py`
-- Modify: `.claude/skills/xbsl-meta-add/references/Отчет.md`
-- Modify: `.claude/skills/xbsl-form-add/SKILL.md`
-- Modify: `.claude/skills/xbsl-form-add/references/ФормаОтчета.md`
+- Modify: `skills/xbsl-meta-add/references/Отчет.md`
+- Modify: `skills/xbsl-form-add/SKILL.md`
+- Modify: `skills/xbsl-form-add/references/ФормаОтчета.md`
 
 **Interfaces:**
 - Consumes: a report YAML fixture whose `Запрос` points to the sibling `.xbql` filename.
@@ -230,10 +230,10 @@ Expected: all tests pass.
 - [ ] **Step 6: Commit the independently testable report correction**
 
 ```bash
-git add .claude/skills/xbsl-meta-add/examples \
-  .claude/skills/xbsl-meta-add/references/Отчет.md \
-  .claude/skills/xbsl-form-add/SKILL.md \
-  .claude/skills/xbsl-form-add/references/ФормаОтчета.md \
+git add skills/xbsl-meta-add/examples \
+  skills/xbsl-meta-add/references/Отчет.md \
+  skills/xbsl-form-add/SKILL.md \
+  skills/xbsl-form-add/references/ФормаОтчета.md \
   tests/skills/xbsl_meta_add/test_reference_contracts.py
 git commit -m "fix(xbsl-meta-add): align report metadata and XBQL" \
   -m "Co-Authored-By: codex <codex@openai.com>"
@@ -242,12 +242,12 @@ git commit -m "fix(xbsl-meta-add): align report metadata and XBQL" \
 ### Task 3: Correct field semantics, presentation references, and UUID accounting
 
 **Files:**
-- Modify: `.claude/skills/xbsl-meta-add/references/types.md`
-- Modify: `.claude/skills/xbsl-meta-add/references/РегистрСведений.md`
-- Modify: `.claude/skills/xbsl-meta-add/references/РегистрНакопления.md`
-- Modify: `.claude/skills/xbsl-meta-add/references/Справочник.md`
-- Modify: `.claude/skills/xbsl-meta-add/references/Документ.md`
-- Modify: `.claude/skills/xbsl-meta-add/references/ТабличныеЧасти.md`
+- Modify: `skills/xbsl-meta-add/references/types.md`
+- Modify: `skills/xbsl-meta-add/references/РегистрСведений.md`
+- Modify: `skills/xbsl-meta-add/references/РегистрНакопления.md`
+- Modify: `skills/xbsl-meta-add/references/Справочник.md`
+- Modify: `skills/xbsl-meta-add/references/Документ.md`
+- Modify: `skills/xbsl-meta-add/references/ТабличныеЧасти.md`
 - Modify: `tests/skills/xbsl_meta_add/test_reference_contracts.py`
 
 **Interfaces:**
@@ -339,7 +339,7 @@ Expected: all tests pass.
 - [ ] **Step 6: Commit the independently testable metadata correction**
 
 ```bash
-git add .claude/skills/xbsl-meta-add/references \
+git add skills/xbsl-meta-add/references \
   tests/skills/xbsl_meta_add/test_reference_contracts.py
 git commit -m "fix(xbsl-meta-add): correct metadata field contracts" \
   -m "Co-Authored-By: codex <codex@openai.com>"
@@ -348,9 +348,9 @@ git commit -m "fix(xbsl-meta-add): correct metadata field contracts" \
 ### Task 4: Replace obsolete XBSL APIs and correct access-key parameters
 
 **Files:**
-- Modify: `.claude/skills/xbsl-meta-add/references/ГлобальноеКлиентскоеСобытие.md`
-- Modify: `.claude/skills/xbsl-meta-add/references/ЛокализованныеСтроки.md`
-- Modify: `.claude/skills/xbsl-meta-add/references/КлючДоступа.md`
+- Modify: `skills/xbsl-meta-add/references/ГлобальноеКлиентскоеСобытие.md`
+- Modify: `skills/xbsl-meta-add/references/ЛокализованныеСтроки.md`
+- Modify: `skills/xbsl-meta-add/references/КлючДоступа.md`
 - Modify: `tests/skills/xbsl_meta_add/test_reference_contracts.py`
 - Modify: `tests/test_xbsl_spec_contract.py`
 
@@ -456,7 +456,7 @@ Expected: all tests pass.
 - [ ] **Step 6: Commit the independently testable API correction**
 
 ```bash
-git add .claude/skills/xbsl-meta-add/references \
+git add skills/xbsl-meta-add/references \
   tests/skills/xbsl_meta_add/test_reference_contracts.py \
   tests/test_xbsl_spec_contract.py
 git commit -m "fix(xbsl-meta-add): update documented XBSL APIs" \
@@ -507,7 +507,7 @@ Expected: focused and full tests pass, `git diff --check` is empty, and only int
 - [ ] **Step 4: Commit pressure-test fixes only if Step 2 changed files**
 
 ```bash
-git add .claude/skills tests
+git add skills tests
 git commit -m "test(xbsl-meta-add): cover 9.2 contract regressions" \
   -m "Co-Authored-By: codex <codex@openai.com>"
 ```

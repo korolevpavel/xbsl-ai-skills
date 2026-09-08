@@ -15,7 +15,7 @@ import markdown
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README_PATH = REPO_ROOT / "README.md"
-SKILLS_ROOT = REPO_ROOT / ".claude" / "skills"
+SKILLS_ROOT = REPO_ROOT / "skills"
 OUTPUT_DIR = REPO_ROOT / "site"
 ASSETS_DIR = OUTPUT_DIR / "assets"
 REPO_URL = "https://github.com/korolevpavel/xbsl-ai-skills"
@@ -1220,7 +1220,7 @@ def parse_frontmatter(frontmatter: str | None) -> dict[str, object]:
 
 
 def extract_skill_order(readme_text: str) -> list[str]:
-    return re.findall(r"\(\.claude/skills/([^/]+)/SKILL\.md\)", readme_text)
+    return re.findall(r"\(skills/([^/]+)/SKILL\.md\)", readme_text)
 
 
 def build_page_map(skill_paths: list[Path]) -> dict[Path, str]:

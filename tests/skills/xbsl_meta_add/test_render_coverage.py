@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
+SKILL_ROOT = REPOSITORY_ROOT / "skills" / "xbsl-meta-add"
 COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
 MARKDOWN_PATH = SKILL_ROOT / "object-coverage.md"
 RENDERER_PATH = REPOSITORY_ROOT / "scripts" / "render_xbsl_meta_add_coverage.py"

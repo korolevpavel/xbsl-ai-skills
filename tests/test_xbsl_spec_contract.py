@@ -3,8 +3,8 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-SPEC_PATH = ROOT_DIR / ".claude" / "xbsl-spec.md"
-SPEC_REFERENCE = ".claude/xbsl-spec.md"
+SPEC_PATH = ROOT_DIR / "docs" / "xbsl-spec.md"
+SPEC_REFERENCE = "docs/xbsl-spec.md"
 XBSL_GENERATING_SKILLS = (
     "xbsl-init",
     "xbsl-meta-add",
@@ -80,7 +80,7 @@ def test_xbsl_spec_defines_required_syntax_contract() -> None:
 def test_xbsl_generating_instructions_link_to_shared_spec() -> None:
     paths = [ROOT_DIR / "CLAUDE.md"]
     paths.extend(
-        ROOT_DIR / ".claude" / "skills" / skill / "SKILL.md"
+        ROOT_DIR / "skills" / skill / "SKILL.md"
         for skill in XBSL_GENERATING_SKILLS
     )
 
@@ -90,14 +90,14 @@ def test_xbsl_generating_instructions_link_to_shared_spec() -> None:
 
 def test_xbsl_generating_skills_do_not_contain_legacy_code_examples() -> None:
     for skill in XBSL_GENERATING_SKILLS:
-        skill_dir = ROOT_DIR / ".claude" / "skills" / skill
+        skill_dir = ROOT_DIR / "skills" / skill
         for path in skill_dir.rglob("*.md"):
             for block in xbsl_code_blocks(path.read_text(encoding="utf-8")):
                 assert LEGACY_XBSL_SYNTAX.search(block) is None, path
 
 
 def test_xbsl_meta_add_examples_do_not_contain_obsolete_apis() -> None:
-    skill_dir = ROOT_DIR / ".claude" / "skills" / "xbsl-meta-add"
+    skill_dir = ROOT_DIR / "skills" / "xbsl-meta-add"
     for path in skill_dir.rglob("*.md"):
         for block in xbsl_code_blocks(path.read_text(encoding="utf-8")):
             for api in OBSOLETE_META_ADD_APIS:

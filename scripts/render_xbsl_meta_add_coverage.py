@@ -12,7 +12,7 @@ from typing import Any, Mapping, Sequence
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
+SKILL_ROOT = REPOSITORY_ROOT / "skills" / "xbsl-meta-add"
 COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
 OUTPUT_PATH = SKILL_ROOT / "object-coverage.md"
 
@@ -191,7 +191,7 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
         _fail("shared_references: unexpected shared reference list")
     for path in data["shared_references"]:
         _require_safe_path(path, f"shared_references.{path}")
-        full_path = repo_root / ".claude" / "skills" / "xbsl-meta-add" / path
+        full_path = repo_root / "skills" / "xbsl-meta-add" / path
         if path != "references/reference-contract.md" and not full_path.is_file():
             _fail(f"shared_references.{path}: referenced file does not exist")
 

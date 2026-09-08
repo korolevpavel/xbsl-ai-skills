@@ -7,13 +7,12 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 VALIDATOR_PATH = (
     REPOSITORY_ROOT
-    / ".claude"
     / "skills"
     / "xbsl-validate"
     / "scripts"
     / "validate.py"
 )
-META_ADD_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
+META_ADD_ROOT = REPOSITORY_ROOT / "skills" / "xbsl-meta-add"
 FIXTURES_ROOT = Path(__file__).resolve().parent / "fixtures"
 
 

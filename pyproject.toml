@@ -1,3 +1,20 @@
+[project]
+name = "xbsl-ai-skills"
+version = "9.3.0.1"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "coverage>=7.6,<8",
+    "markdown>=3.7,<4",
+    "pytest>=8,<9",
+    "PyYAML>=6.0,<7",
+]
+
+[tool.uv]
+package = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -5,7 +22,7 @@ addopts = "-q"
 
 [tool.coverage.run]
 branch = true
-source = [".claude/skills/xbsl-deploy/scripts", ".claude/skills/xbsl-form-add/scripts"]
+source = ["skills/xbsl-deploy/scripts", "skills/xbsl-form-add/scripts"]
 
 [tool.coverage.report]
 show_missing = true

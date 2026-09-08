@@ -10,7 +10,7 @@ import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = ROOT_DIR / ".claude/skills/xbsl-pattern-register/scripts/extract_meta.py"
+SCRIPT_PATH = ROOT_DIR / "skills/xbsl-pattern-register/scripts/extract_meta.py"
 
 
 def load_extract_meta_module():

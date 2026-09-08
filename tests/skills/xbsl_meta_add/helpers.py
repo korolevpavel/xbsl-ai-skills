@@ -8,7 +8,7 @@ import yaml
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-SKILL_ROOT = REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add"
+SKILL_ROOT = REPOSITORY_ROOT / "skills" / "xbsl-meta-add"
 COVERAGE_PATH = SKILL_ROOT / "object-coverage.json"
 REFERENCES = SKILL_ROOT / "references"
 REFERENCE_SECTIONS = [

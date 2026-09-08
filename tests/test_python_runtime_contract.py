@@ -14,7 +14,7 @@ from python_runtime_contract import (
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-SKILLS_DIR = ROOT_DIR / ".claude" / "skills"
+SKILLS_DIR = ROOT_DIR / "skills"
 
 BARE_PYTHON_INVOCATION_RE = re.compile(
     r"(?<![\w{])python(?![\w}])\s+(?:-c\b|[^\s`]*\.py\b)"

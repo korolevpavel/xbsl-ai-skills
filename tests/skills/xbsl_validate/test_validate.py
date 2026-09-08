@@ -12,7 +12,6 @@ import pytest
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 VALIDATOR_PATH = (
     REPOSITORY_ROOT
-    / ".claude"
     / "skills"
     / "xbsl-validate"
     / "scripts"
@@ -140,7 +139,7 @@ def test_installed_skill_layout_uses_sibling_coverage_registry(tmp_path, capsys)
     installed_registry = installed_registry_dir / "object-coverage.json"
     shutil.copy2(VALIDATOR_PATH, installed_validator)
     shutil.copy2(
-        REPOSITORY_ROOT / ".claude" / "skills" / "xbsl-meta-add" / "object-coverage.json",
+        REPOSITORY_ROOT / "skills" / "xbsl-meta-add" / "object-coverage.json",
         installed_registry,
     )
 

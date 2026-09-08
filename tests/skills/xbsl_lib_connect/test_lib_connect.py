@@ -1,4 +1,4 @@
-"""Тесты для .claude/skills/xbsl-lib-connect/scripts/lib_connect.py"""
+"""Тесты для skills/xbsl-lib-connect/scripts/lib_connect.py"""
 
 import importlib.util
 import io
@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 
-SCRIPT_PATH = Path(__file__).parents[3] / '.claude' / 'skills' / 'xbsl-lib-connect' / 'scripts' / 'lib_connect.py'
+SCRIPT_PATH = Path(__file__).parents[3] / 'skills' / 'xbsl-lib-connect' / 'scripts' / 'lib_connect.py'
 
 
 @pytest.fixture

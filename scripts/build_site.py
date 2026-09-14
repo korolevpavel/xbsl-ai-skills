@@ -1213,6 +1213,26 @@ def parse_frontmatter(frontmatter: str | None) -> dict[str, object]:
                 result["runtime"] = normalize_runtime_labels(runtime)
             continue
 
+        if key == "metadata" and not value:
+            metadata: dict[str, str] = {}
+            index += 1
+            while index < len(lines):
+                nested = lines[index]
+                if re.match(r"^[A-Za-z0-9_-]+:", nested):
+                    break
+                metadata_match = re.match(
+                    r"^\s+([A-Za-z0-9_-]+):\s*(.+?)\s*$", nested
+                )
+                if metadata_match:
+                    metadata[metadata_match.group(1)] = (
+                        metadata_match.group(2).strip('"').strip("'")
+                    )
+                index += 1
+            result[key] = metadata
+            if metadata.get("runtime"):
+                result["runtime"] = normalize_runtime_labels([metadata["runtime"]])
+            continue
+
         result[key] = value.strip('"').strip("'")
         index += 1
 
@@ -1255,7 +1275,7 @@ def rewrite_links(html: str, source_relative: Path, page_map: dict[Path, str]) -
             return match.group(0)
 
         path_part, anchor = split_link_target(href)
-        candidate = (source_dir / path_part).resolve()
+        candidate = (REPO_ROOT / source_dir / path_part).resolve()
         try:
             relative_path = candidate.relative_to(REPO_ROOT)
         except ValueError:

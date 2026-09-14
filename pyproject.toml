@@ -1,6 +1,6 @@
 [project]
 name = "xbsl-ai-skills"
-version = "9.3.0.1"
+version = "9.3.1.0"
 requires-python = ">=3.10"
 dependencies = []
 

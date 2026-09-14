@@ -1,0 +1,12 @@
+{
+  "name": "element-playwright-e2e",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "auth": "node auth.mjs",
+    "auth:check": "node auth.mjs --check"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
+  }
+}

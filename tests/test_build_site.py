@@ -31,6 +31,29 @@ def collect_actual_skills():
     return build_site.collect_skills(readme_text, page_map)
 
 
+def test_site_includes_canonical_skills_with_real_source_links(tmp_path, monkeypatch) -> None:
+    output_dir = tmp_path / "site"
+    monkeypatch.setattr(build_site, "OUTPUT_DIR", output_dir)
+    monkeypatch.setattr(build_site, "ASSETS_DIR", output_dir / "assets")
+    # Link resolution must not depend on the shell's current working directory.
+    monkeypatch.chdir(tmp_path)
+
+    build_site.build_site()
+
+    home = (output_dir / "index.html").read_text(encoding="utf-8")
+    playwright = (output_dir / "skills" / "xbsl-playwright.html").read_text(encoding="utf-8")
+    uuid = (output_dir / "skills" / "xbsl-uuid.html").read_text(encoding="utf-8")
+    assert 'href="skills/xbsl-playwright.html"' in home
+    assert 'href="skills/xbsl-uuid.html"' in home
+    assert "Node.js + @playwright/test" in playwright
+    assert build_site.build_repo_url(Path("skills/xbsl-playwright/SKILL.md")) in playwright
+    assert build_site.build_repo_url(Path("skills/xbsl-playwright/assets/inspect.spec.ts")) in playwright
+    assert build_site.build_repo_url(Path("skills/xbsl-uuid/SKILL.md")) in uuid
+    search = (output_dir / "assets" / "search-index.js").read_text(encoding="utf-8")
+    assert '"url": "skills/xbsl-playwright.html"' in search
+    assert len(list((output_dir / "skills").glob("*.html"))) == len(list(build_site.SKILLS_ROOT.glob("*/SKILL.md")))
+
+
 def test_parse_frontmatter_normalizes_scalar_python_requirement() -> None:
     frontmatter = "compatibility: Requires Python 3."
 

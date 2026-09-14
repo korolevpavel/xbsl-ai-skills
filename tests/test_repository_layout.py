@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -52,3 +53,11 @@ def test_runtime_evidence_ignore_rules_follow_canonical_source_layout() -> None:
     assert "skills/*/references/evidence/" in ignore_text
     assert ".claude/settings.local.json" in ignore_text
     assert ".claude/skills/*/runtime-evidence/" not in ignore_text
+
+
+def test_readme_links_to_every_skill_at_its_actual_source() -> None:
+    readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
+    links = re.findall(r"\]\((skills/[^/]+/SKILL\.md)\)", readme)
+
+    assert {Path(link).parent.name for link in links} == EXPECTED_SKILLS
+    assert all((ROOT_DIR / link).is_file() for link in links)

@@ -1275,7 +1275,7 @@ def rewrite_links(html: str, source_relative: Path, page_map: dict[Path, str]) -
             return match.group(0)
 
         path_part, anchor = split_link_target(href)
-        candidate = (source_dir / path_part).resolve()
+        candidate = (REPO_ROOT / source_dir / path_part).resolve()
         try:
             relative_path = candidate.relative_to(REPO_ROOT)
         except ValueError:

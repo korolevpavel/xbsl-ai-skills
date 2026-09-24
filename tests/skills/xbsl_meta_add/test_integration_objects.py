@@ -168,6 +168,9 @@ def test_soap_client_fixture_resolves_wsdl_xsd_and_declares_generated_calls():
     assert {"НастроитьЗаголовкиSoapGetOrder", "ОбработатьЗаголовкиSoapGetOrder"} <= (
         method_names(root / "КлиентЗаказов.xbsl")
     )
+    module = (root / "КлиентЗаказов.xbsl").read_text(encoding="utf-8")
+    for name in ("НастроитьЗаголовкиSoapGetOrder", "ОбработатьЗаголовкиSoapGetOrder"):
+        assert re.search(rf"(?m)^@Обработчик\s*\nметод {name}\(", module)
 
     missing_wsdl = FIXTURES / "negative" / "КлиентSoapСервиса" / "missing_wsdl"
     assert (missing_wsdl / "КлиентЗаказов.yaml").exists()

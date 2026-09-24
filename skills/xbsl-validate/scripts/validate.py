@@ -1610,9 +1610,28 @@ def validate_integration_process_permissions(
     )]
 
 
+def validate_document(input_file: InputFile, document: Mapping[str, Any]) -> list[Diagnostic]:
+    attributes = document.get("Реквизиты")
+    if isinstance(attributes, list) and any(
+        isinstance(attribute, dict) and attribute.get("Имя") == "Дата"
+        for attribute in attributes
+    ):
+        return []
+    return [
+        Diagnostic(
+            input_file.display_path,
+            None,
+            "error",
+            "owner.document.date",
+            "Документ requires the standard Дата attribute in Реквизиты",
+        )
+    ]
+
+
 SUPPORTED_VALIDATORS: dict[
     str, Callable[[InputFile, Mapping[str, Any]], list[Diagnostic]]
 ] = {
+    "Документ": validate_document,
     "Отчет": validate_report,
     "РегистрНакопления": validate_register,
     "РегистрСведений": validate_register,

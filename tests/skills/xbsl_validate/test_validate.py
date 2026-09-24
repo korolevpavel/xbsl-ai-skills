@@ -1140,3 +1140,32 @@ def test_object_specific_json_is_deterministic(capsys):
     second = run_cli(args, capsys)
 
     assert first == second
+
+
+def test_document_requires_standard_date_in_cloud_smoke_fixture(tmp_path, capsys):
+    source = (
+        REPOSITORY_ROOT
+        / "tests/skills/xbsl_meta_add/fixtures/data-journal/Основное/Заказы.yaml"
+    )
+    target = tmp_path / "Заказы.yaml"
+    valid_source = source.read_text(encoding="utf-8")
+    target.write_text(valid_source, encoding="utf-8")
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    assert code == 0
+    assert stderr == ""
+    assert not any(
+        item["rule_id"] == "owner.document.date"
+        for item in parse_json(stdout)["diagnostics"]
+    )
+
+    target.write_text(
+        valid_source.replace("  - Имя: Дата\n    Тип: ДатаВремя\n", ""),
+        encoding="utf-8",
+    )
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    assert code == 1
+    assert stderr == ""
+    assert [item["rule_id"] for item in parse_json(stdout)["diagnostics"]] == [
+        "owner.document.date"
+    ]

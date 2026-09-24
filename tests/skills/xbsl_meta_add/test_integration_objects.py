@@ -104,7 +104,7 @@ def test_integration_status_balance_finishes_all_local_partial_records():
     for record in registry["objects"]:
         statuses[record["status"]] += 1
 
-    assert statuses == {"supported": 31, "partial": 0, "routed": 1}
+    assert statuses == {"supported": 32, "partial": 0, "routed": 1}
     assert not [record for record in registry["objects"] if record["status"] == "partial"]
 
 

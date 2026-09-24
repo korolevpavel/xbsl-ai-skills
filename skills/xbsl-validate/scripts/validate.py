@@ -1388,6 +1388,109 @@ def validate_processing(input_file: InputFile, document: Mapping[str, Any]) -> l
     return diagnostics
 
 
+def validate_data_journal(input_file: InputFile, document: Mapping[str, Any]) -> list[Diagnostic]:
+    """Проверить состав и ссылки колонок журнала в локальном проекте."""
+    diagnostics: list[Diagnostic] = []
+
+    def error(rule_id: str, message: str) -> None:
+        diagnostics.append(Diagnostic(input_file.display_path, None, "error", rule_id, message))
+
+    if "КонтрольДоступа" in document:
+        error("owner.data_journal.access", "Data journal has no own КонтрольДоступа")
+
+    composition = document.get("Состав")
+    if not isinstance(composition, list) or not composition:
+        error("owner.data_journal.composition", "Состав must be a non-empty list")
+        return diagnostics
+
+    source_names: list[str] = []
+    for item in composition:
+        if not isinstance(item, dict) or set(item) != {"Элемент"} or not isinstance(item["Элемент"], str) or not item["Элемент"]:
+            error("owner.data_journal.composition", "Each Состав item needs only a non-empty Элемент")
+            continue
+        source_names.append(item["Элемент"])
+    if len(source_names) != len(set(source_names)):
+        error("owner.data_journal.composition", "Состав contains duplicate elements")
+
+    project_root = next(
+        (parent for parent in input_file.actual_path.parents if (parent / "Проект.yaml").is_file()),
+        None,
+    )
+    if project_root is None:
+        error("owner.data_journal.project", "Cannot resolve journal sources without local Проект.yaml")
+        return diagnostics
+
+    sources: dict[str, list[Mapping[str, Any]]] = {name: [] for name in source_names}
+    for path in project_root.rglob("*.yaml"):
+        if path == input_file.actual_path or path.name in STRUCTURAL_FILE_KINDS:
+            continue
+        try:
+            with path.open(encoding="utf-8") as stream:
+                candidate = yaml.safe_load(stream)
+        except (OSError, UnicodeError, yaml.YAMLError):
+            continue
+        if not isinstance(candidate, dict):
+            continue
+        name = candidate.get("Имя")
+        if isinstance(name, str) and name in sources:
+            sources[name].append(candidate)
+
+    resolved: dict[str, Mapping[str, Any]] = {}
+    for name in source_names:
+        matches = sources[name]
+        if len(matches) != 1:
+            error("owner.data_journal.source", f"Source {name} resolves to {len(matches)} local elements")
+            continue
+        source = matches[0]
+        if source.get("ВидЭлемента") not in {"Справочник", "Документ"}:
+            error("owner.data_journal.source_kind", f"Source {name} must be Справочник or Документ")
+            continue
+        resolved[name] = source
+
+    columns = document.get("Колонки", [])
+    if not isinstance(columns, list):
+        error("owner.data_journal.columns", "Колонки must be a list")
+        return diagnostics
+    column_names: list[str] = []
+    for column in columns:
+        if not isinstance(column, dict):
+            error("owner.data_journal.columns", "Each column must be a mapping")
+            continue
+        name, uid = column.get("Имя"), column.get("Ид")
+        if not isinstance(name, str) or not name:
+            error("owner.data_journal.columns", "Column requires non-empty Имя")
+        else:
+            column_names.append(name)
+        if not isinstance(uid, str) or not UUID_RE.fullmatch(uid):
+            error("owner.data_journal.column_uuid", f"Column {name} requires UUID Ид")
+        attributes = column.get("Реквизиты")
+        if not isinstance(attributes, list) or not attributes:
+            error("owner.data_journal.attributes", f"Column {name} requires non-empty Реквизиты")
+            continue
+        for attribute in attributes:
+            if not isinstance(attribute, str) or attribute.count(".") != 1:
+                error("owner.data_journal.attribute", f"Invalid attribute reference: {attribute}")
+                continue
+            source_name, attribute_name = attribute.split(".")
+            if source_name not in source_names:
+                error("owner.data_journal.attribute_source", f"{attribute}: source is absent from Состав")
+                continue
+            source = resolved.get(source_name)
+            if source is None:
+                continue
+            declared = {
+                item.get("Имя") for item in source.get("Реквизиты", [])
+                if isinstance(item, dict)
+            } if isinstance(source.get("Реквизиты", []), list) else set()
+            standard = ({"Дата", "Номер"} if source["ВидЭлемента"] == "Документ"
+                        else {"Наименование", "Код"})
+            if attribute_name not in declared | standard:
+                error("owner.data_journal.attribute_missing", f"{attribute}: attribute is absent from source")
+    if len(column_names) != len(set(column_names)):
+        error("owner.data_journal.columns", "Колонки contains duplicate names")
+    return diagnostics
+
+
 SUPPORTED_VALIDATORS: dict[
     str, Callable[[InputFile, Mapping[str, Any]], list[Diagnostic]]
 ] = {
@@ -1396,6 +1499,7 @@ SUPPORTED_VALIDATORS: dict[
     "РегистрСведений": validate_register,
     "КлючДоступа": validate_access_key,
     "Обработка": validate_processing,
+    "ЖурналДанных": validate_data_journal,
 }
 
 

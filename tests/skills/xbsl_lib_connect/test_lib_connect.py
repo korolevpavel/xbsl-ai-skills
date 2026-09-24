@@ -12,6 +12,16 @@ import pytest
 
 
 SCRIPT_PATH = Path(__file__).parents[3] / 'skills' / 'xbsl-lib-connect' / 'scripts' / 'lib_connect.py'
+SKILL_PATH = SCRIPT_PATH.parents[1] / 'SKILL.md'
+
+
+def test_release_guidance_uses_actual_or_build_derived_version():
+    skill = SKILL_PATH.read_text(encoding='utf-8')
+    assert 'HAS_RELEASE` из Шага 2 равно `true`' in skill
+    assert 'expected_release_version' in skill
+    assert 'фактическую версию' in skill
+    assert 'Задайте номер версии релиза' not in skill
+    assert 'Библиотеки[].Версия' in skill
 
 
 @pytest.fixture
@@ -74,6 +84,7 @@ class TestInspect:
         assert result['technology_version'] == '24.1'
         assert result['has_release'] is False
         assert result['release_version'] == ''
+        assert result['expected_release_version'] == '1.0'
 
     def test_inspect_with_release(self, lc, monkeypatch, capsys, tmp_path):
         xlib = make_xlib(tmp_path, version='2.0.1', with_release=True)
@@ -82,6 +93,16 @@ class TestInspect:
         result = json.loads(captured.out)
         assert result['has_release'] is True
         assert result['release_version'] == '2.0.1'
+        assert result['expected_release_version'] == '2.0.1'
+
+    def test_unreleased_build_derives_release_version_without_numeric_suffix(self, lc, monkeypatch, capsys, tmp_path):
+        xlib = make_xlib(tmp_path, version='3.4.2-17')
+        captured, code = run_main(lc, monkeypatch, capsys, ['--action', 'inspect', '--file', str(xlib)])
+        assert code == 0
+        result = json.loads(captured.out)
+        assert result['has_release'] is False
+        assert result['release_version'] == ''
+        assert result['expected_release_version'] == '3.4.2'
 
     def test_application_returns_error(self, lc, monkeypatch, capsys, tmp_path):
         xlib = make_xlib(tmp_path, project_kind='Application')

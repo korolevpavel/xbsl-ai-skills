@@ -78,6 +78,7 @@ def action_inspect(file: str) -> None:
     project_kind = meta.get('ProjectKind', '')
     has_release = 'Release' in meta
     version = meta.get('Version', '')
+    expected_release_version = re.sub(r'-\d+$', '', version) if version else ''
     result = {
         "vendor": meta.get('Vendor', ''),
         "name": meta.get('Name', ''),
@@ -86,6 +87,7 @@ def action_inspect(file: str) -> None:
         "technology_version": meta.get('TechnologyVersion', ''),
         "has_release": has_release,
         "release_version": version if has_release else "",
+        "expected_release_version": expected_release_version,
     }
 
     if project_kind != 'Library':

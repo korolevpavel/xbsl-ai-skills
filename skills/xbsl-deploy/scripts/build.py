@@ -39,6 +39,7 @@ import zipfile
 
 # Расширения файлов, включаемых в сборку
 INCLUDE_EXTENSIONS = {'.yaml', '.xbsl', '.xbql', '.md', '.txt'}
+SOAP_COMPANION_PATTERN = re.compile(r'\.(Wsdl|Xsd)\.[1-9][0-9]*$', re.IGNORECASE)
 
 # Каталоги и файлы, исключаемые из сборки
 EXCLUDE_DIRS = {'.claude', '.git', '__pycache__', 'node_modules', '.github'}
@@ -116,6 +117,8 @@ def should_include(rel_path: str) -> bool:
     filename = parts[-1]
     if filename in EXCLUDE_FILES or filename.endswith('.xasm') or filename.endswith('.xlib'):
         return False
+    if SOAP_COMPANION_PATTERN.search(filename):
+        return True
     ext = os.path.splitext(filename)[1].lower()
     return ext in INCLUDE_EXTENSIONS
 
@@ -189,6 +192,9 @@ def build_xasm(project_dir: str, output_dir: str,
                 filepath = os.path.join(root, filename)
                 rel = os.path.relpath(filepath, repo_dir).replace('\\', '/')
                 if should_include(rel):
+                    soap_companion = SOAP_COMPANION_PATTERN.search(filename)
+                    if soap_companion and soap_companion.group(1).lower() == 'wsdl':
+                        rel = f'{rel}.wsdl'
                     zf.write(filepath, rel)
 
     return output_path

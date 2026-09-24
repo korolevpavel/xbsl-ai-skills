@@ -107,6 +107,9 @@ def test_composite_fixture_build_preserves_cross_cutting_contracts(tmp_path: Pat
         manual_api = archive.read(
             "Demo/RegressionApp/Контракты/КонтрактныйРучнойКлюч.xbsl"
         ).decode("utf-8")
+        report_form = archive.read(
+            "Demo/RegressionApp/Контракты/КонтрактныйОтчетФормаОтчета.yaml"
+        ).decode("utf-8")
 
     assert {
         "Demo/RegressionApp/Контракты/ЕжедневнаяПроверка.xbsl",
@@ -139,6 +142,9 @@ def test_composite_fixture_build_preserves_cross_cutting_contracts(tmp_path: Pat
     assert ".Отозвать(" in manual_api
     assert ".ОтозватьКлючи(" in manual_api
     assert "ВыдатьКлючиДоступа(" in manual_api
+    assert "Тип: ФормаОтчета<КонтрактныйОтчет>" in report_form
+    assert "Тип: ПросмотрОтчета<КонтрактныйОтчет>" in report_form
+    assert "\nСвойства:" not in report_form
     assert "<ВыдаваемыйКлючДоступа.Объект, ЧитаемаяКоллекция<Пользователи.Ссылка>>" in manual_api
 
     before_write_start = lifecycle.index("метод ПередЗаписью(")

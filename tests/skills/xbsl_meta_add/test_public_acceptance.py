@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import importlib.util
 from pathlib import Path
 
@@ -29,6 +31,7 @@ def test_public_examples_and_positive_fixtures_pass_xbsl_validate(capsys):
 
     code = validator.main(
         [
+            '--format', 'json',
             str(META_ADD_ROOT / "examples"),
             str(FIXTURES_ROOT / "data-and-execution" / "positive"),
             str(FIXTURES_ROOT / "contracts-and-reports" / "positive"),
@@ -39,5 +42,9 @@ def test_public_examples_and_positive_fixtures_pass_xbsl_validate(capsys):
     captured = capsys.readouterr()
 
     assert code == 0, captured.out
-    assert captured.out == ""
+    report = json.loads(captured.out)
+    assert report['summary']['errors'] == 0
+    assert [item['rule_id'] for item in report['diagnostics']] == [
+        'owner.integration_process.permissions_runtime',
+    ]
     assert captured.err == ""

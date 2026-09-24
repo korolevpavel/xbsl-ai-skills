@@ -405,6 +405,7 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
         FIXTURES / "object_rules" / "register" / "valid" / "Остатки.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "Курсы.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "ПодчиненныеЦены.yaml",
+        FIXTURES / "object_rules" / "processing" / "valid" / "РасчетНалогов.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "ВыгруженныеДанные.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "ОборотыБезТипа.yaml",
         FIXTURES / "object_rules" / "scheduled" / "valid" / "ЕжедневнаяОчистка.yaml",
@@ -432,7 +433,7 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
 
     assert code == 0
     assert stderr == ""
-    assert data["summary"] == {"files": 15, "errors": 0, "warnings": 0}
+    assert data["summary"] == {"files": 16, "errors": 0, "warnings": 0}
     assert data["diagnostics"] == []
 
 
@@ -767,6 +768,83 @@ def test_subordinated_info_register_rejects_invalid_contract(change, rule_id, tm
     assert code == 1
     assert stderr == ""
     assert rule_id in {item["rule_id"] for item in data["diagnostics"]}
+
+
+@pytest.mark.parametrize(
+    ("change", "rule_id"),
+    [
+        (
+            lambda doc: doc["КонтрольДоступа"]["Разрешения"].update({"Чтение": "РазрешеноВсем"}),
+            "owner.processing.access_shape",
+        ),
+        (
+            lambda doc: doc["Операции"][0]["КонтрольДоступа"]["Разрешения"].update(
+                {"Вызов": "Запрещено"}
+            ),
+            "owner.processing.call_right",
+        ),
+        (
+            lambda doc: doc["Операции"][1]["КонтрольДоступа"].pop("Обработчик"),
+            "owner.processing.handler",
+        ),
+        (
+            lambda doc: doc["Операции"][1]["КонтрольДоступа"].update(
+                {"Обработчик": "НесуществующийМетод"}
+            ),
+            "owner.processing.handler",
+        ),
+        (
+            lambda doc: doc["Операции"][0]["КонтрольДоступа"]["Разрешения"].update(
+                {"ПоУмолчанию": "РазрешеноВсем"}
+            ),
+            "owner.processing.access_shape",
+        ),
+    ],
+)
+def test_processing_call_right_contract(change, rule_id, tmp_path, capsys):
+    import yaml
+
+    source = FIXTURES / "object_rules" / "processing" / "valid" / "РасчетНалогов.yaml"
+    document = yaml.safe_load(source.read_text(encoding="utf-8"))
+    change(document)
+    target = tmp_path / "РасчетНалогов.yaml"
+    target.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    target.with_suffix(".Объект.xbsl").write_text(
+        source.with_suffix(".Объект.xbsl").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    assert code == 1
+    assert stderr == ""
+    assert rule_id in {item["rule_id"] for item in parse_json(stdout)["diagnostics"]}
+
+
+def test_processing_computed_root_right_requires_event_handler(tmp_path, capsys):
+    import yaml
+
+    source = FIXTURES / "object_rules" / "processing" / "valid" / "РасчетНалогов.yaml"
+    document = yaml.safe_load(source.read_text(encoding="utf-8"))
+    document["КонтрольДоступа"]["Разрешения"]["ПоУмолчанию"] = "РазрешенияВычисляются"
+    target = tmp_path / "РасчетНалогов.yaml"
+    target.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    companion = target.with_suffix(".Объект.xbsl")
+    companion.write_text(source.with_suffix(".Объект.xbsl").read_text(encoding="utf-8"), encoding="utf-8")
+
+    code, stdout, _ = run_cli(["--format=json", str(target)], capsys)
+    assert code == 1
+    assert "owner.processing.handler" in {
+        item["rule_id"] for item in parse_json(stdout)["diagnostics"]
+    }
+
+    companion.write_text(
+        companion.read_text(encoding="utf-8")
+        + "\n@Обработчик\nметод ВычислитьРазрешенияДоступа(): Массив<РазрешениеДоступа>\n    возврат []\n;\n",
+        encoding="utf-8",
+    )
+    code, stdout, _ = run_cli(["--format=json", str(target)], capsys)
+    assert code == 0
+    assert parse_json(stdout)["diagnostics"] == []
 
 
 @pytest.mark.parametrize(

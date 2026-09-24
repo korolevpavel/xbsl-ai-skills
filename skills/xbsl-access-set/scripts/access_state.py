@@ -34,6 +34,7 @@ SUPPORTED_TYPES = frozenset([
     "РегистрСведений",
     "РегистрНакопления",
     "HttpСервис",
+    "Обработка",
 ])
 
 VALID_VALUES = frozenset([
@@ -51,6 +52,7 @@ INSERT_BEFORE: dict[str, list[str]] = {
     "РегистрСведений":   ["Измерения", "Ресурсы", "Реквизиты"],
     "РегистрНакопления": ["ПараметрыЗаписи", "ХранитьПериодическиеИтоги", "Измерения", "Ресурсы", "Реквизиты"],
     "HttpСервис":        ["ШаблоныUrl"],
+    "Обработка":         ["Операции", "Реквизиты", "Интерфейс"],
 }
 
 _OPERATIONS = frozenset(["Чтение", "Изменение", "Добавление", "Удаление", "Создание", "Вызов"])
@@ -173,6 +175,63 @@ def parse_control_access(text: str) -> dict:
     return result
 
 
+def parse_processing_operations(text: str, default_call: str | None) -> list[dict]:
+    """Read operation call rights without confusing nested access with object access."""
+    operations: list[dict] = []
+    in_operations = False
+    current: dict | None = None
+    in_access = False
+    in_permissions = False
+
+    for line in text.splitlines():
+        indent = len(line) - len(line.lstrip(" "))
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if indent == 0:
+            if in_operations:
+                break
+            in_operations = stripped == "Операции:"
+            continue
+        if not in_operations:
+            continue
+        if indent == 4 and (stripped == "-" or stripped.startswith("- ")):
+            current = {"name": None, "access": None}
+            operations.append(current)
+            in_access = False
+            in_permissions = False
+            if stripped.startswith("- Имя:"):
+                current["name"] = stripped.partition(":")[2].strip().strip('"\'')
+            continue
+        if current is None:
+            continue
+        if indent == 8:
+            in_access = stripped == "КонтрольДоступа:"
+            in_permissions = False
+            if stripped.startswith("Имя:"):
+                current["name"] = stripped.partition(":")[2].strip().strip('"\'')
+            elif in_access:
+                current["access"] = {"вызов": None, "обработчик": None}
+        elif indent == 12 and in_access:
+            in_permissions = stripped == "Разрешения:"
+            if stripped.startswith("Обработчик:"):
+                current["access"]["обработчик"] = stripped.partition(":")[2].strip().strip('"\'')
+        elif indent == 16 and in_access and in_permissions and stripped.startswith("Вызов:"):
+            current["access"]["вызов"] = stripped.partition(":")[2].strip().strip('"\'')
+
+    for operation in operations:
+        access = operation["access"]
+        operation["effective_call"] = (
+            (access["вызов"] or "РазрешеноАдминистраторам") if access is not None
+            else (default_call or "РазрешеноАдминистраторам")
+        )
+        operation["source"] = (
+            "operation" if access is not None else "processing" if default_call else "platform"
+        )
+        operation["rename_requires_recalculation"] = access is not None
+    return operations
+
+
 # ---------------------------------------------------------------------------
 # Сканирование объектов
 # ---------------------------------------------------------------------------
@@ -202,6 +261,10 @@ def scan_objects(project_root: str, object_name: str | None = None) -> list[dict
             if object_name is not None and obj_name != object_name:
                 continue
             access = parse_control_access(text)
+            if obj_type == "Обработка":
+                access["processing_operations"] = parse_processing_operations(
+                    text, access["операции"].get("Вызов") or access["по_умолчанию"]
+                )
             objects.append({
                 "name": obj_name or "",
                 "type": obj_type,
@@ -333,6 +396,62 @@ def set_control_access(text: str, object_type: str, new_value: str) -> tuple[str
     return None, insert_control_access(text, object_type, new_value)
 
 
+def set_processing_operation_call(
+    text: str, operation_name: str, new_value: str
+) -> tuple[str | None, str]:
+    """Set only the selected processing operation's Вызов permission."""
+    lines = text.splitlines(keepends=True)
+    in_operations = False
+    starts: list[int] = []
+    end = len(lines)
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        indent = len(line) - len(line.lstrip(" "))
+        if indent == 0:
+            if in_operations:
+                end = index
+                break
+            in_operations = stripped == "Операции:"
+        elif in_operations and indent == 4 and (stripped == "-" or stripped.startswith("- ")):
+            starts.append(index)
+
+    parsed = parse_processing_operations(text, None)
+    for position, start in enumerate(starts):
+        if position >= len(parsed) or parsed[position]["name"] != operation_name:
+            continue
+        stop = starts[position + 1] if position + 1 < len(starts) else end
+        if parsed[position]["access"] is not None and parsed[position]["access"]["вызов"] == new_value:
+            return "already_set", text
+        block = lines[start:stop]
+        if block and not block[-1].endswith("\n"):
+            block[-1] += "\n"
+        access_at = next((i for i, line in enumerate(block) if line.startswith("        КонтрольДоступа:")), None)
+        if access_at is None:
+            block.append(
+                "        КонтрольДоступа:\n"
+                "            Разрешения:\n"
+                f"                Вызов: {new_value}\n"
+            )
+        else:
+            permissions_at = next(
+                (i for i in range(access_at + 1, len(block)) if block[i].startswith("            Разрешения:")),
+                None,
+            )
+            if permissions_at is None:
+                block.insert(access_at + 1, f"            Разрешения:\n                Вызов: {new_value}\n")
+            else:
+                call_at = next(
+                    (i for i in range(permissions_at + 1, len(block)) if block[i].startswith("                Вызов:")),
+                    None,
+                )
+                if call_at is None:
+                    block.insert(permissions_at + 1, f"                Вызов: {new_value}\n")
+                else:
+                    block[call_at] = f"                Вызов: {new_value}\n"
+        return None, "".join(lines[:start] + block + lines[stop:])
+    return "operation_not_found", text
+
+
 # ---------------------------------------------------------------------------
 # Построение плана изменений
 # ---------------------------------------------------------------------------
@@ -379,6 +498,7 @@ def print_dry_run(
     skipped_rls: list[str],
     root: str,
     new_value: str,
+    label: str = "ПоУмолчанию",
 ) -> None:
     def rel(p: str) -> str:
         return os.path.relpath(p, root)
@@ -387,8 +507,8 @@ def print_dry_run(
         print(f"\n=== Изменения ({len(changes)}) ===")
         for path, _orig, _new, old_val in changes:
             print(f"\n  {rel(path)}")
-            print(f"    - ПоУмолчанию: {old_val}")
-            print(f"    + ПоУмолчанию: {new_value}")
+            print(f"    - {label}: {old_val}")
+            print(f"    + {label}: {new_value}")
     else:
         print("\n=== Изменения: нет ===")
 
@@ -429,6 +549,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--object", default=None, help="Ограничить одним объектом")
     parser.add_argument(
+        "--operation", default=None,
+        help="Операция обработки для установки права Вызов (требует --object и --set)",
+    )
+    parser.add_argument(
         "--apply",
         action="store_true",
         help="Применить изменения (без флага — dry-run)",
@@ -457,6 +581,9 @@ def main() -> None:
         sys.exit(1)
 
     if args.set is None:
+        if args.operation:
+            print("Ошибка: --operation требует --object и --set.", file=sys.stderr)
+            sys.exit(1)
         summary = build_summary(all_objects, root)
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
@@ -471,6 +598,50 @@ def main() -> None:
         print(
             "Ошибка: прямая установка РазрешенияВычисляютсяДляКаждогоОбъекта не поддерживается. "
             "Используйте скилл xbsl-pattern-rls.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if args.operation:
+        if (
+            not args.object or len(all_objects) != 1
+            or all_objects[0]["type"] != "Обработка"
+            or new_value == "РазрешенияВычисляются"
+        ):
+            print(
+                "Ошибка: --operation требует одну Обработку и статическое право Вызов.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        obj = all_objects[0]
+        reason, new_text = set_processing_operation_call(
+            obj["_text"], args.operation, new_value
+        )
+        if reason == "operation_not_found":
+            print(f"Ошибка: операция «{args.operation}» не найдена.", file=sys.stderr)
+            sys.exit(1)
+        prior = next(
+            item for item in obj["access"]["processing_operations"]
+            if item["name"] == args.operation
+        )
+        changes = [] if reason == "already_set" else [
+            (obj["path"], obj["_text"], new_text, prior["effective_call"])
+        ]
+        skipped = [obj["path"]] if reason == "already_set" else []
+        print_dry_run(
+            changes, skipped, [], root, new_value, label=f"{args.operation}.Вызов"
+        )
+        if args.apply:
+            apply_changes(changes)
+            print(f"\n✓ Применено: {len(changes)} файлов")
+        return
+
+    if new_value == "РазрешенияВычисляются" and any(
+        obj["type"] == "Обработка" for obj in all_objects
+    ):
+        print(
+            "Ошибка: вычисляемые права Обработки требуют обработчика в модуле; "
+            "настройте их по справочнику xbsl-meta-add.",
             file=sys.stderr,
         )
         sys.exit(1)

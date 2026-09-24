@@ -34,7 +34,7 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
   только у функциональных объектов и только в их документированных type slots,
   а UI, `Проект.yaml` и `Подсистема.yaml` маршрутизирует без объектных
   false-positive diagnostics;
-- для `Отчет`, `ЖурналДанных`, `ИнтегрируемоеПриложение`, `ПланОбмена`, `РегистрНакопления`, `РегистрСведений`, `Обработка`, `КлючДоступа` и
+- для `Отчет`, `ЖурналДанных`, `ИнтегрируемоеПриложение`, `ПланОбмена`, `ПроцессИнтеграции`, `РегистрНакопления`, `РегистрСведений`, `Обработка`, `КлючДоступа` и
   `ЗапланированноеЗадание` запускает object-specific validators после common
   слоя.
 
@@ -68,6 +68,8 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
   `owner.data_journal.attribute`, `owner.data_journal.attribute_source`,
   `owner.data_journal.attribute_missing`.
 - интегрируемое приложение: `owner.integrable_application.system_settings`;
+- процесс интеграции: `owner.integration_process.permissions_runtime`
+  (warning: нужны разрешения работающего приложения);
 - план обмена с передачей данных: `owner.exchange_plan.transfer`,
   `owner.exchange_plan.batch_kind`, `owner.exchange_plan.connections`,
   `owner.exchange_plan.project`, `owner.exchange_plan.external_name`,

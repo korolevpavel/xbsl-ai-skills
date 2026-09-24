@@ -1589,6 +1589,27 @@ def validate_exchange_plan_transfer(
     return diagnostics
 
 
+def validate_integration_process_permissions(
+    input_file: InputFile, document: Mapping[str, Any]
+) -> list[Diagnostic]:
+    schema = document.get("Схема")
+    nodes = schema.get("Узлы", []) if isinstance(schema, dict) else []
+    external_nodes = [
+        node.get("Имя", "<unnamed>") for node in nodes
+        if isinstance(node, dict)
+        and isinstance(node.get("Вид"), str)
+        and (node["Вид"].endswith("Источник") or node["Вид"].endswith("Назначение"))
+    ] if isinstance(nodes, list) else []
+    if not external_nodes:
+        return []
+    return [Diagnostic(
+        input_file.display_path, None, "warning", "owner.integration_process.permissions_runtime",
+        "Check application permissions in control panel before starting nodes "
+        + ", ".join(external_nodes)
+        + "; missing permissions can move messages to undelivered without retry",
+    )]
+
+
 SUPPORTED_VALIDATORS: dict[
     str, Callable[[InputFile, Mapping[str, Any]], list[Diagnostic]]
 ] = {
@@ -1600,6 +1621,7 @@ SUPPORTED_VALIDATORS: dict[
     "ЖурналДанных": validate_data_journal,
     "ИнтегрируемоеПриложение": validate_integrable_application,
     "ПланОбмена": validate_exchange_plan_transfer,
+    "ПроцессИнтеграции": validate_integration_process_permissions,
 }
 
 

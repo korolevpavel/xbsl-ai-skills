@@ -7,6 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import yaml
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -170,6 +171,40 @@ def test_build_form_yaml_contains_matrix_layout_and_min_width(generate) -> None:
     assert "Выражение: Название" in yaml_text
     assert "Выражение: Фото" in yaml_text
     assert "МинимальнаяШирина: 250" in yaml_text
+
+
+def test_build_form_yaml_places_10_list_settings_at_documented_levels(generate) -> None:
+    form_text = generate.build_form_yaml(
+        "uid-form", "Задачи", "Acme::CRM::Основное", "Название", None,
+        [{"name": "Статус", "type": "Строка"}], 400,
+        settings_mode="Расширенный", auto_filters={"Название": "Всегда"},
+        auto_sorts={"Название"}, deletion_filter=True, multi_sort=True,
+    )
+    form = yaml.safe_load(form_text)
+    component = form["Наследует"]["Содержимое"]["Содержимое"]["Содержимое"][0]
+    source = component["Источник"]
+    title_field = next(field for field in source["Поля"] if field["Выражение"] == "Название")
+
+    assert component["РежимНастроек"] == "Расширенный"
+    assert component["ИспользоватьМножественнуюСортировку"] == "Истина"
+    assert source["ОтображатьФильтрПометкиНаУдаление"] == "Истина"
+    assert title_field["ОтображатьВАвтоматическихФильтрах"] == "Всегда"
+    assert title_field["ОтображатьВАвтоматическихСортировках"] == "Истина"
+    assert "ИспользоватьРасширенныеНастройки" not in form_text
+    assert "ОтображатьВПростыхФильтрах" not in form_text
+
+
+def test_card_list_settings_reject_unknown_source_field(generate, tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        generate, "get_form_info",
+        lambda _object_name, _root: make_form_info(
+            "Задачи", tmp_path, [{"name": "Название", "type": "Строка"}],
+        ),
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        generate.main(["--object", "Задачи", "--auto-filter", "Неизвестное:Всегда"])
+    assert exc_info.value.code == 1
+    assert "недопустимый автоматический фильтр" in capsys.readouterr().err
 
 
 def test_build_row_yaml_switches_between_photo_and_standard_cards(generate) -> None:

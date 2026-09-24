@@ -175,7 +175,13 @@ def build_card_content_yaml(content_fields: list[dict], indent: int) -> str:
 # Генерация полей Источника (список Поля в ФормаСписка)
 # ---------------------------------------------------------------------------
 
-def build_source_fields_yaml(title: str, photo: str | None, content_fields: list[dict]) -> str:
+def build_source_fields_yaml(
+    title: str,
+    photo: str | None,
+    content_fields: list[dict],
+    auto_filters: dict[str, str] | None = None,
+    auto_sorts: set[str] | None = None,
+) -> str:
     """
     Строит блок Поля для секции Источник в ФормаСписка.
     Каждое поле: 28 пробелов '-', 32 пробела 'Тип:' и 'Выражение:'.
@@ -186,6 +192,8 @@ def build_source_fields_yaml(title: str, photo: str | None, content_fields: list
     for f in content_fields:
         field_names.append(f["name"])
 
+    auto_filters = auto_filters or {}
+    auto_sorts = auto_sorts or set()
     lines = []
     for name in field_names:
         lines.append(
@@ -193,6 +201,10 @@ def build_source_fields_yaml(title: str, photo: str | None, content_fields: list
             f"                                Тип: ПолеДинамическогоСписка\n"
             f"                                Выражение: {name}\n"
         )
+        if name in auto_filters:
+            lines.append(f"                                ОтображатьВАвтоматическихФильтрах: {auto_filters[name]}\n")
+        if name in auto_sorts:
+            lines.append("                                ОтображатьВАвтоматическихСортировках: Истина\n")
     return "".join(lines)
 
 
@@ -208,8 +220,21 @@ def build_form_yaml(
     photo: str | None,
     content_fields: list[dict],
     min_width: int,
+    settings_mode: str | None = None,
+    auto_filters: dict[str, str] | None = None,
+    auto_sorts: set[str] | None = None,
+    deletion_filter: bool = False,
+    multi_sort: bool = False,
 ) -> str:
-    source_fields = build_source_fields_yaml(title, photo, content_fields)
+    source_fields = build_source_fields_yaml(title, photo, content_fields, auto_filters, auto_sorts)
+    list_options = ""
+    if settings_mode:
+        list_options += f"                    РежимНастроек: {settings_mode}\n"
+    if multi_sort:
+        list_options += "                    ИспользоватьМножественнуюСортировку: Истина\n"
+    source_options = ""
+    if deletion_filter:
+        source_options = "                        ОтображатьФильтрПометкиНаУдаление: Истина\n"
 
     return (
         f"ВидЭлемента: КомпонентИнтерфейса\n"
@@ -236,8 +261,10 @@ def build_form_yaml(
         f"                    Имя: ОсновнаяТаблица\n"
         f"                    ОбрабатыватьНажатие: Истина\n"
         f"                    ТипКомпонентаСтроки: СтрокаСписка{obj}\n"
+        f"{list_options}"
         f"                    Источник:\n"
         f"                        ИмяТипаДанныхСтроки: ДанныеСтрокиСписка\n"
+        f"{source_options}"
         f"                        ОсновнаяТаблица:\n"
         f"                            Таблица: {obj}\n"
         f"                        Поля:\n"
@@ -471,6 +498,23 @@ def run(args: argparse.Namespace) -> None:
         print(f"Ошибка: не найдено строковое поле для заголовка карточки в объекте {obj}.", file=sys.stderr)
         sys.exit(1)
 
+    available_fields = {"Ссылка", title, *(f["name"] for f in content_fields)}
+    if photo:
+        available_fields.add(photo)
+    auto_filters: dict[str, str] = {}
+    for setting in args.auto_filter:
+        field, separator, mode = setting.partition(":")
+        mode = mode if separator else "Всегда"
+        if field not in available_fields or mode not in {"Всегда", "Опционально", "НеОтображать"}:
+            print(f"Ошибка: недопустимый автоматический фильтр {setting!r}; поле должно входить в источник, режим — Всегда, Опционально или НеОтображать.", file=sys.stderr)
+            sys.exit(1)
+        auto_filters[field] = mode
+    auto_sorts = set(args.auto_sort)
+    unknown_sorts = auto_sorts - available_fields
+    if unknown_sorts:
+        print(f"Ошибка: поля автоматической сортировки отсутствуют в источнике: {', '.join(sorted(unknown_sorts))}.", file=sys.stderr)
+        sys.exit(1)
+
     # МинимальнаяШирина
     if args.min_width is not None:
         min_width = args.min_width
@@ -527,7 +571,12 @@ def run(args: argparse.Namespace) -> None:
     uid1 = str(uuid.uuid4())
     uid2 = str(uuid.uuid4())
 
-    form_yaml = build_form_yaml(uid1, obj, namespace, title, photo, content_fields, min_width)
+    form_yaml = build_form_yaml(
+        uid1, obj, namespace, title, photo, content_fields, min_width,
+        settings_mode=args.settings_mode, auto_filters=auto_filters,
+        auto_sorts=auto_sorts, deletion_filter=args.deletion_filter,
+        multi_sort=args.multi_sort,
+    )
     row_yaml = build_row_yaml(uid2, obj, namespace, title, photo, content_fields, object_type)
 
     write_text(form_path, form_yaml)
@@ -552,6 +601,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--object", required=True, help="Имя объекта (например Задачи)")
     parser.add_argument("--root", default=".", help="Корень проекта (по умолчанию: .)")
     parser.add_argument("--min-width", type=int, default=None, help="МинимальнаяШирина карточки (авто: 250 с фото, 400 без)")
+    parser.add_argument("--settings-mode", choices=["Простой", "Расширенный", "Произвольный"], help="Режим настроек списка (10.0+)")
+    parser.add_argument("--auto-filter", action="append", default=[], metavar="ПОЛЕ[:РЕЖИМ]", help="Автоматический фильтр поля; режим: Всегда (по умолчанию), Опционально, НеОтображать (10.0+)")
+    parser.add_argument("--auto-sort", action="append", default=[], metavar="ПОЛЕ", help="Показывать поле в автоматических сортировках (10.0+)")
+    parser.add_argument("--deletion-filter", action="store_true", help="Показывать фильтр пометки на удаление (10.0+)")
+    parser.add_argument("--multi-sort", action="store_true", help="Включить интерфейс множественной сортировки (10.0+)")
     parser.add_argument("--apply", action="store_true", help="Применить изменения (без флага — dry-run)")
     return parser.parse_args(argv)
 

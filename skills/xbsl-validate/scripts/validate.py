@@ -1491,6 +1491,104 @@ def validate_data_journal(input_file: InputFile, document: Mapping[str, Any]) ->
     return diagnostics
 
 
+def validate_integrable_application(
+    input_file: InputFile, document: Mapping[str, Any]
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    forbidden = {"НастройкиПрямогоПодключения", "Адрес", "ИдКлиента", "СекретКлиента"}
+    if forbidden & document.keys():
+        diagnostics.append(Diagnostic(
+            input_file.display_path, None, "error", "owner.integrable_application.system_settings",
+            "Direct connection settings belong to the running application, not project YAML",
+        ))
+    attributes = document.get("Реквизиты", [])
+    if isinstance(attributes, list) and any(
+        isinstance(item, dict) and item.get("Имя") in forbidden for item in attributes
+    ):
+        diagnostics.append(Diagnostic(
+            input_file.display_path, None, "error", "owner.integrable_application.system_settings",
+            "Do not declare system direct-connection fields as user attributes",
+        ))
+    return diagnostics
+
+
+def validate_exchange_plan_transfer(
+    input_file: InputFile, document: Mapping[str, Any]
+) -> list[Diagnostic]:
+    transfer = document.get("ПередачаДанных")
+    if transfer is None:
+        return []
+    diagnostics: list[Diagnostic] = []
+
+    def error(rule_id: str, message: str) -> None:
+        diagnostics.append(Diagnostic(input_file.display_path, None, "error", rule_id, message))
+
+    if not isinstance(transfer, dict):
+        error("owner.exchange_plan.transfer", "ПередачаДанных must be a mapping")
+        return diagnostics
+    enabled = transfer.get("Использовать", "Ложь")
+    if not isinstance(enabled, str) or enabled not in {"Истина", "Ложь"}:
+        error("owner.exchange_plan.transfer", "Использовать must be Истина or Ложь")
+    batch = transfer.get("ВидПакетаПередачиДанных", "ВсеИзменения")
+    if not isinstance(batch, str) or batch not in {"ВсеИзменения", "ОдноИзменение"}:
+        error("owner.exchange_plan.batch_kind", "Invalid ВидПакетаПередачиДанных")
+    connections = transfer.get("ИнтегрируемыеПриложения", [])
+    if not isinstance(connections, list) or (enabled == "Истина" and not connections):
+        error("owner.exchange_plan.connections", "Enabled transfer needs non-empty ИнтегрируемыеПриложения")
+        return diagnostics
+    if not connections:
+        return diagnostics
+
+    project_root = next(
+        (parent for parent in input_file.actual_path.parents if (parent / "Проект.yaml").is_file()),
+        None,
+    )
+    if project_root is None:
+        error("owner.exchange_plan.project", "Cannot resolve integration links without local Проект.yaml")
+        return diagnostics
+    try:
+        with (project_root / "Проект.yaml").open(encoding="utf-8") as stream:
+            project = yaml.safe_load(stream)
+    except (OSError, UnicodeError, yaml.YAMLError):
+        project = None
+    if not isinstance(project, dict):
+        error("owner.exchange_plan.project", "Cannot read local Проект.yaml")
+        return diagnostics
+
+    candidates: list[tuple[str, str, str]] = []
+    for path in project_root.rglob("*.yaml"):
+        if path.name in STRUCTURAL_FILE_KINDS or path == input_file.actual_path:
+            continue
+        try:
+            with path.open(encoding="utf-8") as stream:
+                item = yaml.safe_load(stream)
+        except (OSError, UnicodeError, yaml.YAMLError):
+            continue
+        if not isinstance(item, dict) or not isinstance(item.get("Имя"), str):
+            continue
+        relative = path.relative_to(project_root).with_suffix("")
+        qualified = "::".join(
+            [str(project.get("Поставщик", "")), str(project.get("Имя", "")), *relative.parts]
+        )
+        candidates.append((item["Имя"], qualified, item.get("ВидЭлемента", "")))
+
+    for connection in connections:
+        if not isinstance(connection, dict) or not isinstance(connection.get("Имя"), str) or not connection["Имя"]:
+            error("owner.exchange_plan.connections", "Each connection requires non-empty Имя")
+            continue
+        name = connection["Имя"]
+        external_name = connection.get("ИмяПланаОбменаВИнтегрируемомПриложении")
+        if external_name is not None and (not isinstance(external_name, str) or not external_name):
+            error("owner.exchange_plan.external_name", "External exchange-plan name must be non-empty")
+        matches = [candidate for candidate in candidates
+                   if (candidate[1] if "::" in name else candidate[0]) == name]
+        if len(matches) != 1:
+            error("owner.exchange_plan.connection", f"Connection {name} resolves to {len(matches)} local elements")
+        elif matches[0][2] != "ИнтегрируемоеПриложение":
+            error("owner.exchange_plan.connection_kind", f"Connection {name} is not ИнтегрируемоеПриложение")
+    return diagnostics
+
+
 SUPPORTED_VALIDATORS: dict[
     str, Callable[[InputFile, Mapping[str, Any]], list[Diagnostic]]
 ] = {
@@ -1500,6 +1598,8 @@ SUPPORTED_VALIDATORS: dict[
     "КлючДоступа": validate_access_key,
     "Обработка": validate_processing,
     "ЖурналДанных": validate_data_journal,
+    "ИнтегрируемоеПриложение": validate_integrable_application,
+    "ПланОбмена": validate_exchange_plan_transfer,
 }
 
 

@@ -139,6 +139,7 @@ def test_composite_fixture_build_preserves_cross_cutting_contracts(tmp_path: Pat
     assert ".Отозвать(" in manual_api
     assert ".ОтозватьКлючи(" in manual_api
     assert "ВыдатьКлючиДоступа(" in manual_api
+    assert "<ВыдаваемыйКлючДоступа.Объект, ЧитаемаяКоллекция<Пользователи.Ссылка>>" in manual_api
 
     before_write_start = lifecycle.index("метод ПередЗаписью(")
     next_method_start = lifecycle.find("\nметод ", before_write_start + 1)

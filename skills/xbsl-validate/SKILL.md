@@ -58,6 +58,7 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
   `owner.scheduled_task.unreadable_companion`,
   `owner.scheduled_task.handler`.
 - ключ доступа: `owner.access_key.boolean_literal`,
+  `owner.access_key.manual_grant_required`,
   `owner.access_key.parameter_uuid`, `owner.access_key.system_recalculation_mode`,
   `owner.access_key.manual_handler_ignored`.
 

@@ -474,6 +474,17 @@ def validate_access_key(
     diagnostics: list[Diagnostic] = []
     text = input_file.actual_path.read_text(encoding="utf-8")
 
+    if "РучнаяВыдача" not in document:
+        diagnostics.append(
+            Diagnostic(
+                input_file.display_path,
+                None,
+                "error",
+                "owner.access_key.manual_grant_required",
+                "Access key requires explicit РучнаяВыдача: Истина or Ложь for target 10.0",
+            )
+        )
+
     for field in ("РучнаяВыдача", "ОтключитьСистемныеПересчеты"):
         if field in document and document[field] not in {"Истина", "Ложь"}:
             diagnostics.append(
@@ -486,7 +497,7 @@ def validate_access_key(
                 )
             )
 
-    manual = document.get("РучнаяВыдача", "Ложь") == "Истина"
+    manual = document.get("РучнаяВыдача") == "Истина"
     if manual and "ОтключитьСистемныеПересчеты" in document:
         diagnostics.append(
             Diagnostic(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -38,7 +39,7 @@ def test_document_before_write_fixture_uses_documented_signature() -> None:
     assert source == expected
 
 
-def test_access_key_lifecycle_modes_are_explicit_and_backward_compatible() -> None:
+def test_access_key_lifecycle_modes_are_explicit_for_target_10() -> None:
     skill = SKILL_PATH.read_text(encoding="utf-8")
     reference = REFERENCE_PATH.read_text(encoding="utf-8")
 
@@ -47,7 +48,22 @@ def test_access_key_lifecycle_modes_are_explicit_and_backward_compatible() -> No
         assert mode in reference
     assert "`automatic` — default" in skill
     assert "РучнаяВыдача: Истина" in reference
+    assert "РучнаяВыдача: Ложь               # обязательно в target 10.0" in reference
     assert "ОтключитьСистемныеПересчеты: Истина" in reference
+
+
+def test_bulk_grant_example_uses_grantable_access_key_type() -> None:
+    references = [
+        REFERENCE_PATH,
+        ROOT_DIR / "skills/xbsl-meta-add/references/КлючДоступа.md",
+    ]
+    snippets = "\n".join(
+        snippet
+        for path in references
+        for snippet in re.findall(r"```xbsl\n(.*?)```", path.read_text(encoding="utf-8"), re.DOTALL)
+    )
+    assert "ВыдаваемыйКлючДоступа.Объект" in snippets
+    assert not re.search(r"(?<!Выдаваемый)КлючДоступа\.Объект\s*,\s*ЧитаемаяКоллекция", snippets)
 
 
 def test_manual_mode_documents_issue_revoke_without_key_recalculation() -> None:

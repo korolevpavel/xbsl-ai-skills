@@ -357,6 +357,25 @@ def test_build_result_for_report_returns_report_fields(form_info, tmp_path: Path
     assert result["fields"] == []
 
 
+def test_report_layout_required_parameter_is_available_to_form_skill(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+    write_file(
+        subsystem_dir / "ИерархияТоваров.yaml",
+        "ВидЭлемента: Отчет\nИмя: ИерархияТоваров\n"
+        "ВидИсточникаДанных: Таблица\nИсточникДанных: Товары\n"
+        "Макет:\n    ВидОтображения: СводнаяТаблица\n"
+        "    Параметры:\n        -\n            Имя: ДатаОтчета\n"
+        "            Тип: ДатаВремя\n            Обязательный: Истина\n"
+        "    Поля:\n        -\n            Вид: Измерение\n",
+    )
+    found = form_info.find_object(str(tmp_path), "ИерархияТоваров")
+    assert found is not None
+    result = form_info.build_result(found)
+    assert result["report_params"] == [
+        {"name": "ДатаОтчета", "type": "ДатаВремя", "required": True}
+    ]
+
+
 
 def test_main_infers_document_number_type_when_type_is_omitted(form_info, tmp_path: Path, monkeypatch, capsys) -> None:
     _, subsystem_dir = create_project_structure(tmp_path)

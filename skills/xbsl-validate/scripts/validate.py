@@ -547,6 +547,51 @@ def validate_report(input_file: InputFile, document: Mapping[str, Any]) -> list[
     source_kind = document.get("ВидИсточникаДанных", "Таблица")
     companion = input_file.actual_path.with_suffix(".xbql")
 
+    def layout_error(message: str) -> None:
+        diagnostics.append(Diagnostic(
+            input_file.display_path, None, "error", "owner.report.layout_10", message
+        ))
+
+    if "ВыбиратьРазрешенные" in document or "Обязательный" in document:
+        layout_error("10.0 report properties belong under Макет")
+    layout = document.get("Макет")
+    if layout is not None:
+        if not isinstance(layout, dict):
+            layout_error("Макет must be a mapping")
+        else:
+            if "ВыбиратьРазрешенные" in layout and layout["ВыбиратьРазрешенные"] not in (
+                "Истина", "Ложь"
+            ):
+                layout_error("Макет.ВыбиратьРазрешенные must be Истина or Ложь")
+            parameters = layout.get("Параметры", [])
+            if not isinstance(parameters, list):
+                layout_error("Макет.Параметры must be a list")
+            else:
+                for parameter in parameters:
+                    if not isinstance(parameter, dict):
+                        layout_error("Макет.Параметры members must be mappings")
+                    elif "Обязательный" in parameter and parameter["Обязательный"] not in (
+                        "Истина", "Ложь"
+                    ):
+                        layout_error("Макет.Параметры[].Обязательный must be Истина or Ложь")
+            fields = layout.get("Поля", [])
+            if isinstance(fields, list):
+                for field in fields:
+                    if not isinstance(field, dict):
+                        continue
+                    roles = field.get("ВизуальныеРоли", [])
+                    if isinstance(roles, list) and "Иерархия" in roles and (
+                        layout.get("ВидОтображения") != "СводнаяТаблица"
+                        or field.get("Вид") != "Измерение"
+                    ):
+                        layout_error("Иерархия requires an Измерение in a СводнаяТаблица")
+    query_parameters = document.get("ПараметрыЗапроса", [])
+    if isinstance(query_parameters, list) and any(
+        isinstance(parameter, dict) and "Обязательный" in parameter
+        for parameter in query_parameters
+    ):
+        layout_error("Обязательный belongs to Макет.Параметры, not ПараметрыЗапроса")
+
     if "Запрос" in document:
         diagnostics.append(
             Diagnostic(

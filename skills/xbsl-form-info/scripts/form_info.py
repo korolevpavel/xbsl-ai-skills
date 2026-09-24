@@ -127,6 +127,45 @@ def parse_list_section(text: str, section_name: str) -> list[dict]:
     return items
 
 
+def parse_report_layout_parameters(text: str) -> list[dict]:
+    """Read Макет.Параметры without mistaking ПараметрыЗапроса for layout parameters."""
+    in_layout = False
+    in_parameters = False
+    items: list[dict] = []
+    current: dict | None = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if indent == 0:
+            if in_layout:
+                break
+            in_layout = stripped == "Макет:"
+            continue
+        if not in_layout:
+            continue
+        if indent == 4:
+            if in_parameters:
+                break
+            in_parameters = stripped == "Параметры:"
+            continue
+        if not in_parameters:
+            continue
+        if indent == 8 and stripped.startswith("-"):
+            current = {}
+            items.append(current)
+            rest = stripped[1:].strip()
+            if ":" in rest:
+                key, _, value = rest.partition(":")
+                current[key.strip()] = value.strip()
+        elif indent in (10, 12) and current is not None and ":" in stripped:
+            key, _, value = stripped.partition(":")
+            if value.strip():
+                current[key.strip()] = value.strip()
+    return items
+
+
 def find_project_dirs(root: str) -> list[str]:
     """
     Рекурсивно ищет все папки, содержащие Проект.yaml, начиная с root.
@@ -288,6 +327,18 @@ def build_result(found: ObjectMatch) -> dict:
     if is_report:
         report_params_raw = parse_list_section(found.object_text, "ПараметрыЗапроса")
         report_params = [{"name": p.get("Имя", "?"), "type": p.get("Тип", "")} for p in report_params_raw]
+        for parameter in parse_report_layout_parameters(found.object_text):
+            name = parameter.get("Имя", "?")
+            layout_param = {
+                "name": name,
+                "type": parameter.get("Тип", ""),
+                "required": parameter.get("Обязательный") == "Истина",
+            }
+            existing = next((index for index, item in enumerate(report_params) if item["name"] == name), None)
+            if existing is None:
+                report_params.append(layout_param)
+            else:
+                report_params[existing] = layout_param
         data_source_kind = get_yaml_field(found.object_text, "ВидИсточникаДанных")
         data_source = get_yaml_field(found.object_text, "ИсточникДанных")
         layout = "report"

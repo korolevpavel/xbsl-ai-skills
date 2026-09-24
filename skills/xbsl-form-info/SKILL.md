@@ -18,8 +18,10 @@ compatibility: Requires Python 3.
 ## Команда
 
 ```bash
-{python} skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root .
+{python} skills/xbsl-form-info/scripts/form_info.py --name <ИмяОбъекта> --root . --target-version 10.0
 ```
+
+`--target-version` определяет вид иерархии по умолчанию, когда `Иерархия.Вид` не задан: с 10.0 — `ИерархияГруппИЭлементов`, до 10.0 — `ИерархияЭлементов`. По умолчанию CLI использует 10.0.
 
 ## Возвращает JSON
 
@@ -39,6 +41,8 @@ compatibility: Requires Python 3.
     "ФормаСписка": null
   },
   "is_hierarchical": false,
+  "hierarchy_kind": null,
+  "parent_reference_type": null,
   "additional_hierarchies": [],
   "report_params": [],
   "data_source_kind": null,

@@ -293,6 +293,8 @@ def test_main_prints_expected_json_for_found_object(form_info, tmp_path: Path, m
             "ФормаСписка": None,
         },
         "is_hierarchical": False,
+        "hierarchy_kind": None,
+        "parent_reference_type": None,
         "additional_hierarchies": [],
         "report_params": [],
         "data_source_kind": None,
@@ -454,7 +456,36 @@ def test_build_result_detects_simple_hierarchy(form_info, tmp_path: Path) -> Non
     result = form_info.build_result(found)
 
     assert result["is_hierarchical"] is True
+    assert result["hierarchy_kind"] == "ИерархияГруппИЭлементов"
+    assert result["parent_reference_type"] == "Категории.Группы.Ссылка?"
     assert result["additional_hierarchies"] == []
+
+
+def test_build_result_detects_explicit_element_hierarchy(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+    write_file(
+        subsystem_dir / "Категории.yaml",
+        "Имя: Категории\nВидЭлемента: Справочник\nИерархический: Истина\n"
+        "Иерархия:\n    Вид: ИерархияЭлементов\n"
+        "Реквизиты:\n    - Имя: Наименование\n",
+    )
+    result = form_info.build_result(form_info.find_object(str(tmp_path), "Категории"))
+
+    assert result["hierarchy_kind"] == "ИерархияЭлементов"
+    assert result["parent_reference_type"] == "Категории.Ссылка?"
+
+
+def test_build_result_uses_old_default_before_element_10(form_info, tmp_path: Path) -> None:
+    _, subsystem_dir = create_project_structure(tmp_path)
+    write_file(
+        subsystem_dir / "Категории.yaml",
+        "Имя: Категории\nВидЭлемента: Справочник\nИерархический: Истина\n",
+    )
+    found = form_info.find_object(str(tmp_path), "Категории")
+    result = form_info.build_result(found, "9.2")
+
+    assert result["hierarchy_kind"] == "ИерархияЭлементов"
+    assert result["parent_reference_type"] == "Категории.Ссылка?"
 
 
 def test_build_result_detects_additional_hierarchies(form_info, tmp_path: Path) -> None:

@@ -67,6 +67,22 @@ def get_yaml_field(text: str, field: str) -> str | None:
     return None
 
 
+def get_catalog_hierarchy_kind(text: str) -> str | None:
+    """Read Иерархия.Вид without confusing it with another nested Вид field."""
+    in_hierarchy = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if indent == 0:
+            in_hierarchy = stripped == "Иерархия:"
+            continue
+        if in_hierarchy and stripped.startswith("Вид:"):
+            return stripped.partition(":")[2].strip().strip('"') or None
+    return None
+
+
 def parse_list_section(text: str, section_name: str) -> list[dict]:
     """
     Парсит элементы верхнеуровневой YAML-секции вида:
@@ -313,7 +329,7 @@ def build_existing_forms(object_path: str, object_file: str, obj_type: str) -> d
     }
 
 
-def build_result(found: ObjectMatch) -> dict:
+def build_result(found: ObjectMatch, target_version: str = "10.0") -> dict:
     obj_type = get_yaml_field(found.object_text, "ВидЭлемента") or UNKNOWN_OBJECT_TYPE
     fields = normalize_fields(obj_type, parse_list_section(found.object_text, "Реквизиты"))
     tc_list = parse_list_section(found.object_text, "ТабличныеЧасти")
@@ -322,6 +338,14 @@ def build_result(found: ObjectMatch) -> dict:
     field_count = len(fields)
     tc_count = len(tc_list)
     is_hierarchical = get_yaml_field(found.object_text, "Иерархический") == "Истина"
+    hierarchy_kind = None
+    parent_reference_type = None
+    if obj_type == "Справочник" and is_hierarchical:
+        default_kind = "ИерархияГруппИЭлементов" if int(target_version.split(".")[0]) >= 10 else "ИерархияЭлементов"
+        hierarchy_kind = get_catalog_hierarchy_kind(found.object_text) or default_kind
+        object_name = get_yaml_field(found.object_text, "Имя") or os.path.splitext(found.object_file)[0]
+        group_suffix = ".Группы" if hierarchy_kind == "ИерархияГруппИЭлементов" else ""
+        parent_reference_type = f"{object_name}{group_suffix}.Ссылка?"
 
     is_report = obj_type == "Отчет"
     if is_report:
@@ -360,6 +384,8 @@ def build_result(found: ObjectMatch) -> dict:
         "suggested_layout": layout,
         "existing_forms": build_existing_forms(found.object_path, found.object_file, obj_type),
         "is_hierarchical": is_hierarchical,
+        "hierarchy_kind": hierarchy_kind,
+        "parent_reference_type": parent_reference_type,
         "additional_hierarchies": [
             {"name": h.get("Имя", ""), "field": h.get("ПолеРодителя", "")}
             for h in additional_hierarchies
@@ -400,6 +426,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Анализ объекта 1С:Элемент для создания форм")
     parser.add_argument("--name", required=True, help="Имя объекта конфигурации")
     parser.add_argument("--root", default=".", help="Корневая папка поиска (по умолчанию: .)")
+    parser.add_argument("--target-version", default="10.0", help="Версия Element для определения вида иерархии по умолчанию")
     return parser.parse_args(argv)
 
 
@@ -416,7 +443,7 @@ def main(argv: list[str] | None = None):
         print_json(build_not_found_error(args.name, root))
         sys.exit(1)
 
-    print_json(build_result(found))
+    print_json(build_result(found, args.target_version))
 
 
 if __name__ == "__main__":

@@ -410,7 +410,6 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
         FIXTURES / "object_rules" / "register" / "valid" / "ВыгруженныеДанные.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "ОборотыБезТипа.yaml",
         FIXTURES / "object_rules" / "scheduled" / "valid" / "ЕжедневнаяОчистка.yaml",
-        FIXTURES / "object_rules" / "access_key" / "valid_default" / "КлючЗаказов.yaml",
         FIXTURES / "object_rules" / "access_key" / "valid_automatic" / "КлючЗаказов.yaml",
         FIXTURES / "object_rules" / "access_key" / "valid_automatic_disabled" / "КлючЗаказов.yaml",
         FIXTURES / "object_rules" / "access_key" / "valid_manual" / "КлючЗаказов.yaml",
@@ -434,7 +433,7 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
 
     assert code == 0
     assert stderr == ""
-    assert data["summary"] == {"files": 17, "errors": 0, "warnings": 0}
+    assert data["summary"] == {"files": 16, "errors": 0, "warnings": 0}
     assert data["diagnostics"] == []
 
 
@@ -586,6 +585,12 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
             "Обработчик() without parameters",
         ),
         (
+            "access_key/invalid_missing_manual_mode/КлючЗаказов.yaml",
+            None,
+            "owner.access_key.manual_grant_required",
+            "requires explicit РучнаяВыдача",
+        ),
+        (
             "access_key/invalid_manual_recalculation/КлючЗаказов.yaml",
             5,
             "owner.access_key.system_recalculation_mode",
@@ -599,7 +604,7 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
         ),
         (
             "access_key/invalid_custom_parameter/КлючЗаказов.yaml",
-            4,
+            5,
             "owner.access_key.parameter_uuid",
             "requires a valid UUID",
         ),

@@ -41,7 +41,8 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
 Стабильные object-specific rule ID:
 
 - отчет: `owner.report.source`, `owner.report.query_companion`,
-  `owner.report.query_parameters`, `owner.report.interface`;
+  `owner.report.query_parameters`, `owner.report.interface`,
+  `owner.report.layout_10`;
 - регистр: `owner.register.dimensions`, `owner.register.resources`,
   `owner.register.member`, `owner.register.invalid_uuid`,
   `owner.register.resource_type`, `owner.register.registrar`,

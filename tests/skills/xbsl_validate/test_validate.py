@@ -402,6 +402,7 @@ def test_schema_routing_json_is_deterministic(capsys):
 def test_supported_object_validators_accept_documented_fixtures(capsys):
     targets = [
         FIXTURES / "object_rules" / "report" / "valid" / "Продажи.yaml",
+        FIXTURES / "object_rules" / "report" / "valid" / "ИерархияТоваров.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "Остатки.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "Курсы.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "ПодчиненныеЦены.yaml",
@@ -433,7 +434,7 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
 
     assert code == 0
     assert stderr == ""
-    assert data["summary"] == {"files": 16, "errors": 0, "warnings": 0}
+    assert data["summary"] == {"files": 17, "errors": 0, "warnings": 0}
     assert data["diagnostics"] == []
 
 
@@ -845,6 +846,33 @@ def test_processing_computed_root_right_requires_event_handler(tmp_path, capsys)
     code, stdout, _ = run_cli(["--format=json", str(target)], capsys)
     assert code == 0
     assert parse_json(stdout)["diagnostics"] == []
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda doc: doc.update({"ВыбиратьРазрешенные": "Истина"}),
+        lambda doc: doc["Макет"].update({"ВыбиратьРазрешенные": "Да"}),
+        lambda doc: doc["Макет"]["Параметры"][0].update({"Обязательный": "Да"}),
+        lambda doc: doc["Макет"]["Поля"][0].update({"Вид": "Мера"}),
+        lambda doc: doc["Макет"].update({"ВидОтображения": "КруговаяДиаграмма"}),
+    ],
+)
+def test_report_10_layout_rejects_invalid_settings(change, tmp_path, capsys):
+    import yaml
+
+    source = FIXTURES / "object_rules" / "report" / "valid" / "ИерархияТоваров.yaml"
+    document = yaml.safe_load(source.read_text(encoding="utf-8"))
+    change(document)
+    target = tmp_path / "ИерархияТоваров.yaml"
+    target.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    assert code == 1
+    assert stderr == ""
+    assert "owner.report.layout_10" in {
+        item["rule_id"] for item in parse_json(stdout)["diagnostics"]
+    }
 
 
 @pytest.mark.parametrize(

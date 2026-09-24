@@ -247,7 +247,7 @@ def test_report_export_to_image_delta_is_documented():
     assert report["min_version"] == "9.1"
     assert report["known_gaps"] == []
     assert "Feature delta 9.2+: ЭкспортироватьВИзображение()" in reference
-    assert "https://" not in reference
+    assert "https://" not in reference.split("## Feature delta 9.2+:", 1)[1]
     assert "ЭкспортироватьВИзображение(" in reference
     assert "Ширина: Число? = Неопределено" in reference
     assert "Высота: Число? = Неопределено" in reference

@@ -42,7 +42,7 @@
 | [`xbsl-scheduled-task`](skills/xbsl-scheduled-task/SKILL.md) | Создание запланированного задания и обязательного одноимённого XBSL-обработчика |
 | [`xbsl-validate`](skills/xbsl-validate/SKILL.md) | Read-only проверка YAML-файлов проекта: синтаксис, duplicate keys, общие invariants, grammar типов и coverage dispatch |
 
-Покрытие типов `xbsl-meta-add` для 1С:Предприятие.Элемент 9.3 хранится в
+Покрытие типов `xbsl-meta-add` для 1С:Предприятие.Элемент 10.0 хранится в
 каноническом registry
 [`object-coverage.json`](skills/xbsl-meta-add/object-coverage.json).
 Человекочитаемая матрица

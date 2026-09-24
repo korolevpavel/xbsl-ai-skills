@@ -48,7 +48,7 @@ def test_xbsl_spec_defines_required_syntax_contract() -> None:
 
     for required_text in (
         "XBSL",
-        "9.3",
+        "10.0",
         "метод",
         "знч",
         "пер",

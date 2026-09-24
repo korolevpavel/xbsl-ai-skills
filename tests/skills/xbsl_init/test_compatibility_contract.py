@@ -30,6 +30,15 @@ def test_regression_fixture_keeps_compatibility_and_technology_independent() -> 
     assert re.fullmatch(r"\d+\.\d+\.\d+-\d+", technology_version)
 
 
+def test_new_project_targets_10_0_by_default() -> None:
+    skill = INIT_SKILL.read_text(encoding="utf-8")
+    defaults = re.findall(r"^\| `РежимСовместимости` \| Нет \| `(.*?)` \|$", skill, re.MULTILINE)
+
+    assert defaults == ["10.0"]
+    assert "РежимСовместимости: {РежимСовместимости}" in skill
+    assert "РежимСовместимости.Версия10_0" in skill
+
+
 def test_init_contract_preserves_explicit_compatibility_mode() -> None:
     skill = INIT_SKILL.read_text(encoding="utf-8")
 

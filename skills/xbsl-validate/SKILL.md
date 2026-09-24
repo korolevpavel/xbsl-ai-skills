@@ -45,7 +45,9 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
 - регистр: `owner.register.dimensions`, `owner.register.resources`,
   `owner.register.member`, `owner.register.invalid_uuid`,
   `owner.register.resource_type`, `owner.register.registrar`,
-  `owner.register.kind`;
+  `owner.register.kind`, `owner.register.write_mode`,
+  `owner.register.next_period`, `owner.register.subordinate_filter`,
+  `owner.register.reserved_member`;
 - запланированное задание: `owner.scheduled_task.schedule`,
   `owner.scheduled_task.time_literal`, `owner.scheduled_task.location`,
   `owner.scheduled_task.yaml_handler`,

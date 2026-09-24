@@ -10,7 +10,8 @@
 
 Вывод: JSON
     Для РегистрНакопления — element_type, name, register_kind, dimensions, resources, needs_record_type.
-    Для РегистрСведений  — element_type, name, periodicity, is_periodic, dimensions, resources, requisites.
+    Для РегистрСведений  — element_type, name, periodicity, is_periodic, writing_mode,
+                           registrar_type, filter_fields, dimensions, resources, requisites.
     Для Документа        — element_type, name, header_fields, tables, handler_file.
 """
 
@@ -187,16 +188,22 @@ def extract_register(text: str) -> dict:
 def extract_info_register(text: str) -> dict:
     name = get_yaml_field(text, "Имя") or "???"
     periodicity = get_yaml_field(text, "Периодичность") or "Непериодический"
+    writing_mode = get_yaml_field(text, "РежимЗаписи") or "Независимый"
 
     dimensions = [d["Имя"] for d in parse_flat_list(text, "Измерения") if "Имя" in d]
     resources = [r["Имя"] for r in parse_flat_list(text, "Ресурсы") if "Имя" in r]
-    requisites = [r["Имя"] for r in parse_flat_list(text, "Реквизиты") if "Имя" in r]
+    attributes = parse_flat_list(text, "Реквизиты")
+    registrar = next((item for item in attributes if item.get("Имя") == "Регистратор"), None)
+    requisites = [item["Имя"] for item in attributes if "Имя" in item and item is not registrar]
 
     return {
         "element_type": "РегистрСведений",
         "name": name,
         "periodicity": periodicity,
         "is_periodic": periodicity != "Непериодический",
+        "writing_mode": writing_mode,
+        "registrar_type": registrar.get("Тип") if registrar is not None else None,
+        "filter_fields": ["Регистратор"] if writing_mode == "ПодчинениеРегистратору" else dimensions,
         "dimensions": dimensions,
         "resources": resources,
         "requisites": requisites,

@@ -157,6 +157,37 @@ def test_entity_contract_fixture_covers_properties_tabular_sections_and_incompat
     assert bad_table["ТабличныеЧасти"][0]["Реквизиты"][0]["Тип"] == "Строка"
 
 
+def test_entity_contract_10_module_and_singleton_examples_are_conditional():
+    root = FIXTURES / "positive" / "КонтрактСущности"
+    minimal = load_yaml(root / "ТоварныйОбъект.yaml")
+    assert minimal["ВидЭлемента"] == "КонтрактСущности"
+    assert not (root / "ТоварныйОбъект.Объект.xbsl").exists()
+    assert "ПолучениеВсехОдиночек" not in minimal
+
+    example = root / "with_module"
+    contract = load_yaml(example / "УчастникиОповещений.yaml")
+    implementation = load_yaml(example / "Сотрудники.yaml")
+    contract_module = (example / "УчастникиОповещений.Объект.xbsl").read_text(encoding="utf-8")
+    implementation_module = (example / "Сотрудники.Объект.xbsl").read_text(encoding="utf-8")
+    registry = record_for("КонтрактСущности")
+    reference = (REFERENCES / "КонтрактСущности.md").read_text(encoding="utf-8")
+
+    assert contract["ПолучениеВсехОдиночек"] == "Доступно"
+    assert abstract_method_names(contract_module) == {"Оповестить"}
+    assert implementation["НастройкиТипов"]["Справочник.Объект"]["Контракты"] == [
+        "УчастникиОповещений.Объект"
+    ]
+    assert implementation_method_names(implementation_module) == {"Оповестить"}
+    assert "@Реализация" in implementation_module
+    assert any(
+        artifact["pattern"] == "*.Объект.xbsl" and artifact["required"] is False
+        for artifact in registry["artifacts"]
+    )
+    assert "ПолучитьОдиночку(Сотрудник)" in reference
+    assert "ПолучитьОдиночки()" in reference
+    assert "Без `Доступно` не предлагай" in reference
+
+
 def test_type_contract_fixture_distinguishes_contract_type_settings_from_implementing_type_settings():
     root = FIXTURES / "positive" / "КонтрактТипа"
     contract = load_yaml(root / "КонтрактСкидки.yaml")

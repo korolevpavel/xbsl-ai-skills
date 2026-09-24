@@ -451,6 +451,12 @@
           "role": "описание контракта сущности",
           "required": true,
           "basis": "platform"
+        },
+        {
+          "pattern": "*.Объект.xbsl",
+          "role": "модуль контракта сущности с абстрактными методами",
+          "required": false,
+          "basis": "platform"
         }
       ],
       "min_version": "9.1",

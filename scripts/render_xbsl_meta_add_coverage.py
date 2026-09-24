@@ -272,6 +272,15 @@ def _format_required_artifacts(record: Mapping[str, Any]) -> str:
     return "<br>".join(required) or "—"
 
 
+def _format_optional_artifacts(record: Mapping[str, Any]) -> str:
+    optional = [
+        f"`{_escape_cell(artifact['pattern'])}` — {_escape_cell(artifact['role'])}"
+        for artifact in record["artifacts"]
+        if not artifact["required"]
+    ]
+    return "<br>".join(optional) or "—"
+
+
 def render_markdown(data: Mapping[str, Any]) -> str:
     validate_coverage_data(data)
     target = data["target_platform"]
@@ -289,8 +298,8 @@ def render_markdown(data: Mapping[str, Any]) -> str:
         "",
         "## Объекты",
         "",
-        "| Вид элемента | Статус | Владелец | Min version | Reference | Required artifacts |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Вид элемента | Статус | Владелец | Min version | Reference | Required artifacts | Optional artifacts |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
     ]
     for record in data["objects"]:
         lines.append(
@@ -300,7 +309,8 @@ def render_markdown(data: Mapping[str, Any]) -> str:
             f"`{_escape_cell(record['owner_skill'])}` | "
             f"`{_escape_cell(_format_value(record['min_version']))}` | "
             f"{_format_reference(record)} | "
-            f"{_format_required_artifacts(record)} |"
+            f"{_format_required_artifacts(record)} | "
+            f"{_format_optional_artifacts(record)} |"
         )
 
     lines.extend(

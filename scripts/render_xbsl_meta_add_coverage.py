@@ -196,8 +196,8 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
             _fail(f"shared_references.{path}: referenced file does not exist")
 
     objects = data["objects"]
-    if not isinstance(objects, list) or len(objects) != 33:
-        _fail("objects: expected exactly 33 records")
+    if not isinstance(objects, list) or len(objects) != 34:
+        _fail("objects: expected exactly 34 records")
     seen_objects: set[str] = set()
     shared = set(data["shared_references"])
     for index, record in enumerate(objects):
@@ -207,9 +207,9 @@ def validate_coverage_data(data: Mapping[str, Any], *, repo_root: Path = REPOSIT
         seen_objects.add(record["element_kind"])
 
     counts = Counter(record["status"] for record in objects)
-    expected_counts = {"supported": 32, "partial": 0, "routed": 1}
+    expected_counts = {"supported": 33, "partial": 0, "routed": 1}
     if {status: counts[status] for status in expected_counts} != expected_counts:
-        _fail("objects: expected balance 32 supported + 0 partial + 1 routed")
+        _fail("objects: expected balance 33 supported + 0 partial + 1 routed")
     routed = [record for record in objects if record["status"] == "routed"]
     if routed[0]["element_kind"] != "ЗапланированноеЗадание":
         _fail("objects: routed type must be ЗапланированноеЗадание")

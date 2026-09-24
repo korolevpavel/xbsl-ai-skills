@@ -6,7 +6,7 @@
 
 ## Баланс
 
-`32 supported + 0 partial + 1 routed = 33`
+`33 supported + 0 partial + 1 routed = 34`
 
 ## Объекты
 
@@ -16,6 +16,7 @@
 | `Справочник` | `supported` | `xbsl-meta-add` | `9.1` | `references/Справочник.md`<br>`references/types.md`<br>`references/ТабличныеЧасти.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта | — |
 | `Документ` | `supported` | `xbsl-meta-add` | `9.1` | `references/Документ.md`<br>`references/types.md`<br>`references/ТабличныеЧасти.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта | `*.Объект.xbsl` — модуль объекта |
 | `ЖурналДанных` | `supported` | `xbsl-meta-add` | `10.0` | `references/ЖурналДанных.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание журнала данных | — |
+| `ИнтегрируемоеПриложение` | `supported` | `xbsl-meta-add` | `10.0` | `references/ИнтегрируемоеПриложение.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание интегрируемого приложения | — |
 | `РегистрСведений` | `supported` | `xbsl-meta-add` | `9.1` | `references/РегистрСведений.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта | — |
 | `РегистрНакопления` | `supported` | `xbsl-meta-add` | `9.1` | `references/РегистрНакопления.md`<br>`references/types.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта | — |
 | `ОбщийМодуль` | `supported` | `xbsl-meta-add` | `9.1` | `references/ОбщийМодуль.md`<br>`references/reference-contract.md` | `*.yaml` — описание объекта<br>`*.xbsl` — модуль реализации | — |

@@ -98,6 +98,26 @@
       "known_gaps": []
     },
     {
+      "element_kind": "ИнтегрируемоеПриложение",
+      "status": "supported",
+      "owner_skill": "xbsl-meta-add",
+      "reference_path": "references/ИнтегрируемоеПриложение.md",
+      "shared_reference_paths": [
+        "references/types.md",
+        "references/reference-contract.md"
+      ],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание интегрируемого приложения",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
+      "min_version": "10.0",
+      "known_gaps": []
+    },
+    {
       "element_kind": "РегистрСведений",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",

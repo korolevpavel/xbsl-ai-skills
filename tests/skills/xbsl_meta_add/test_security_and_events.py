@@ -82,7 +82,7 @@ def test_security_and_events_status_balance_finishes_security_events_without_new
     for record in registry["objects"]:
         statuses[record["status"]] += 1
 
-    assert statuses == {"supported": 32, "partial": 0, "routed": 1}
+    assert statuses == {"supported": 33, "partial": 0, "routed": 1}
     assert not [record for record in registry["objects"] if record["status"] == "partial"]
 
 

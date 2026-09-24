@@ -29,7 +29,9 @@ def test_embedded_pages_nodes_belong_to_application_component() -> None:
     assert inherited['ВстроенныеВебСтраницы']['ВебСтраницы'][0]['Ид'] == 'ВнешняяСтраница'
     fragment = inherited['ИнтерфейсВстроенныхВебСтраниц']['КомандыПанели']
     assert fragment['Тип'] == 'ФрагментКомандногоИнтерфейса'
-    assert fragment['Элементы'][0]['Имя'] == 'ГлавнаяСтраница'
+    assert fragment['Элементы'][0]['Тип'] == 'НавигационнаяКоманда'
+    assert fragment['Элементы'][0]['ТипФормы'] == 'ФормаЗаказа'
+    assert 'Имя' not in fragment['Элементы'][0]
     assert 'ВстроенныеВебСтраницы' not in form['Наследует']
 
 

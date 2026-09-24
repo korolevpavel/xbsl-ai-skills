@@ -239,6 +239,9 @@ def test_extract_info_register_returns_metadata_for_nonperiodic(extract_meta) ->
         "name": "ЦеныТоваров",
         "periodicity": "Непериодический",
         "is_periodic": False,
+        "writing_mode": "Независимый",
+        "registrar_type": None,
+        "filter_fields": ["Товар", "Склад"],
         "dimensions": ["Товар", "Склад"],
         "resources": ["Цена"],
         "requisites": ["Комментарий"],
@@ -261,9 +264,32 @@ def test_extract_info_register_periodic_sets_is_periodic_true(extract_meta) -> N
 
     assert result["periodicity"] == "День"
     assert result["is_periodic"] is True
+    assert result["writing_mode"] == "Независимый"
+    assert result["filter_fields"] == ["Валюта"]
     assert result["dimensions"] == ["Валюта"]
     assert result["resources"] == ["Курс", "Кратность"]
     assert result["requisites"] == []
+
+
+def test_extract_subordinated_info_register_uses_registrar_filter(extract_meta) -> None:
+    fixture = (
+        ROOT_DIR
+        / "tests/skills/xbsl_validate/fixtures/object_rules/register/valid/ПодчиненныеЦены.yaml"
+    )
+    result = extract_meta.extract_info_register(fixture.read_text(encoding="utf-8"))
+
+    assert result == {
+        "element_type": "РегистрСведений",
+        "name": "ПодчиненныеЦены",
+        "periodicity": "День",
+        "is_periodic": True,
+        "writing_mode": "ПодчинениеРегистратору",
+        "registrar_type": "ДокументИзменениеЦен.Ссылка?",
+        "filter_fields": ["Регистратор"],
+        "dimensions": ["Товар"],
+        "resources": ["Цена"],
+        "requisites": [],
+    }
 
 
 def test_main_prints_info_register_json(extract_meta, tmp_path: Path, monkeypatch, capsys) -> None:
@@ -291,6 +317,9 @@ def test_main_prints_info_register_json(extract_meta, tmp_path: Path, monkeypatc
         "name": "НастройкиПользователей",
         "periodicity": "Непериодический",
         "is_periodic": False,
+        "writing_mode": "Независимый",
+        "registrar_type": None,
+        "filter_fields": ["Пользователь"],
         "dimensions": ["Пользователь"],
         "resources": ["Значение"],
         "requisites": [],

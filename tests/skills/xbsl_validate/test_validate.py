@@ -404,6 +404,7 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
         FIXTURES / "object_rules" / "report" / "valid" / "Продажи.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "Остатки.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "Курсы.yaml",
+        FIXTURES / "object_rules" / "register" / "valid" / "ПодчиненныеЦены.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "ВыгруженныеДанные.yaml",
         FIXTURES / "object_rules" / "register" / "valid" / "ОборотыБезТипа.yaml",
         FIXTURES / "object_rules" / "scheduled" / "valid" / "ЕжедневнаяОчистка.yaml",
@@ -431,7 +432,7 @@ def test_supported_object_validators_accept_documented_fixtures(capsys):
 
     assert code == 0
     assert stderr == ""
-    assert data["summary"] == {"files": 14, "errors": 0, "warnings": 0}
+    assert data["summary"] == {"files": 15, "errors": 0, "warnings": 0}
     assert data["diagnostics"] == []
 
 
@@ -712,6 +713,60 @@ def test_register_object_specific_rules_have_stable_ids(capsys):
             "owner.register.kind",
         ]
     )
+
+
+@pytest.mark.parametrize(
+    ("change", "rule_id"),
+    [
+        (lambda doc: doc.update({"РежимЗаписи": "Другой"}), "owner.register.write_mode"),
+        (lambda doc: doc.pop("Реквизиты"), "owner.register.registrar"),
+        (
+            lambda doc: doc["Реквизиты"][0].update({"Тип": "ДвоичныйОбъект.Ссылка?"}),
+            "owner.register.registrar",
+        ),
+        (
+            lambda doc: doc["Реквизиты"][0].update(
+                {"Ид": "22911111-1111-4111-8111-111111111115"}
+            ),
+            "owner.register.registrar",
+        ),
+        (
+            lambda doc: doc.update({"Периодичность": "Непериодический"}),
+            "owner.register.next_period",
+        ),
+        (
+            lambda doc: doc["Измерения"][0].update({"Ведущее": "Ложь"}),
+            "owner.register.subordinate_filter",
+        ),
+        (
+            lambda doc: doc.update({"ИспользоватьПериодВОсновномФильтре": "Ложь"}),
+            "owner.register.subordinate_filter",
+        ),
+        (
+            lambda doc: doc["Ресурсы"][0].update({"Имя": "Активность"}),
+            "owner.register.reserved_member",
+        ),
+        (
+            lambda doc: doc.update({"РежимЗаписи": "Независимый"}),
+            "owner.register.registrar",
+        ),
+    ],
+)
+def test_subordinated_info_register_rejects_invalid_contract(change, rule_id, tmp_path, capsys):
+    import yaml
+
+    source = FIXTURES / "object_rules" / "register" / "valid" / "ПодчиненныеЦены.yaml"
+    document = yaml.safe_load(source.read_text(encoding="utf-8"))
+    change(document)
+    target = tmp_path / "ПодчиненныеЦены.yaml"
+    target.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    code, stdout, stderr = run_cli(["--format=json", str(target)], capsys)
+    data = parse_json(stdout)
+
+    assert code == 1
+    assert stderr == ""
+    assert rule_id in {item["rule_id"] for item in data["diagnostics"]}
 
 
 @pytest.mark.parametrize(

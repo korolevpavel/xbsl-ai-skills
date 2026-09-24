@@ -764,6 +764,9 @@ def validate_register(input_file: InputFile, document: Mapping[str, Any]) -> lis
     diagnostics: list[Diagnostic] = []
     register_kind = document.get("ВидЭлемента")
     is_accumulation = register_kind == "РегистрНакопления"
+    is_information = register_kind == "РегистрСведений"
+    writing_mode = document.get("РежимЗаписи", "Независимый")
+    is_subordinate = is_information and writing_mode == "ПодчинениеРегистратору"
 
     dimensions = document.get("Измерения")
     if not isinstance(dimensions, list):
@@ -854,13 +857,114 @@ def validate_register(input_file: InputFile, document: Mapping[str, Any]) -> lis
         attributes = []
     for member in attributes:
         is_registrar = (
-            is_accumulation
+            (is_accumulation or is_subordinate)
             and isinstance(member, dict)
             and member.get("Имя") == "Регистратор"
         )
         diagnostics.extend(
             validate_register_member(input_file, member, require_id=not is_registrar)
         )
+
+    if is_information:
+        if not isinstance(writing_mode, str) or writing_mode not in {
+            "Независимый", "ПодчинениеРегистратору"
+        }:
+            diagnostics.append(
+                Diagnostic(
+                    input_file.display_path,
+                    None,
+                    "error",
+                    "owner.register.write_mode",
+                    "РежимЗаписи must be Независимый or ПодчинениеРегистратору",
+                )
+            )
+
+        if "ХранитьСледующийПериод" in document:
+            next_period = document["ХранитьСледующийПериод"]
+            if (
+                not isinstance(next_period, str)
+                or next_period not in {"Истина", "Ложь"}
+                or document.get("Периодичность", "Непериодический") == "Непериодический"
+            ):
+                diagnostics.append(
+                    Diagnostic(
+                        input_file.display_path,
+                        None,
+                        "error",
+                        "owner.register.next_period",
+                        "ХранитьСледующийПериод requires a periodic register and Истина/Ложь",
+                    )
+                )
+
+        registrars = [
+            member
+            for member in attributes
+            if isinstance(member, dict) and member.get("Имя") == "Регистратор"
+        ]
+        if is_subordinate:
+            if (
+                len(registrars) != 1
+                or "Ид" in registrars[0]
+                or not reference_registrar_type(registrars[0].get("Тип"))
+            ):
+                diagnostics.append(
+                    Diagnostic(
+                        input_file.display_path,
+                        None,
+                        "error",
+                        "owner.register.registrar",
+                        "Subordinated information register requires one Регистратор without Ид and with a nullable document-reference-shaped type",
+                    )
+                )
+
+            if "ИспользоватьПериодВОсновномФильтре" in document or any(
+                isinstance(member, dict)
+                and ("Ведущее" in member or "ИспользоватьВОсновномФильтре" in member)
+                for member in (dimensions if isinstance(dimensions, list) else [])
+            ):
+                diagnostics.append(
+                    Diagnostic(
+                        input_file.display_path,
+                        None,
+                        "error",
+                        "owner.register.subordinate_filter",
+                        "Subordinated information register filters only by Регистратор; leading dimensions and period/main-filter properties are unsupported",
+                    )
+                )
+
+            reserved_names = {"Активность", "НомерСтроки", "Индекс"}
+            member_collections = (
+                (dimensions, reserved_names | {"Регистратор"}),
+                (resources, reserved_names | {"Регистратор"}),
+                (attributes, reserved_names),
+            )
+            if any(
+                isinstance(member, dict)
+                and isinstance(member.get("Имя"), str)
+                and member["Имя"] in forbidden
+                for collection, forbidden in member_collections
+                if isinstance(collection, list)
+                for member in collection
+            ):
+                diagnostics.append(
+                    Diagnostic(
+                        input_file.display_path,
+                        None,
+                        "error",
+                        "owner.register.reserved_member",
+                        "Subordinated information register uses Активность, НомерСтроки and Индекс as system fields",
+                    )
+                )
+        elif writing_mode == "Независимый" and registrars:
+            diagnostics.append(
+                Diagnostic(
+                    input_file.display_path,
+                    None,
+                    "error",
+                    "owner.register.registrar",
+                    "Independent information register must not declare standard Регистратор",
+                )
+            )
 
     if is_accumulation:
         value = document.get("ВидРегистра", "Остатки")

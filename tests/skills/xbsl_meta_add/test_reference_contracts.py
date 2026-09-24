@@ -475,9 +475,23 @@ def test_information_register_key_and_leading_dimension_are_distinct():
     assert "ведущие измерения образуют первичный ключ" not in text.lower()
 
 
+def test_subordinated_information_register_reference_uses_system_registrar():
+    text = read_reference("РегистрСведений.md")
+    examples = re.findall(r"```yaml\n(.*?)```", text, re.DOTALL)
+    subordinate = [
+        example for example in examples
+        if "РежимЗаписи: ПодчинениеРегистратору" in example
+    ]
+
+    assert len(subordinate) == 1
+    assert "Ведущее:" not in subordinate[0]
+    assert "ХранитьСледующийПериод: Истина" in subordinate[0]
+    assert "Имя: Регистратор\n        Тип: ДокументИзменениеЦен.Ссылка?" in subordinate[0]
+
+
 def test_information_register_documents_leading_default_and_explicit_false():
     text = read_reference("РегистрСведений.md")
-    assert "`Ведущее` — `Истина` по умолчанию" in text
+    assert "`Ведущее` — `Истина` по умолчанию у измерений независимого регистра" in text
     assert (
         "Для каждого ссылочного измерения без каскадного удаления явно указывай "
         "`Ведущее: Ложь`"
@@ -487,6 +501,7 @@ def test_information_register_documents_leading_default_and_explicit_false():
     reference_dimensions = [
         item
         for example in examples
+        if "РежимЗаписи: ПодчинениеРегистратору" not in example
         for item in yaml_list_item_mappings(example, "Измерения")
         if ".Ссылка" in item.get("Тип", "")
     ]

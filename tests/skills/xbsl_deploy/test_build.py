@@ -253,13 +253,13 @@ def test_build_xasm_preserves_soap_wsdl_and_xsd_companions(build, tmp_path: Path
         for name, member_name in (
             ("КлиентЗаказов.yaml", "КлиентЗаказов.yaml"),
             ("КлиентЗаказов.Wsdl.1", "КлиентЗаказов.Wsdl.1.wsdl"),
-            ("КлиентЗаказов.Xsd.1", "КлиентЗаказов.Xsd.1.xsd"),
+            ("КлиентЗаказов.Xsd.1", "КлиентЗаказов.Xsd.1"),
         ):
             member = f"acme/demo/{member_name}"
             assert member in names
             assert archive.read(member) == (source_dir / name).read_bytes()
         assert "acme/demo/КлиентЗаказов.Wsdl.1" not in names
-        assert "acme/demo/КлиентЗаказов.Xsd.1" not in names
+        assert "acme/demo/КлиентЗаказов.Xsd.1.xsd" not in names
 
 
 def test_build_xasm_preserves_explicit_compatibility_mode(build, tmp_path: Path) -> None:

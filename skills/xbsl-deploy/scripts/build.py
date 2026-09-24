@@ -193,8 +193,8 @@ def build_xasm(project_dir: str, output_dir: str,
                 rel = os.path.relpath(filepath, repo_dir).replace('\\', '/')
                 if should_include(rel):
                     soap_companion = SOAP_COMPANION_PATTERN.search(filename)
-                    if soap_companion:
-                        rel = f'{rel}.{soap_companion.group(1).lower()}'
+                    if soap_companion and soap_companion.group(1).lower() == 'wsdl':
+                        rel = f'{rel}.wsdl'
                     zf.write(filepath, rel)
 
     return output_path

@@ -78,6 +78,7 @@ compatibility: Requires Python 3.
 **Дополнительно:**
 - Если есть P4 или упоминание кастомных цветов/шрифтов → `references/стилизация.md`
 - Если есть P1, P2, P3 или P5 (динамические данные) → `references/xbsl-шаблон.md`
+- Если пользователь просит настроить «Избранное» на target 10.0+ → `../xbsl-form-add/references/favorites-10.md` и `references/регистрация.md`
 
 ### Шаг 3 — Сгенерировать UUID
 

@@ -73,6 +73,7 @@ compatibility: Requires Python 3.
 - P7 → `references/p7-бенто.md`
 - P8 → `references/p8-поиск.md`
 - P9 → `references/p9-статика.md`
+- Если на главной странице нужны панель тегов, панель этапов, канбан-доска или карта на target 10.0+ → `../xbsl-form-add/references/components-10.md`; на старом target их не генерируй.
 
 **Дополнительно:**
 - Если есть P4 или упоминание кастомных цветов/шрифтов → `references/стилизация.md`

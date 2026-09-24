@@ -156,6 +156,10 @@ def test_git_info_returns_defaults_on_failure(build, monkeypatch, error_kind: st
         ("acme/demo/Проект.yaml", True),
         ("acme/demo/README.MD", True),
         ("acme/demo/notes.txt", True),
+        ("acme/demo/Основное/КлиентЗаказов.Wsdl.1", True),
+        ("acme/demo/Основное/КлиентЗаказов.Xsd.2", True),
+        ("acme/demo/Основное/КлиентЗаказов.Wsdl.0", False),
+        ("acme/demo/Основное/secret.1", False),
         ("acme/demo/image.png", False),
         ("acme/demo/archive.xasm", False),
         ("acme/demo/.env", False),
@@ -225,6 +229,35 @@ def test_build_xasm_creates_expected_archive(build, monkeypatch, tmp_path: Path)
         assert "Created: 2026.03.29 12:34:56" in manifest
         assert "BranchName: main" in manifest
         assert "CommitId: abc123" in manifest
+
+
+def test_build_xasm_preserves_soap_wsdl_and_xsd_companions(build, tmp_path: Path) -> None:
+    project_dir = tmp_path / "repo" / "acme" / "demo"
+    write_project_yaml(project_dir)
+    source_dir = (
+        ROOT_DIR
+        / "tests/skills/xbsl_meta_add/fixtures/integration/positive/КлиентSoapСервиса"
+    )
+    for name in (
+        "КлиентЗаказов.yaml",
+        "КлиентЗаказов.Wsdl.1",
+        "КлиентЗаказов.Xsd.1",
+    ):
+        (project_dir / name).write_bytes((source_dir / name).read_bytes())
+
+    output_path = build.build_xasm(
+        str(project_dir), str(tmp_path / "out"), "1.0-1", "", "smoke"
+    )
+    with zipfile.ZipFile(output_path) as archive:
+        names = set(archive.namelist())
+        for name in (
+            "КлиентЗаказов.yaml",
+            "КлиентЗаказов.Wsdl.1",
+            "КлиентЗаказов.Xsd.1",
+        ):
+            member = f"acme/demo/{name}"
+            assert member in names
+            assert archive.read(member) == (source_dir / name).read_bytes()
 
 
 def test_build_xasm_preserves_explicit_compatibility_mode(build, tmp_path: Path) -> None:

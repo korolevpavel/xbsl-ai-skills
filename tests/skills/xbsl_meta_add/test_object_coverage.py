@@ -65,12 +65,12 @@ def test_registry_has_exact_schema_initial_balance_and_safe_paths():
     ]
 
     objects = data["objects"]
-    assert len(objects) == 32
+    assert len(objects) == 33
     statuses = {status: 0 for status in ("supported", "partial", "routed")}
     for record in objects:
         statuses[record["status"]] += 1
-    assert statuses == {"supported": 31, "partial": 0, "routed": 1}
-    assert {record["min_version"] for record in objects} == {"9.1", "9.2"}
+    assert statuses == {"supported": 32, "partial": 0, "routed": 1}
+    assert {record["min_version"] for record in objects} == {"9.1", "9.2", "10.0"}
 
     routed = [record for record in objects if record["status"] == "routed"]
     assert routed == [

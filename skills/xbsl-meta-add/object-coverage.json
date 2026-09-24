@@ -78,6 +78,26 @@
       "known_gaps": []
     },
     {
+      "element_kind": "ЖурналДанных",
+      "status": "supported",
+      "owner_skill": "xbsl-meta-add",
+      "reference_path": "references/ЖурналДанных.md",
+      "shared_reference_paths": [
+        "references/types.md",
+        "references/reference-contract.md"
+      ],
+      "artifacts": [
+        {
+          "pattern": "*.yaml",
+          "role": "описание журнала данных",
+          "required": true,
+          "basis": "platform"
+        }
+      ],
+      "min_version": "10.0",
+      "known_gaps": []
+    },
+    {
       "element_kind": "РегистрСведений",
       "status": "supported",
       "owner_skill": "xbsl-meta-add",

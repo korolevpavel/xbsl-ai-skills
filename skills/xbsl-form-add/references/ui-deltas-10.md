@@ -109,8 +109,12 @@
 `КомпонентМеню` и `ОсновнаяКомандаМеню` не создавай произвольную реализацию
 без конкретного компонента или команды. Если их нет, оставь стандартный UI
 платформы и сообщи, что кастомное меню требует отдельного описания.
-Команды и группы, которые создаются внутри фрагмента на target 10.0, должны
-иметь уникальные `Имя`.
+`Имя` для команды или группы задавай только внутри самостоятельного элемента
+проекта вида `ФрагментКомандногоИнтерфейса`. Во встроенном фрагменте компонента,
+например в `ИнтерфейсВстроенныхВебСтраниц.КомандыПанели`, у описанной на месте
+`НавигационнаяКоманда` поле `Имя` не указывай: компилятор Element `10.0.2-19`
+его отклоняет. Ссылка `=<СуществующаяКоманда>` остаётся предпочтительной,
+если команда уже определена в проекте.
 
 [Схема приложения](https://1cmycloud.com/console/help/element/10.0/docs/stdlib/element/InterfaceComponents/Std/InterfaceComponents/StandardClientApplicationWithSections/),
 [схема интерфейса веб-страниц](https://1cmycloud.com/console/help/element/10.0/docs/stdlib/element/InterfaceComponents/Std/InterfaceComponents/StandardClientApplicationWithSections/EmbeddedWebPagesInterface/EmbeddedWebPagesInterfaceInstance_ru/),

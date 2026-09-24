@@ -1253,6 +1253,85 @@ def validate_scheduled_task(input_file: InputFile, document: Mapping[str, Any]) 
     return diagnostics
 
 
+PROCESSING_ACCESS_VALUES = frozenset({
+    "РазрешеноАдминистраторам",
+    "РазрешеноАутентифицированным",
+    "РазрешеноВсем",
+    "РазрешенияВычисляются",
+})
+
+
+def validate_processing(input_file: InputFile, document: Mapping[str, Any]) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    companion = input_file.actual_path.with_suffix(".Объект.xbsl")
+
+    def companion_text() -> str:
+        try:
+            return companion.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            return ""
+
+    def error(rule_id: str, message: str) -> None:
+        diagnostics.append(Diagnostic(input_file.display_path, None, "error", rule_id, message))
+
+    def permissions(value: Any, allowed: set[str], location: str) -> Mapping[str, Any] | None:
+        if not isinstance(value, dict) or set(value) - allowed:
+            error("owner.processing.access_shape", f"{location} has unsupported access fields")
+            return None
+        for field in value:
+            if not isinstance(value[field], str) or value[field] not in PROCESSING_ACCESS_VALUES:
+                error("owner.processing.call_right", f"{location}.{field} has invalid call right")
+        return value
+
+    root_control = document.get("КонтрольДоступа")
+    if root_control is not None:
+        if not isinstance(root_control, dict) or set(root_control) - {"Разрешения"}:
+            error("owner.processing.access_shape", "Processing КонтрольДоступа supports only Разрешения")
+        else:
+            root_rights = permissions(
+                root_control.get("Разрешения"), {"ПоУмолчанию", "Вызов"},
+                "Processing Разрешения",
+            )
+            if root_rights and "РазрешенияВычисляются" in root_rights.values():
+                if not re.search(
+                    r"(?m)^\s*@Обработчик\s*\n\s*метод\s+ВычислитьРазрешенияДоступа\s*\(",
+                    companion_text(),
+                ):
+                    error("owner.processing.handler", "Computed processing call rights require ВычислитьРазрешенияДоступа handler")
+
+    operations = document.get("Операции", [])
+    if not isinstance(operations, list):
+        error("owner.processing.operations", "Операции must be a list")
+        return diagnostics
+    for operation in operations:
+        if not isinstance(operation, dict):
+            error("owner.processing.operations", "Operation must be a mapping")
+            continue
+        name = operation.get("Имя")
+        if not isinstance(name, str) or not name:
+            error("owner.processing.operations", "Operation requires Имя")
+        if "КонтрольДоступа" not in operation:
+            continue
+        control = operation["КонтрольДоступа"]
+        if not isinstance(control, dict) or set(control) - {"Разрешения", "Обработчик"}:
+            error("owner.processing.access_shape", "Operation КонтрольДоступа supports only Разрешения and Обработчик")
+            continue
+        rights = permissions(control.get("Разрешения"), {"Вызов"}, "Operation Разрешения")
+        handler = control.get("Обработчик")
+        if handler is not None and (not isinstance(handler, str) or not handler):
+            error("owner.processing.handler", "Operation Обработчик must be a non-empty method name")
+        if rights and rights.get("Вызов") == "РазрешенияВычисляются":
+            if not isinstance(handler, str) or not handler:
+                error("owner.processing.handler", "Computed operation call right requires Обработчик")
+            else:
+                if not re.search(
+                    rf"(?m)^\s*метод\s+{re.escape(handler)}\s*\(",
+                    companion_text(),
+                ):
+                    error("owner.processing.handler", f"Operation handler {handler} is missing from companion module")
+    return diagnostics
+
+
 SUPPORTED_VALIDATORS: dict[
     str, Callable[[InputFile, Mapping[str, Any]], list[Diagnostic]]
 ] = {
@@ -1260,6 +1339,7 @@ SUPPORTED_VALIDATORS: dict[
     "РегистрНакопления": validate_register,
     "РегистрСведений": validate_register,
     "КлючДоступа": validate_access_key,
+    "Обработка": validate_processing,
 }
 
 

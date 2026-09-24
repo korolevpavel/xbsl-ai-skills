@@ -149,6 +149,68 @@ def test_scan_all_supported_types(access_state, tmp_path: Path) -> None:
     assert len(objects) == 5
 
 
+def test_processing_summary_resolves_operation_override_and_fallback(access_state, tmp_path: Path) -> None:
+    _, sub = create_project_structure(tmp_path)
+    write_file(
+        sub / "Расчет.yaml",
+        "ВидЭлемента: Обработка\nИмя: Расчет\n"
+        "КонтрольДоступа:\n    Разрешения:\n        ПоУмолчанию: РазрешеноАутентифицированным\n"
+        "Операции:\n"
+        "    -\n        Имя: ДляАдминистратора\n"
+        "        КонтрольДоступа:\n            Разрешения:\n"
+        "                Вызов: РазрешеноАдминистраторам\n"
+        "    -\n        Имя: ДляВсехВошедших\n",
+    )
+    objects = access_state.scan_objects(str(tmp_path / "prj"))
+    assert len(objects) == 1
+    operations = objects[0]["access"]["processing_operations"]
+    assert [(item["name"], item["effective_call"], item["source"]) for item in operations] == [
+        ("ДляАдминистратора", "РазрешеноАдминистраторам", "operation"),
+        ("ДляВсехВошедших", "РазрешеноАутентифицированным", "processing"),
+    ]
+    assert operations[0]["rename_requires_recalculation"] is True
+    assert operations[1]["rename_requires_recalculation"] is False
+
+
+def test_processing_operation_set_changes_only_selected_call(access_state) -> None:
+    text = (
+        "ВидЭлемента: Обработка\nИмя: Расчет\n"
+        "КонтрольДоступа:\n    Разрешения:\n        ПоУмолчанию: РазрешеноВсем\n"
+        "Операции:\n"
+        "    -\n        Имя: Первая\n"
+        "    -\n        Имя: Вторая\n"
+        "        КонтрольДоступа:\n            Разрешения:\n"
+        "                Вызов: РазрешеноАдминистраторам\n"
+    )
+    reason, updated = access_state.set_processing_operation_call(
+        text, "Первая", "РазрешеноАутентифицированным"
+    )
+    assert reason is None
+    assert "ПоУмолчанию: РазрешеноВсем" in updated
+    operations = access_state.parse_processing_operations(updated, "РазрешеноВсем")
+    assert operations[0]["effective_call"] == "РазрешеноАутентифицированным"
+    assert operations[1]["effective_call"] == "РазрешеноАдминистраторам"
+
+
+def test_processing_operation_cli_dry_run_then_apply(access_state, tmp_path: Path, monkeypatch, capsys) -> None:
+    _, sub = create_project_structure(tmp_path)
+    path = sub / "Расчет.yaml"
+    original = "ВидЭлемента: Обработка\nИмя: Расчет\nОперации:\n    -\n        Имя: Запустить\n"
+    write_file(path, original)
+    argv = [
+        "access_state.py", "--root", str(tmp_path), "--object", "Расчет",
+        "--operation", "Запустить", "--set", "РазрешеноАутентифицированным",
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    access_state.main()
+    assert "Запустить.Вызов" in capsys.readouterr().out
+    assert path.read_text(encoding="utf-8") == original
+
+    monkeypatch.setattr(sys, "argv", argv + ["--apply"])
+    access_state.main()
+    assert "Вызов: РазрешеноАутентифицированным" in path.read_text(encoding="utf-8")
+
+
 def test_scan_filter_by_object_name(access_state, tmp_path: Path) -> None:
     _, sub = create_project_structure(tmp_path)
     write_file(sub / "Склады.yaml", "ВидЭлемента: Справочник\nИмя: Склады\n")

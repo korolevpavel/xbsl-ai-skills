@@ -34,7 +34,7 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
   только у функциональных объектов и только в их документированных type slots,
   а UI, `Проект.yaml` и `Подсистема.yaml` маршрутизирует без объектных
   false-positive diagnostics;
-- для `Отчет`, `РегистрНакопления`, `РегистрСведений`, `КлючДоступа` и
+- для `Отчет`, `РегистрНакопления`, `РегистрСведений`, `Обработка`, `КлючДоступа` и
   `ЗапланированноеЗадание` запускает object-specific validators после common
   слоя.
 
@@ -48,6 +48,8 @@ layout — `~/.codex/skills/xbsl-validate/scripts/validate.py`.
   `owner.register.kind`, `owner.register.write_mode`,
   `owner.register.next_period`, `owner.register.subordinate_filter`,
   `owner.register.reserved_member`;
+- обработка: `owner.processing.access_shape`, `owner.processing.call_right`,
+  `owner.processing.handler`, `owner.processing.operations`;
 - запланированное задание: `owner.scheduled_task.schedule`,
   `owner.scheduled_task.time_literal`, `owner.scheduled_task.location`,
   `owner.scheduled_task.yaml_handler`,

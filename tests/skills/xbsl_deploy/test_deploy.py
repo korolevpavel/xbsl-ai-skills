@@ -63,6 +63,26 @@ def set_required_env(monkeypatch) -> None:
     monkeypatch.setenv("ELEMENT_CLIENT_SECRET", "secret")
 
 
+@pytest.mark.parametrize('from_branch', [False, True])
+def test_extension_project_rejected_before_api_or_app_update(
+    deploy, monkeypatch, capsys, tmp_path: Path, from_branch: bool
+) -> None:
+    project_dir = tmp_path / 'acme' / 'extension'
+    project_dir.mkdir(parents=True)
+    (project_dir / 'Проект.yaml').write_text(
+        'ВидПроекта: Расширение\nПоставщик: acme\nИмя: extension\n',
+        encoding='utf-8',
+    )
+    args = ['--project-dir', str(project_dir)]
+    if from_branch:
+        args.append('--from-branch')
+
+    captured = run_main(deploy, monkeypatch, capsys, args, expected_exit=1)
+
+    assert json.loads(captured.err)['rule_id'] == 'xbsl-deploy.extension_requires_separate_route'
+    assert captured.out == ''
+
+
 def stub_successful_update_tracking(deploy, monkeypatch) -> None:
     monkeypatch.setattr(
         deploy,

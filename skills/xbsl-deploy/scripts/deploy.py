@@ -67,6 +67,25 @@ def fail_deploy(rule_id: str, error: str, details: dict) -> None:
     sys.exit(1)
 
 
+def reject_extension_project(project_dir: str) -> None:
+    """Расширение нельзя направлять по маршруту обновления проекта приложения."""
+    project_yaml = os.path.join(project_dir, 'Проект.yaml')
+    if not os.path.isfile(project_yaml):
+        return
+    with open(project_yaml, encoding='utf-8') as source:
+        for line in source:
+            if line.startswith((' ', '\t')) or ':' not in line:
+                continue
+            key, _, value = line.partition(':')
+            if key.strip() == 'ВидПроекта' and value.strip().strip('"\'') == 'Расширение':
+                fail_deploy(
+                    'xbsl-deploy.extension_requires_separate_route',
+                    'Extension cannot be deployed as an application project',
+                    {'project_dir': project_dir,
+                     'action': 'Build the extension in Element IDE and install it through the control panel'},
+                )
+
+
 def run(cmd: list[str], capture: bool = True) -> str:
     """Запустить команду, вернуть stdout или упасть с ошибкой."""
     result = subprocess.run(cmd, capture_output=capture, text=True)
@@ -642,6 +661,9 @@ def main() -> None:
     parser.add_argument('--dry-run', action='store_true',
                         help='Только собрать .xasm, не деплоить (только для пути из исходников)')
     args = parser.parse_args()
+
+    if args.project_dir:
+        reject_extension_project(args.project_dir)
 
     # — Проверка обязательных параметров
     for var in ('ELEMENT_BASE_URL', 'ELEMENT_CLIENT_ID', 'ELEMENT_CLIENT_SECRET'):

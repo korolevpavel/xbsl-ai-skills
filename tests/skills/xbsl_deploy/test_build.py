@@ -283,6 +283,36 @@ def test_main_requires_project_yaml(build, monkeypatch, capsys, tmp_path: Path) 
     assert "ERROR: Проект.yaml not found. Use --project-dir" in captured.err
 
 
+@pytest.mark.parametrize('override', [[], ['--kind', 'application'], ['--kind', 'library']])
+def test_extension_is_never_built_as_application_or_library(
+    build, monkeypatch, capsys, tmp_path: Path, override: list[str]
+) -> None:
+    project_dir = tmp_path / 'repo' / 'acme' / 'extension'
+    write_project_yaml(project_dir)
+    with (project_dir / 'Проект.yaml').open('a', encoding='utf-8') as source:
+        source.write('ВидПроекта: Расширение\n')
+    output_dir = tmp_path / 'out'
+
+    captured = run_main(
+        build, monkeypatch, capsys,
+        ['--project-dir', str(project_dir), '--output', str(output_dir), *override],
+        expected_exit=1,
+    )
+
+    assert json.loads(captured.err)['rule_id'] == 'xbsl-deploy.extension_archive_unsupported'
+    assert not output_dir.exists()
+
+
+def test_extension_direct_build_cannot_bypass_guard(build, tmp_path: Path) -> None:
+    project_dir = tmp_path / 'repo' / 'acme' / 'extension'
+    write_project_yaml(project_dir)
+    with (project_dir / 'Проект.yaml').open('a', encoding='utf-8') as source:
+        source.write('ВидПроекта: Расширение\n')
+    with pytest.raises(ValueError, match='Расширение нельзя собирать'):
+        build.build_xasm(str(project_dir), str(tmp_path / 'out'), '1.0-1', '', '', 'application')
+    assert not (tmp_path / 'out').exists()
+
+
 @pytest.mark.parametrize("invalid_value", ["", "9", "9.2.9-12", "9.1-extra"])
 def test_main_rejects_invalid_compatibility_mode_format(
     build, monkeypatch, capsys, tmp_path: Path, invalid_value: str

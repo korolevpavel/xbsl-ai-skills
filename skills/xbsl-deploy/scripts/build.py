@@ -60,10 +60,12 @@ def compatibility_mode_format_error(value: str) -> dict | None:
 
 
 def detect_project_kind(project_dir: str) -> str:
-    """Определить вид проекта из Проект.yaml: 'library' или 'application'."""
+    """Определить вид проекта из Проект.yaml."""
     meta = parse_simple_yaml(os.path.join(project_dir, 'Проект.yaml'))
     if meta.get('ВидПроекта', '') == 'Библиотека':
         return 'library'
+    if meta.get('ВидПроекта', '') == 'Расширение':
+        return 'extension'
     return 'application'
 
 
@@ -142,6 +144,8 @@ def build_xasm(project_dir: str, output_dir: str,
         {vendor}/{name}/Основное/*.yaml
         ...
     """
+    if kind == 'extension' or detect_project_kind(project_dir) == 'extension':
+        raise ValueError('Расширение нельзя собирать как .xasm/.xlib: формат выгрузки расширения не подтверждён документацией 10.0. Соберите проект расширения в среде разработки и установите его через панель управления.')
     # project_dir = .../repo/vendor/project_name
     # vendor_dir  = .../repo/vendor
     # repo_dir    = .../repo  (корень: архивные пути от него)
@@ -214,8 +218,8 @@ def main():
     parser.add_argument('--commit', help='Переопределить git commit hash')
     parser.add_argument('--branch', help='Переопределить имя ветки')
     parser.add_argument(
-        '--kind', choices=['application', 'library'],
-        help='Вид проекта: application (.xasm) или library (.xlib). '
+        '--kind', choices=['application', 'library', 'extension'],
+        help='Вид проекта: application (.xasm), library (.xlib), extension (диагностика). '
              'По умолчанию определяется из ВидПроекта в Проект.yaml.'
     )
     args = parser.parse_args()
@@ -250,7 +254,20 @@ def main():
     version = args.version or next_version(base_version, args.last_build)
 
     # — Вид проекта
-    kind = args.kind or detect_project_kind(project_dir)
+    actual_kind = detect_project_kind(project_dir)
+    kind = args.kind or actual_kind
+    if actual_kind == 'extension':
+        print(json.dumps({
+            'error': 'Extension archive format is not documented for Element 10.0',
+            'details': {
+                'project_kind': 'extension',
+                'action': 'Build the extension in Element IDE and install its assembly through the control panel',
+            },
+            'rule_id': 'xbsl-deploy.extension_archive_unsupported',
+        }, ensure_ascii=False), file=sys.stderr)
+        sys.exit(1)
+    if kind == 'extension':
+        parser.error('--kind extension допустим только для проекта с ВидПроекта: Расширение')
 
     # — Сборка
     output_path = build_xasm(project_dir, args.output, version, commit, branch, kind)

@@ -17,6 +17,7 @@ import pytest
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = ROOT_DIR / "skills/xbsl-deploy/scripts/api.py"
+SKILL_PATH = ROOT_DIR / "skills/xbsl-deploy/SKILL.md"
 
 
 class FakeResponse:
@@ -676,6 +677,86 @@ def test_main_non_token_action_prints_error_and_exits_on_token_fetch_failure(api
     )
 
     assert result == {"error": "Connection error", "details": "dns failed"}
+
+
+def test_skill_uses_uploaded_assembly_id_for_new_app() -> None:
+    instructions = SKILL_PATH.read_text(encoding="utf-8")
+    create_app = instructions.split("### A3. Создай приложение", 1)[1].split("### A4.", 1)[0]
+    upload_build = instructions.split("### H4. Загрузи сборку и создай проект", 1)[1].split("## Сценарий I", 1)[0]
+
+    assert "--version-id <assembly-id>" in create_app
+    assert "--project-id <project-id>" in create_app  # Существующий проект по-прежнему поддерживается.
+    assert "`id` загруженной сборки" in upload_build
+
+
+def test_create_app_http_error_exits_nonzero_with_json_diagnostic(api, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    error = urllib.error.HTTPError(
+        url="https://example.com/console/api/v2/applications",
+        code=400,
+        msg="Bad Request",
+        hdrs={},
+        fp=io.BytesIO(b'{"message":"Default assembly not found"}'),
+    )
+    monkeypatch.setattr(api.urllib.request, "urlopen", lambda _request: (_ for _ in ()).throw(error))
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action", "create-app", "--name", "testapp", "--project-id", "project-1",
+            "--base-url", "https://example.com", "--client-id", "client", "--client-secret", "secret",
+        ],
+        expected_exit=1,
+    )
+
+    assert result == {"error": "HTTP 400", "details": {"message": "Default assembly not found"}}
+
+
+def test_upload_build_http_error_exits_nonzero_with_json_diagnostic(api, monkeypatch, capsys, tmp_path) -> None:
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    error = urllib.error.HTTPError(
+        url="https://example.com/console/api/v2/projects/project-1/assemblies",
+        code=503,
+        msg="Service Unavailable",
+        hdrs={},
+        fp=io.BytesIO(b'{"message":"Upload unavailable"}'),
+    )
+    monkeypatch.setattr(api.urllib.request, "urlopen", lambda _request: (_ for _ in ()).throw(error))
+    build = write_assembly(tmp_path / "TestApp.xasm")
+
+    result = run_upload_build(
+        api,
+        monkeypatch,
+        capsys,
+        build,
+        project_id="project-1",
+        expected_exit=1,
+    )
+
+    assert result == {"error": "HTTP 503", "details": {"message": "Upload unavailable"}}
+
+
+def test_get_app_domain_error_is_successful_api_response(api, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(api, "get_token", lambda _args: "TOKEN")
+    monkeypatch.setattr(
+        api,
+        "api_request",
+        lambda *_args: {"id": "app-1", "status": "Error", "error": "Compilation failed"},
+    )
+
+    result = run_main(
+        api,
+        monkeypatch,
+        capsys,
+        [
+            "--action", "get-app", "--app-id", "app-1",
+            "--base-url", "https://example.com", "--client-id", "client", "--client-secret", "secret",
+        ],
+    )
+
+    assert result == {"id": "app-1", "status": "Error", "error": "Compilation failed"}
 
 
 @pytest.mark.parametrize(

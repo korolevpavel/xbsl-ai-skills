@@ -78,13 +78,17 @@ class IdentityPreflightError(Exception):
     """Безопасная диагностическая ошибка preflight без сырых ответов API."""
 
 
-def build_error(error: str, details=None, response=None) -> dict:
+class ApiErrorResult(dict):
+    """Отказ API/transport; поле error в успешном объекте приложения не является отказом."""
+
+
+def build_error(error: str, details=None, response=None) -> ApiErrorResult:
     payload = {"error": error}
     if details is not None:
         payload["details"] = details
     if response is not None:
         payload["response"] = response
-    return payload
+    return ApiErrorResult(payload)
 
 
 def identity_preflight_error(details: str) -> dict:
@@ -947,6 +951,9 @@ def main():
 
     else:
         print(json.dumps({"error": f"Unknown action: {action}"}, ensure_ascii=False))
+        sys.exit(1)
+
+    if isinstance(result, ApiErrorResult):
         sys.exit(1)
 
 

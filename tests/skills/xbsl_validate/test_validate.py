@@ -1169,3 +1169,191 @@ def test_document_requires_standard_date_in_cloud_smoke_fixture(tmp_path, capsys
     assert [item["rule_id"] for item in parse_json(stdout)["diagnostics"]] == [
         "owner.document.date"
     ]
+
+
+def write_enum_default_fixture(root, scope="Основное", members=("ВРаботе",), visibility="ВПодсистеме"):
+    import yaml
+
+    target = root / scope / "Статусы.yaml"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(yaml.safe_dump({
+        "ВидЭлемента": "Перечисление",
+        "Ид": "11111111-1111-4111-8111-111111111111",
+        "Имя": "Статусы",
+        "ОбластьВидимости": visibility,
+        "Элементы": [
+            {"Ид": f"22222222-2222-4222-8222-{index:012d}", "Имя": name,
+             **({"ПоУмолчанию": "Истина"} if index == 0 else {})}
+            for index, name in enumerate(members)
+        ],
+    }, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    return target
+
+
+def write_enum_consumer(root, default="ВРаботе", kind="Документ", slot="Реквизиты",
+                        scope="Основное", imports=(), type_name="Статусы", explicit=True):
+    import yaml
+
+    field = {"Ид": "33333333-3333-4333-8333-333333333333", "Имя": "Статус", "Тип": type_name}
+    if explicit:
+        field["ЗначениеПоУмолчанию"] = default
+    document = {
+        "ВидЭлемента": kind, "Ид": "44444444-4444-4444-8444-444444444444",
+        "Имя": "Заказы", "Импорт": list(imports),
+    }
+    if kind == "Документ":
+        document["Реквизиты"] = [{"Имя": "Дата", "Тип": "ДатаВремя"}]
+    if slot == "ТабличныеЧасти":
+        document[slot] = [{"Ид": "55555555-5555-4555-8555-555555555555",
+                           "Имя": "Строки", "Реквизиты": [field]}]
+    else:
+        document.setdefault(slot, []).append(field)
+    if kind == "РегистрСведений":
+        document.setdefault("Измерения", [{"Ид": "66666666-6666-4666-8666-666666666666",
+                                           "Имя": "Ключ", "Тип": "Число"}])
+        document.setdefault("Ресурсы", [{"Ид": "77777777-7777-4777-8777-777777777777",
+                                         "Имя": "Количество", "Тип": "Число"}])
+    target = root / scope / "Заказы.yaml"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    return target
+
+
+@pytest.mark.parametrize("kind,slot", [
+    ("Документ", "Реквизиты"), ("Справочник", "Реквизиты"),
+    ("Документ", "ТабличныеЧасти"), ("Справочник", "ТабличныеЧасти"),
+    ("РегистрСведений", "Ресурсы"), ("РегистрСведений", "Измерения"),
+])
+@pytest.mark.parametrize("value,rule", [
+    ("ВРаботе", None),
+    ("Статусы.ВРаботе", "types.enum_default_format"),
+    ("Статусы::ВРаботе", "types.enum_default_format"),
+    ("НесуществующийСтатус", "types.enum_default_member"),
+    (42, "types.enum_default_format"),
+])
+def test_local_enum_default_scalar_contract(tmp_path, capsys, kind, slot, value, rule):
+    write_enum_default_fixture(tmp_path)
+    target = write_enum_consumer(tmp_path, value, kind, slot)
+    before = snapshot_tree(tmp_path)
+    code, stdout, stderr = run_cli([str(target), "--format", "json"], capsys)
+    result = parse_json(stdout)
+    assert stderr == ""
+    assert result["summary"]["files"] == 1
+    assert code == (1 if rule else 0)
+    assert [diagnostic["rule_id"] for diagnostic in result["diagnostics"]] == ([rule] if rule else [])
+    if rule:
+        diagnostic = result["diagnostics"][0]
+        assert diagnostic["path"] == str(target)
+        assert "Статус" in diagnostic["message"]
+        assert diagnostic["line"] == next(
+            index for index, line in enumerate(target.read_text().splitlines(), 1)
+            if "ЗначениеПоУмолчанию:" in line
+        )
+    assert snapshot_tree(tmp_path) == before
+
+
+def test_enum_default_error_points_to_second_field_value(tmp_path, capsys):
+    write_enum_default_fixture(tmp_path)
+    target = write_enum_consumer(tmp_path, "Статусы.ВРаботе")
+    text = target.read_text()
+    text = text.replace("Реквизиты:\n", "Реквизиты:\n- Имя: Примечание\n  Тип: Строка\n  ЗначениеПоУмолчанию: текст\n")
+    target.write_text(text)
+    code, stdout, stderr = run_cli([str(target), "--format", "json"], capsys)
+    assert code == 1 and not stderr
+    diagnostic, = parse_json(stdout)["diagnostics"]
+    assert "Статусы.ВРаботе" in target.read_text().splitlines()[diagnostic["line"] - 1]
+
+
+def test_enum_defaults_resolve_local_scope_before_imports(tmp_path, capsys):
+    (tmp_path / "Проект.yaml").write_text("Имя: Проверка\n")
+    write_enum_default_fixture(tmp_path, members=("Новый",))
+    write_enum_default_fixture(tmp_path, "Общие", ("ВРаботе",), "ВПроекте")
+    target = write_enum_consumer(tmp_path, "ВРаботе", imports=("Общие",))
+    code, stdout, _ = run_cli([str(target), "--format", "json"], capsys)
+    assert code == 1
+    diagnostic, = parse_json(stdout)["diagnostics"]
+    assert diagnostic["rule_id"] == "types.enum_default_member"
+    assert "Новый" in diagnostic["message"]
+    write_enum_consumer(tmp_path, "Новый", imports=("Общие",))
+    assert run_cli([str(target)], capsys) == (0, "", "")
+
+
+@pytest.mark.parametrize("visibility", ["ВПроекте", "Глобально"])
+def test_enum_defaults_resolve_imported_subsystem(tmp_path, capsys, visibility):
+    (tmp_path / "Проект.yaml").write_text("Имя: Проверка\n")
+    write_enum_default_fixture(tmp_path, "Общие", ("ВРаботе",), visibility)
+    write_enum_default_fixture(tmp_path, "НеИспользуется", ("ДругойСтатус",), "ВПроекте")
+    target = write_enum_consumer(tmp_path, imports=("Общие",))
+    assert run_cli([str(target)], capsys) == (0, "", "")
+    write_enum_consumer(tmp_path, "ДругойСтатус", imports=("Общие",))
+    code, stdout, _ = run_cli([str(target), "--format", "json"], capsys)
+    assert code == 1
+    assert parse_json(stdout)["diagnostics"][0]["rule_id"] == "types.enum_default_member"
+
+
+def test_enum_default_context_stays_inside_nearest_project(tmp_path, capsys):
+    for root, value in [(tmp_path, "Первый"), (tmp_path / "Вложенный", "Второй")]:
+        root.mkdir(exist_ok=True)
+        (root / "Проект.yaml").write_text("Имя: Проверка\n")
+        write_enum_default_fixture(root, members=(value,))
+        target = write_enum_consumer(root, value)
+        assert run_cli([str(target)], capsys) == (0, "", "")
+
+
+@pytest.mark.parametrize("mode", ["external", "ambiguous", "private", "local_structure"])
+def test_enum_defaults_do_not_guess_unresolved_or_non_enum_types(tmp_path, capsys, mode):
+    import yaml
+
+    (tmp_path / "Проект.yaml").write_text("Имя: Проверка\n")
+    imports = ()
+    if mode in ("ambiguous", "private", "local_structure"):
+        write_enum_default_fixture(tmp_path, "Общие", visibility="ВПодсистеме" if mode == "private" else "ВПроекте")
+        imports = ("Общие",)
+    if mode == "ambiguous":
+        write_enum_default_fixture(tmp_path, "Другие", visibility="ВПроекте")
+        imports = ("Общие", "Другие")
+    if mode == "local_structure":
+        path = write_enum_default_fixture(tmp_path)
+        path.write_text(yaml.safe_dump({"ВидЭлемента": "Структура", "Имя": "Статусы"}, allow_unicode=True))
+    target = write_enum_consumer(tmp_path, "НеПроверять.ПоДогадке", imports=imports)
+    assert run_cli([str(target)], capsys) == (0, "", "")
+
+
+@pytest.mark.parametrize("type_name,default", [
+    ("Строка", "Текст.С.Точкой"), ("Статусы?", "Статусы.ВРаботе"),
+    ("Массив<Статусы>", ["Статусы.ВРаботе"]),
+    ("Статусы|Строка", {"Тип": "Статусы", "Значение": "ВРаботе"}),
+    ("Статусы", {"Тип": "Статусы", "Значение": "ВРаботе"}),
+])
+def test_enum_scalar_check_leaves_other_literal_contracts_unchanged(tmp_path, capsys, type_name, default):
+    write_enum_default_fixture(tmp_path)
+    target = write_enum_consumer(tmp_path, default, type_name=type_name)
+    assert run_cli([str(target)], capsys) == (0, "", "")
+
+
+def test_enum_can_supply_its_own_default(tmp_path, capsys):
+    write_enum_default_fixture(tmp_path)
+    target = write_enum_consumer(tmp_path, explicit=False)
+    assert run_cli([str(target)], capsys) == (0, "", "")
+
+
+def test_unreadable_context_does_not_break_single_file_validation(tmp_path, capsys):
+    write_enum_default_fixture(tmp_path)
+    (tmp_path / "Основное" / "НеТекст.yaml").write_bytes(b"\xff\xfe")
+    (tmp_path / "Основное" / "Повреждено.yaml").write_text("[broken")
+    target = write_enum_consumer(tmp_path)
+    assert run_cli([str(target)], capsys) == (0, "", "")
+
+
+def test_enum_defaults_support_string_and_nested_imports(tmp_path, capsys):
+    import yaml
+
+    (tmp_path / "Проект.yaml").write_text("Имя: Проверка\n")
+    write_enum_default_fixture(tmp_path, "Общие/НСИ", visibility="ВПроекте")
+    target = write_enum_consumer(tmp_path, "Статусы.ВРаботе")
+    document = yaml.safe_load(target.read_text())
+    document["Импорт"] = "Общие::НСИ"
+    target.write_text(yaml.safe_dump(document, allow_unicode=True))
+    code, stdout, stderr = run_cli([str(target), "--format", "json"], capsys)
+    assert code == 1 and not stderr
+    assert parse_json(stdout)["diagnostics"][0]["rule_id"] == "types.enum_default_format"

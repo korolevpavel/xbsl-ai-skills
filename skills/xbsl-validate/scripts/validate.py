@@ -400,6 +400,132 @@ def valid_type_expression(value: str) -> bool:
     return value in SCALAR_TYPES or bool(NAME_RE.fullmatch(value))
 
 
+def local_project_root(path: Path) -> Path | None:
+    return next((parent for parent in path.parents if (parent / "Проект.yaml").is_file()), None)
+
+
+def local_type_index(
+    input_file: InputFile,
+    cache: dict,
+) -> tuple[Path, dict]:
+    """Index local declarations, bounded by the nearest project (or sibling files)."""
+    project_root = local_project_root(input_file.actual_path)
+    root = project_root or input_file.actual_path.parent
+    if root not in cache:
+        index: dict[tuple[tuple[str, ...], str], list[Mapping[str, Any]]] = {}
+        paths = root.rglob("*.yaml") if project_root else root.glob("*.yaml")
+        for path in sorted(paths):
+            if project_root and local_project_root(path) != project_root:
+                continue
+            try:
+                candidate, error = load_yaml(InputFile(path, normalize_path(path)))
+            except UnicodeError:
+                continue
+            if error or not isinstance(candidate, dict):
+                continue
+            name = candidate.get("Имя")
+            if not isinstance(name, str) or not isinstance(candidate.get("ВидЭлемента"), str):
+                continue
+            scope = path.parent.relative_to(root).parts
+            index.setdefault((scope, name), []).append(candidate)
+        cache[root] = index
+    return root, cache[root]
+
+
+def resolve_local_enum(
+    type_name: str,
+    input_file: InputFile,
+    document: Mapping[str, Any],
+    root: Path,
+    index: Mapping,
+) -> Mapping[str, Any] | None:
+    scope = input_file.actual_path.parent.relative_to(root).parts
+    matches = index.get((scope, type_name), [])
+    # A local declaration shadows imports even when it is not an enumeration.
+    if not matches:
+        imports = document.get("Импорт", [])
+        if isinstance(imports, str):
+            imports = [imports]
+        if not isinstance(imports, list):
+            return None
+        imported_scopes = {tuple(value.split("::")) for value in imports if isinstance(value, str)}
+        matches = [
+            candidate
+            for imported_scope in sorted(imported_scopes)
+            for candidate in index.get((imported_scope, type_name), [])
+            if candidate.get("ОбластьВидимости", "ВПодсистеме") in ("ВПроекте", "Глобально")
+        ]
+    if len(matches) == 1 and matches[0].get("ВидЭлемента") == "Перечисление":
+        return matches[0]
+    # Unavailable external types and ambiguous declarations need the platform compiler.
+    return None
+
+
+def functional_field_nodes(node: Any, collection: str | None = None):
+    """Walk owning functional type slots while retaining exact YAML source marks."""
+    if isinstance(node, yaml.MappingNode):
+        fields = {key.value: value for key, value in node.value if isinstance(key, yaml.ScalarNode)}
+        if collection in FUNCTIONAL_TYPE_COLLECTIONS and "Тип" in fields:
+            yield fields
+        for key, value in node.value:
+            if isinstance(key, yaml.ScalarNode):
+                yield from functional_field_nodes(value, key.value)
+    elif isinstance(node, yaml.SequenceNode):
+        for value in node.value:
+            yield from functional_field_nodes(value, collection)
+
+
+def validate_local_enum_defaults(
+    input_file: InputFile,
+    document: Mapping[str, Any],
+    cache: dict,
+) -> list[Diagnostic]:
+    """Validate scalar YAML defaults of unambiguously resolved, non-nullable enums."""
+    text = input_file.actual_path.read_text(encoding="utf-8")
+    fields = [
+        field for field in functional_field_nodes(yaml.compose(text))
+        if "ЗначениеПоУмолчанию" in field
+    ]
+    if not fields:
+        return []
+    root, index = local_type_index(input_file, cache)
+    diagnostics: list[Diagnostic] = []
+    for field in fields:
+        type_node = field["Тип"]
+        default_node = field["ЗначениеПоУмолчанию"]
+        if not isinstance(type_node, yaml.ScalarNode) or not isinstance(default_node, yaml.ScalarNode):
+            continue
+        # Nullable/union/collection literals have a separate typed-value contract.
+        type_name = type_node.value
+        if type_name in SCALAR_TYPES or NAME_RE.fullmatch(type_name) is None:
+            continue
+        enumeration = resolve_local_enum(type_name, input_file, document, root, index)
+        if enumeration is None:
+            continue
+        name_node = field.get("Имя")
+        field_name = name_node.value if isinstance(name_node, yaml.ScalarNode) else "<unknown>"
+        value = default_node.value
+        members = {
+            item["Имя"] for item in enumeration.get("Элементы", [])
+            if isinstance(item, dict) and isinstance(item.get("Имя"), str)
+        } if isinstance(enumeration.get("Элементы"), list) else set()
+        if default_node.tag != "tag:yaml.org,2002:str" or "." in value or "::" in value:
+            diagnostics.append(Diagnostic(
+                input_file.display_path, default_node.start_mark.line + 1, "error",
+                "types.enum_default_format",
+                f"Field {field_name}: YAML default for {type_name} requires a bare element name, "
+                f"not {value!r}; qualified Enum.Member expressions belong to XBSL",
+            ))
+        elif value not in members:
+            diagnostics.append(Diagnostic(
+                input_file.display_path, default_node.start_mark.line + 1, "error",
+                "types.enum_default_member",
+                f"Field {field_name}: unknown default element {value!r} of {type_name}; "
+                f"expected one of: {', '.join(sorted(members))}",
+            ))
+    return diagnostics
+
+
 def validate_yaml_root(input_file: InputFile, document: Any) -> list[Diagnostic]:
     if not isinstance(document, dict):
         return [
@@ -1726,6 +1852,7 @@ def validate_file(
     input_file: InputFile,
     objects: Mapping[str, Any],
     routing: Mapping[str, Any],
+    type_contexts: dict | None = None,
 ) -> list[Diagnostic]:
     document, parse_error = load_yaml(input_file)
     if parse_error is not None:
@@ -1741,6 +1868,9 @@ def validate_file(
 
     if schema_kind in objects:
         diagnostics.extend(validate_common(input_file, document))
+        diagnostics.extend(validate_local_enum_defaults(
+            input_file, document, type_contexts if type_contexts is not None else {}
+        ))
     diagnostics.extend(
         validate_coverage_status(
             input_file,
@@ -1777,8 +1907,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         diagnostics.append(Diagnostic("", None, "error", "input.unreadable", str(error)))
         objects = {}
         routing = {}
+    type_contexts: dict = {}
     for input_file in files:
-        diagnostics.extend(validate_file(input_file, objects, routing))
+        diagnostics.extend(validate_file(input_file, objects, routing, type_contexts))
 
     output_diagnostics(diagnostics, len(files), output_format)
     return exit_code_for(diagnostics)
